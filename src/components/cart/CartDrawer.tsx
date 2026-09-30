@@ -15,6 +15,7 @@ import {
   Lock
 } from 'lucide-react';
 import { openExternal } from '../../lib/external';
+import { couponShortfall } from '../../lib/pricing';
 
 export const CartDrawer: React.FC = () => {
   const {
@@ -398,8 +399,8 @@ export const CartDrawer: React.FC = () => {
                       <div className="flex items-start gap-1.5 text-amber-300 text-[11px] font-medium">
                         <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-px" />
                         <span>
-                          El cupón {appliedCoupon.code} no descuenta nada con las prendas de tu bolsa
-                          {appliedCoupon.targetCategory && appliedCoupon.targetCategory !== 'all' ? ' (es válido solo para una sección)' : ''}.
+                          {couponShortfall(cart, appliedCoupon)
+                            ?? `El cupón ${appliedCoupon.code} no descuenta nada con las prendas de tu bolsa (es válido solo para una sección).`}
                         </span>
                       </div>
                     )}

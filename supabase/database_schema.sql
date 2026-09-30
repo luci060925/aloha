@@ -120,6 +120,8 @@ CREATE TABLE IF NOT EXISTS public.coupons (
     max_uses INTEGER DEFAULT NULL,
     used_count INTEGER DEFAULT 0,
     target_category TEXT DEFAULT 'all',
+    min_amount NUMERIC(12, 2) DEFAULT 0,   -- cupón "por monto": compra mínima (0 = sin mínimo)
+    min_items INTEGER DEFAULT 0,           -- cupón "por cantidad": prendas mínimas (0 = sin mínimo)
     is_active BOOLEAN DEFAULT TRUE,
     expires_at TIMESTAMPTZ DEFAULT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW()

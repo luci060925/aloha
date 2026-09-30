@@ -46,6 +46,8 @@ insert into public.coupons(code,discount_percentage,max_uses,target_category,is_
  ('ALOHA10',10,2,'all',true),
  ('VESTIDOS20',20,null,'vestidos',true),
  ('VENCIDO',10,null,'all',true);
+insert into public.coupons(code,discount_percentage,target_category,min_amount,is_active) values ('GRANDE10',10,'all',80000,true);
+insert into public.coupons(code,discount_percentage,target_category,min_items,is_active) values ('TRES15',15,'all',3,true);
 update public.coupons set expires_at = now() - interval '1 day' where code = 'VENCIDO';
 `;
 

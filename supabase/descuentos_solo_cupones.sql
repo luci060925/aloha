@@ -1,13 +1,18 @@
 -- ==============================================================================
--- ALOHA INDUMENTARIA - Descuentos solo por cupón (un cupón por compra, un uso por clienta)
+-- ALOHA INDUMENTARIA - Cupones: tipos con condición, un uso por clienta y un cupón cada 24 horas
 -- Pegar completo en Supabase > SQL Editor y ejecutar (Run). Re-ejecutable; no borra datos ni cupones.
 --
--- Reglas nuevas:
+-- Reglas:
 --   1. El único descuento posible es un cupón que la clienta escribe. Se eliminan los descuentos
 --      automáticos (por cantidad de prendas, por monto y global): quedan desactivados en la base.
---   2. Un cupón solo se puede usar UNA vez por clienta (los pedidos cancelados liberan el cupón).
---      Por eso "Límite de personas" cuenta personas de verdad.
---   3. Los pedidos con la etiqueta "VOLUMEN-x%" ya no se aceptan (era el descuento automático).
+--   2. Tipos de cupón (la condición para que valga):
+--        · por monto     → min_amount  (compra mínima, sobre el total de la bolsa)
+--        · por cantidad  → min_items   (prendas mínimas)
+--        · global        → sin condición, toda la tienda
+--        · por categoría → target_category (descuenta solo sobre esas prendas)
+--   3. Cada cupón se usa UNA vez por clienta y, después de usar uno, no se puede usar otro
+--      durante 24 horas. Los pedidos cancelados no cuentan.
+--   4. Los pedidos con la etiqueta "VOLUMEN-x%" ya no se aceptan (era el descuento automático).
 --
 -- Va de la mano con el cambio en la tienda (src/lib/pricing.ts): las reglas tienen que coincidir.
 -- ==============================================================================
@@ -19,7 +24,57 @@ set volume_discount_active = false,
     global_discount_active = false
 where id = 1;
 
--- 2. Validación de pedidos: solo cupones, un uso por clienta
+-- 2. Condiciones de los cupones y límites de valores (sin negativos)
+alter table public.coupons add column if not exists min_amount numeric(12, 2) default 0;
+alter table public.coupons add column if not exists min_items integer default 0;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'coupons_values_chk') then
+    alter table public.coupons add constraint coupons_values_chk check (
+      coalesce(discount_percentage, 0) between 0 and 100
+      and coalesce(fixed_discount, 0) >= 0
+      and coalesce(min_amount, 0) >= 0
+      and coalesce(min_items, 0) >= 0
+      and (max_uses is null or max_uses >= 1)
+    ) not valid;
+  end if;
+end $$;
+
+-- 3. get_coupon devuelve también las condiciones (cambia su forma, por eso se recrea)
+drop function if exists public.get_coupon(text);
+create function public.get_coupon(p_code text)
+returns table (
+  id uuid,
+  code text,
+  discount_percentage numeric,
+  fixed_discount numeric,
+  target_category text,
+  max_uses integer,
+  used_count integer,
+  min_amount numeric,
+  min_items integer
+)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select c.id, c.code, c.discount_percentage::numeric, c.fixed_discount::numeric,
+         c.target_category, c.max_uses, c.used_count,
+         coalesce(c.min_amount, 0)::numeric, coalesce(c.min_items, 0)
+  from public.coupons c
+  where upper(c.code) = upper(trim(p_code))
+    and c.is_active
+    and (c.expires_at is null or c.expires_at > now())
+    and (c.max_uses is null or c.used_count < c.max_uses)
+  limit 1;
+$$;
+
+revoke all on function public.get_coupon(text) from public, anon;
+grant execute on function public.get_coupon(text) to authenticated;
+
+-- 4. Validación de pedidos: solo cupones, con sus condiciones y sus reglas de uso
 create or replace function public.validate_order()
 returns trigger
 language plpgsql
@@ -34,6 +89,9 @@ declare
   v_c_target text;
   v_c_percent numeric;
   v_c_fixed numeric;
+  v_c_min_amount numeric;
+  v_c_min_items integer;
+  v_units integer := 0;
   v_qty numeric;
   v_price numeric;
   v_subtotal numeric := 0;
@@ -64,6 +122,8 @@ begin
   -- para que dos pedidos simultáneos no gasten el último cupo a la vez ni una clienta use el mismo cupón dos veces.
   -- Los cupones son el único descuento posible (no hay descuentos automáticos).
   if v_code is not null then
+    -- Serializa los pedidos con cupón de una misma clienta (que no gaste dos cupones a la vez)
+    perform pg_advisory_xact_lock(hashtext(new.user_id::text));
     select * into v_coupon from public.coupons c where upper(c.code) = upper(v_code) for update;
     if not found
        or not coalesce(v_coupon.is_active, false)
@@ -71,17 +131,33 @@ begin
        or (v_coupon.max_uses is not null and coalesce(v_coupon.used_count, 0) >= v_coupon.max_uses) then
       raise exception 'El cupón no es válido, venció o se agotó.';
     end if;
-    -- Una sola vez por clienta: los pedidos cancelados liberan el cupón
-    if exists (
-      select 1 from public.orders o
-      where o.user_id = new.user_id
-        and upper(o.coupon_code) = upper(v_code)
-        and coalesce(o.discount_amount, 0) > 0
-        and coalesce(o.status, '') <> 'cancelled'
-    ) then
-      raise exception 'Ya usaste este cupón: es de un solo uso por clienta.';
+    -- Reglas de uso (solo cuando el pedido realmente aprovecha el cupón). Los pedidos cancelados no cuentan.
+    if coalesce(new.discount_amount, 0) > 0 then
+      -- Cada cupón, una sola vez por clienta
+      if exists (
+        select 1 from public.orders o
+        where o.user_id = new.user_id
+          and upper(o.coupon_code) = upper(v_code)
+          and coalesce(o.discount_amount, 0) > 0
+          and coalesce(o.status, '') <> 'cancelled'
+      ) then
+        raise exception 'Ya usaste este cupón: es de un solo uso por clienta.';
+      end if;
+      -- Y ningún otro cupón durante las 24 horas siguientes a usar uno
+      if exists (
+        select 1 from public.orders o
+        where o.user_id = new.user_id
+          and coalesce(o.coupon_code, '') <> ''
+          and coalesce(o.discount_amount, 0) > 0
+          and coalesce(o.status, '') <> 'cancelled'
+          and o.created_at > now() - interval '24 hours'
+      ) then
+        raise exception 'Ya usaste un cupón en las últimas 24 horas. Podés usar otro más tarde.';
+      end if;
     end if;
     v_has_coupon := true;
+    v_c_min_amount := coalesce(v_coupon.min_amount, 0);
+    v_c_min_items := coalesce(v_coupon.min_items, 0);
     v_c_target := coalesce(v_coupon.target_category, 'all');
     v_c_percent := coalesce(v_coupon.discount_percentage, 0);
     v_c_fixed := coalesce(v_coupon.fixed_discount, 0);
@@ -112,6 +188,7 @@ begin
     end if;
 
     v_subtotal := v_subtotal + v_product.price * v_qty;
+    v_units := v_units + v_qty::integer;
     if v_has_coupon and (v_c_target = 'all' or v_product.category = v_c_target) then
       v_eligible := v_eligible + v_product.price * v_qty;
     end if;
@@ -131,6 +208,13 @@ begin
 
   -- Descuento máximo legítimo (mismas reglas que src/lib/pricing.ts). Se tolera 1 peso por redondeo.
   if v_has_coupon then
+    -- Condición del cupón: compra mínima (por monto) o cantidad mínima de prendas (por cantidad)
+    if v_discount > 0 and v_subtotal < v_c_min_amount then
+      raise exception 'Tu compra no llega al monto mínimo del cupón.';
+    end if;
+    if v_discount > 0 and v_units < v_c_min_items then
+      raise exception 'Tu bolsa no tiene las prendas mínimas que pide el cupón.';
+    end if;
     if v_c_percent > 0 then
       v_max := round(v_eligible * v_c_percent / 100);
     else
@@ -150,6 +234,6 @@ $$;
 
 revoke all on function public.validate_order() from public, anon, authenticated;
 
--- 3. Verificación: los tres deben estar en false
+-- 5. Verificación: los tres descuentos automáticos deben estar en false
 select volume_discount_active, price_discount_active, global_discount_active
 from public.store_settings where id = 1;

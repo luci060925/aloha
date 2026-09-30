@@ -152,22 +152,65 @@ describe('SEC-002 · Cupones: se validan al usarlos y no se pueden agotar sin ap
     });
   });
 
-  test('una clienta usa cada cupón una sola vez, y un pedido cancelado lo libera', async () => {
+  test('una clienta usa cada cupón una sola vez', async () => {
     await as(db, 'authenticated', IDS.ana, async q => {
-      const primero = await insertOrder(q, { userId: IDS.ana, items: [blazer()], subtotal: 50000, discount: 5000, coupon: 'ALOHA10', id: 'ORD-UNAVEZ1' });
+      const primero = await insertOrder(q, { userId: IDS.ana, items: [blazer()], subtotal: 50000, discount: 5000, coupon: 'ALOHA10' });
       expect(primero.ok, !primero.ok ? primero.error : '').toBe(true);
       const segundo = await insertOrder(q, { userId: IDS.ana, items: [blazer()], subtotal: 50000, discount: 5000, coupon: 'aloha10' });
       expect(segundo.ok).toBe(false);
       expect(!segundo.ok && segundo.error).toMatch(/solo uso|ya usaste/i);
-      // otro cupón sí puede usarlo
+    });
+  });
+
+  test('después de usar un cupón, no se puede usar otro durante 24 horas', async () => {
+    await as(db, 'authenticated', IDS.ana, async q => {
+      const primero = await insertOrder(q, { userId: IDS.ana, items: [blazer()], subtotal: 50000, discount: 5000, coupon: 'ALOHA10', id: 'ORD-DIA1' });
+      expect(primero.ok, !primero.ok ? primero.error : '').toBe(true);
       const otro = await insertOrder(q, { userId: IDS.ana, items: [vestido()], subtotal: 30000, discount: 6000, coupon: 'VESTIDOS20' });
-      expect(otro.ok, !otro.ok ? otro.error : '').toBe(true);
-      // si el primer pedido se cancela, el cupón queda libre otra vez
+      expect(otro.ok).toBe(false);
+      expect(!otro.ok && otro.error).toMatch(/24 horas/i);
+      // otra clienta no se ve afectada
+    });
+    await as(db, 'authenticated', IDS.eva, async q => {
+      const eva = await insertOrder(q, { userId: IDS.eva, items: [vestido()], subtotal: 30000, discount: 6000, coupon: 'VESTIDOS20' });
+      expect(eva.ok, !eva.ok ? eva.error : '').toBe(true);
+    });
+  });
+
+  test('pasadas las 24 horas puede usar otro cupón, y cancelar el pedido libera el cupón y la espera', async () => {
+    await as(db, 'authenticated', IDS.ana, async q => {
+      await insertOrder(q, { userId: IDS.ana, items: [blazer()], subtotal: 50000, discount: 5000, coupon: 'ALOHA10', id: 'ORD-DIA2' });
       await db.exec('reset role');
-      await db.exec(`update public.orders set status = 'cancelled' where id = 'ORD-UNAVEZ1'`);
+      await db.exec(`update public.orders set created_at = now() - interval '25 hours' where id = 'ORD-DIA2'`);
       await db.exec('set local role authenticated');
-      const tercero = await insertOrder(q, { userId: IDS.ana, items: [blazer()], subtotal: 50000, discount: 5000, coupon: 'ALOHA10' });
-      expect(tercero.ok, !tercero.ok ? tercero.error : '').toBe(true);
+      const despues = await insertOrder(q, { userId: IDS.ana, items: [vestido()], subtotal: 30000, discount: 6000, coupon: 'VESTIDOS20', id: 'ORD-DIA3' });
+      expect(despues.ok, !despues.ok ? despues.error : '').toBe(true);
+      // cancelar el último libera la espera de 24 horas
+      await db.exec('reset role');
+      await db.exec(`update public.orders set status = 'cancelled' where id = 'ORD-DIA3'`);
+      await db.exec('set local role authenticated');
+      const libre = await insertOrder(q, { userId: IDS.ana, items: [vestido()], subtotal: 30000, discount: 6000, coupon: 'VESTIDOS20' });
+      expect(libre.ok, !libre.ok ? libre.error : '').toBe(true);
+    });
+  });
+
+  test('cupón por monto: solo vale si la compra llega al mínimo', async () => {
+    await as(db, 'authenticated', IDS.ana, async q => {
+      const corto = await insertOrder(q, { userId: IDS.ana, items: [blazer()], subtotal: 50000, discount: 5000, coupon: 'GRANDE10' });
+      expect(corto.ok).toBe(false);
+      expect(!corto.ok && corto.error).toMatch(/monto m[ií]nimo/i);
+      const ok = await insertOrder(q, { userId: IDS.ana, items: [blazer(), vestido()], subtotal: 80000, discount: 8000, coupon: 'GRANDE10' });
+      expect(ok.ok, !ok.ok ? ok.error : '').toBe(true); // justo en el mínimo, sobre el total de la bolsa
+    });
+  });
+
+  test('cupón por cantidad: solo vale con las prendas mínimas', async () => {
+    await as(db, 'authenticated', IDS.ana, async q => {
+      const pocas = await insertOrder(q, { userId: IDS.ana, items: [blazer(2)], subtotal: 100000, discount: 15000, coupon: 'TRES15' });
+      expect(pocas.ok).toBe(false);
+      expect(!pocas.ok && pocas.error).toMatch(/prendas m[ií]nimas/i);
+      const ok = await insertOrder(q, { userId: IDS.ana, items: [blazer(2), vestido()], subtotal: 130000, discount: 19500, coupon: 'TRES15' });
+      expect(ok.ok, !ok.ok ? ok.error : '').toBe(true);
     });
   });
 

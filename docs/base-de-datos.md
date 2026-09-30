@@ -39,7 +39,7 @@ Estados de un pedido (`orders.status`): `whatsapp_sent` → `contacted` → `con
 | `is_admin()` | Función (`SECURITY DEFINER`) | Indica si la cuenta actual es administradora. Evita la recursión al usarla dentro de las políticas de `profiles` |
 | `get_coupon(código)` | Función (`SECURITY DEFINER`) | Valida **un** cupón: activo, no vencido y con cupo. Devuelve sus datos sin permitir listar los demás |
 | `count_coupon_use()` | Disparador en `orders` (después de insertar) | Suma 1 a `used_count` del cupón usado, solo si el pedido realmente descuenta |
-| `validate_order()` | Disparador en `orders` (antes de insertar) | Valida el pedido con los datos reales de la base: prendas existentes y en stock, precio vigente, cantidades 1–50, subtotal, total y descuento máximo legítimo (solo cupón: real, activo, vigente, con cupo y no usado antes por la clienta); bloquea la fila del cupón para respetar el cupo; máximo 10 pedidos por hora por cuenta |
+| `validate_order()` | Disparador en `orders` (antes de insertar) | Valida el pedido con los datos reales de la base: prendas existentes y en stock, precio vigente, cantidades 1–50, subtotal, total y descuento máximo legítimo (solo cupón: real, activo, vigente, con cupo, con su condición cumplida —compra o prendas mínimas—, no usado antes por la clienta y sin otro cupón usado en las últimas 24 horas); bloquea la fila del cupón para respetar el cupo; máximo 10 pedidos por hora por cuenta |
 | `protect_profile_columns()` | Disparador en `profiles` | El email sale siempre de la cuenta de acceso, `id` y `created_at` no cambian y `is_admin` solo lo cambia una administradora o el panel de Supabase |
 
 ## Almacenamiento de fotos

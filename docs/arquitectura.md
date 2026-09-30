@@ -104,7 +104,7 @@ Reglas de diseño:
 
 **Compra.** Bolsa → cupón opcional (se valida en la base) → "Finalizar compra vía WhatsApp": el sitio abre WhatsApp con el mensaje y registra el pedido (`orders`). Un disparador en la base suma el uso del cupón.
 
-**Descuentos.** El único descuento es un **cupón que la clienta escribe** (no hay descuentos automáticos). Se aplica **uno solo por compra**, es de **un solo uso por clienta** y puede ser porcentaje o valor fijo, sobre toda la tienda o sobre una categoría. Hace falta iniciar sesión para usarlo. El cálculo vive en `src/lib/pricing.ts` y la base lo vuelve a comprobar en `validate_order`; las dos reglas tienen que coincidir.
+**Descuentos.** El único descuento es un **cupón que la clienta escribe** (no hay descuentos automáticos). Cada cupón tiene un tipo, que es su condición: por monto (compra mínima), por cantidad de prendas, global o por categoría (columnas `min_amount`, `min_items` y `target_category` de `coupons`). Se aplica **uno solo por compra**, cada cupón se usa **una vez por clienta** y, tras usar uno, no se puede usar otro durante **24 horas** (los pedidos cancelados no cuentan). Puede ser porcentaje o valor fijo; se calcula sobre el total de la bolsa o, en el de categoría, solo sobre esas prendas. Hace falta iniciar sesión para usarlo. El cálculo vive en `src/lib/pricing.ts` y la base lo vuelve a comprobar en `validate_order`; las dos reglas tienen que coincidir.
 
 **Fotos.** El panel recorta la foto a 3:4, la convierte a WebP (menos de 1 MB), la sube a `catalog-images` y guarda solo la URL. Al reemplazar o borrar una prenda se eliminan las fotos que ya no se usan.
 

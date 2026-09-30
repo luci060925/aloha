@@ -27,7 +27,8 @@ revoke all on function public.is_admin() from public;
 grant execute on function public.is_admin() to anon, authenticated;
 
 -- Valida UN cupón por código sin exponer la lista completa.
-create or replace function public.get_coupon(p_code text)
+drop function if exists public.get_coupon(text);
+create function public.get_coupon(p_code text)
 returns table (
   id uuid,
   code text,
@@ -35,7 +36,9 @@ returns table (
   fixed_discount numeric,
   target_category text,
   max_uses integer,
-  used_count integer
+  used_count integer,
+  min_amount numeric,
+  min_items integer
 )
 language sql
 stable
@@ -43,7 +46,8 @@ security definer
 set search_path = public
 as $$
   select c.id, c.code, c.discount_percentage::numeric, c.fixed_discount::numeric,
-         c.target_category, c.max_uses, c.used_count
+         c.target_category, c.max_uses, c.used_count,
+         coalesce(c.min_amount, 0)::numeric, coalesce(c.min_items, 0)
   from public.coupons c
   where upper(c.code) = upper(trim(p_code))
     and c.is_active

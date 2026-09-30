@@ -85,6 +85,8 @@ export interface CouponRow {
   max_uses: number | null;
   used_count: number | null;
   target_category: string | null;
+  min_amount: number | string | null;
+  min_items: number | null;
   is_active: boolean | null;
   expires_at: string | null;
   created_at: string | null;
@@ -93,7 +95,7 @@ export interface CouponRow {
 /** Lo que devuelve la función get_coupon() (un cupón válido, sin datos internos). */
 export type CouponRpcRow = Pick<
   CouponRow,
-  'id' | 'code' | 'discount_percentage' | 'fixed_discount' | 'target_category' | 'max_uses' | 'used_count'
+  'id' | 'code' | 'discount_percentage' | 'fixed_discount' | 'target_category' | 'max_uses' | 'used_count' | 'min_amount' | 'min_items'
 >;
 
 /** store_settings: una sola fila con columnas planas (ver SETTINGS_DB_KEYS en StoreContext). */

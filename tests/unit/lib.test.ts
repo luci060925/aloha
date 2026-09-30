@@ -1,6 +1,6 @@
 // Pruebas de las funciones puras de src/lib (informe.md: SEC-001, SEC-009, SEC-010, SEC-012).
 import { describe, expect, test } from 'vitest';
-import { calculateCartTotals, syncCartWithCatalog, normalizeCouponCode, MAX_ITEM_QUANTITY } from '../../src/lib/pricing';
+import { calculateCartTotals, couponKind, couponShortfall, syncCartWithCatalog, normalizeCouponCode, MAX_ITEM_QUANTITY } from '../../src/lib/pricing';
 import { isHttpUrl, isTrustedAvatarUrl, safeUrl } from '../../src/lib/external';
 import { slugify } from '../../src/lib/slug';
 import { MIN_PASSWORD_LENGTH } from '../../src/lib/constants';
@@ -42,6 +42,36 @@ describe('pricing · calculateCartTotals (debe coincidir con validate_order en s
   test('un cupón inactivo no descuenta y el total nunca es negativo', () => {
     expect(calculateCartTotals([line(blazer)], coupon({ discountPercentage: 10, isActive: false })).discount).toBe(0);
     expect(calculateCartTotals([line(blazer)], coupon({ discountPercentage: 100 })).total).toBe(0);
+  });
+});
+
+describe('pricing · tipos de cupón y sus condiciones', () => {
+  test('el tipo sale de la condición del cupón', () => {
+    expect(couponKind(coupon({ minAmount: 80000 }))).toBe('amount');
+    expect(couponKind(coupon({ minItems: 3 }))).toBe('items');
+    expect(couponKind(coupon({ targetCategory: 'vestidos' }))).toBe('category');
+    expect(couponKind(coupon({}))).toBe('global');
+  });
+
+  test('por monto: descuenta sobre el total solo si la bolsa llega al mínimo', () => {
+    const grande = coupon({ discountPercentage: 10, minAmount: 80000 });
+    expect(calculateCartTotals([line(blazer)], grande).discount).toBe(0);
+    expect(calculateCartTotals([line(blazer), line(vestido)], grande).discount).toBe(8000); // justo en el mínimo
+    expect(couponShortfall([line(blazer)], grande)).toMatch(/Te faltan \$\s?30\.000/);
+  });
+
+  test('por cantidad: cuenta unidades y descuenta sobre el total', () => {
+    const tres = coupon({ discountPercentage: 15, minItems: 3 });
+    expect(calculateCartTotals([line(blazer, 2)], tres).discount).toBe(0);
+    expect(couponShortfall([line(blazer, 2)], tres)).toMatch(/falta 1 prenda/);
+    expect(couponShortfall([line(blazer)], tres)).toMatch(/faltan 2 prendas/);
+    expect(calculateCartTotals([line(blazer, 3)], tres)).toMatchObject({ discount: 22500, total: 127500 });
+    expect(couponShortfall([line(blazer, 3)], tres)).toBeNull();
+  });
+
+  test('un cupón de valor fijo admite cualquier monto positivo (15900, 45000...)', () => {
+    expect(calculateCartTotals([line(blazer, 2)], coupon({ fixedDiscount: 15900 })).discount).toBe(15900);
+    expect(calculateCartTotals([line(blazer, 2)], coupon({ fixedDiscount: 45000 })).discount).toBe(45000);
   });
 });
 

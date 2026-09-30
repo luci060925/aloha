@@ -111,6 +111,9 @@ declare
   v_c_target text;
   v_c_percent numeric;
   v_c_fixed numeric;
+  v_c_min_amount numeric;
+  v_c_min_items integer;
+  v_units integer := 0;
   v_qty numeric;
   v_price numeric;
   v_subtotal numeric := 0;
@@ -141,6 +144,8 @@ begin
   -- para que dos pedidos simultáneos no gasten el último cupo a la vez ni una clienta use el mismo cupón dos veces.
   -- Los cupones son el único descuento posible (no hay descuentos automáticos).
   if v_code is not null then
+    -- Serializa los pedidos con cupón de una misma clienta (que no gaste dos cupones a la vez)
+    perform pg_advisory_xact_lock(hashtext(new.user_id::text));
     select * into v_coupon from public.coupons c where upper(c.code) = upper(v_code) for update;
     if not found
        or not coalesce(v_coupon.is_active, false)
@@ -148,17 +153,33 @@ begin
        or (v_coupon.max_uses is not null and coalesce(v_coupon.used_count, 0) >= v_coupon.max_uses) then
       raise exception 'El cupón no es válido, venció o se agotó.';
     end if;
-    -- Una sola vez por clienta: los pedidos cancelados liberan el cupón
-    if exists (
-      select 1 from public.orders o
-      where o.user_id = new.user_id
-        and upper(o.coupon_code) = upper(v_code)
-        and coalesce(o.discount_amount, 0) > 0
-        and coalesce(o.status, '') <> 'cancelled'
-    ) then
-      raise exception 'Ya usaste este cupón: es de un solo uso por clienta.';
+    -- Reglas de uso (solo cuando el pedido realmente aprovecha el cupón). Los pedidos cancelados no cuentan.
+    if coalesce(new.discount_amount, 0) > 0 then
+      -- Cada cupón, una sola vez por clienta
+      if exists (
+        select 1 from public.orders o
+        where o.user_id = new.user_id
+          and upper(o.coupon_code) = upper(v_code)
+          and coalesce(o.discount_amount, 0) > 0
+          and coalesce(o.status, '') <> 'cancelled'
+      ) then
+        raise exception 'Ya usaste este cupón: es de un solo uso por clienta.';
+      end if;
+      -- Y ningún otro cupón durante las 24 horas siguientes a usar uno
+      if exists (
+        select 1 from public.orders o
+        where o.user_id = new.user_id
+          and coalesce(o.coupon_code, '') <> ''
+          and coalesce(o.discount_amount, 0) > 0
+          and coalesce(o.status, '') <> 'cancelled'
+          and o.created_at > now() - interval '24 hours'
+      ) then
+        raise exception 'Ya usaste un cupón en las últimas 24 horas. Podés usar otro más tarde.';
+      end if;
     end if;
     v_has_coupon := true;
+    v_c_min_amount := coalesce(v_coupon.min_amount, 0);
+    v_c_min_items := coalesce(v_coupon.min_items, 0);
     v_c_target := coalesce(v_coupon.target_category, 'all');
     v_c_percent := coalesce(v_coupon.discount_percentage, 0);
     v_c_fixed := coalesce(v_coupon.fixed_discount, 0);
@@ -189,6 +210,7 @@ begin
     end if;
 
     v_subtotal := v_subtotal + v_product.price * v_qty;
+    v_units := v_units + v_qty::integer;
     if v_has_coupon and (v_c_target = 'all' or v_product.category = v_c_target) then
       v_eligible := v_eligible + v_product.price * v_qty;
     end if;
@@ -208,6 +230,13 @@ begin
 
   -- Descuento máximo legítimo (mismas reglas que src/lib/pricing.ts). Se tolera 1 peso por redondeo.
   if v_has_coupon then
+    -- Condición del cupón: compra mínima (por monto) o cantidad mínima de prendas (por cantidad)
+    if v_discount > 0 and v_subtotal < v_c_min_amount then
+      raise exception 'Tu compra no llega al monto mínimo del cupón.';
+    end if;
+    if v_discount > 0 and v_units < v_c_min_items then
+      raise exception 'Tu bolsa no tiene las prendas mínimas que pide el cupón.';
+    end if;
     if v_c_percent > 0 then
       v_max := round(v_eligible * v_c_percent / 100);
     else

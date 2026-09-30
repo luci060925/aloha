@@ -69,6 +69,8 @@ export interface Coupon {
   maxUses?: number; // Límite para X cantidad de personas
   usedCount: number; // Contador de usos
   targetCategory?: string; // 'all' o slug de categoría (ej: 'pantalones', 'vestidos')
+  minAmount?: number; // cupón "por monto": compra mínima (sobre el total de la bolsa)
+  minItems?: number; // cupón "por cantidad": prendas mínimas en la bolsa
   isActive: boolean;
   expiresAt?: string;
 }

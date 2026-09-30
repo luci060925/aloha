@@ -62,17 +62,26 @@ Panel → **Descuentos & Promociones**. Todos los descuentos son **cupones**: la
 
 **Reglas**
 - Una compra admite **un solo cupón** (no se acumulan).
-- Cada clienta puede usar cada cupón **una sola vez**. Si cancelás un pedido, el cupón le queda libre otra vez.
+- Cada clienta puede usar cada cupón **una sola vez**.
+- Después de usar un cupón, la clienta **no puede usar otro durante 24 horas**. El sitio le avisa a qué hora puede volver a usar uno.
+- Si cancelás un pedido, ese cupón y la espera de 24 horas quedan libres.
 
-**Crear un cupón**
-1. **Dónde vale:** *Toda la tienda* o *Solo* una categoría (el descuento se calcula solo sobre las prendas de esa categoría).
-2. **Modalidad:** *Porcentaje* (entre 1 y 90) o *Valor fijo* en pesos (nunca descuenta más que el total elegible).
+**Crear un cupón** (cada cupón tiene un solo tipo)
+1. **Tipo de cupón:**
+   - *Por monto de compra:* vale si el total de la bolsa llega al mínimo que pongas (ej. $80.000).
+   - *Por cantidad de prendas:* vale si la bolsa tiene esa cantidad de prendas o más (ej. 3).
+   - *Global:* vale para cualquier compra de la tienda, sin condición.
+   - *Por categoría:* descuenta solo sobre las prendas de la categoría elegida.
+2. **Modalidad:** *Porcentaje* (mayor a 0 y hasta 100) o *Valor fijo* en pesos (cualquier monto mayor a cero; nunca descuenta más que el total elegible).
 3. **Valor** a descontar.
-4. **Código** que escribe la clienta (ej. `VERANO10`): letras sin tilde, números o guiones; los espacios pasan a guión. No se pueden repetir códigos.
-5. **Límite de personas** (opcional): cuántas clientas distintas pueden usarlo.
-6. **Crear Cupón.**
+4. La **condición** del tipo elegido (monto mínimo, prendas mínimas o categoría).
+5. **Código** que escribe la clienta (ej. `VERANO10`): letras sin tilde, números o guiones; los espacios pasan a guión. No se pueden repetir códigos.
+6. **Límite de personas** (opcional): cuántas clientas distintas pueden usarlo.
+7. **Crear Cupón.**
 
-En la tabla ves cuántas personas lo usaron (`3 de 50`). Al llegar al límite pasa a **Agotado**. Con **Pausar** lo desactivás sin borrarlo y con el tacho lo eliminás.
+En los tipos por monto, por cantidad y global el descuento se calcula sobre **todo el total** de la bolsa. Solo el cupón por categoría descuenta únicamente sobre las prendas de esa categoría. No se aceptan valores negativos ni cero.
+
+En la tabla ves el tipo y la condición de cada cupón y cuántas personas lo usaron (`3 de 50`). Al llegar al límite pasa a **Agotado**. Con **Pausar** lo desactivás sin borrarlo y con el tacho lo eliminás.
 
 ## Ajustes de tienda y portada
 

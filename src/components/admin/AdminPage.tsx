@@ -5,7 +5,7 @@ import type { StoreSettings, OrderRecord } from '../../types';
 import { BrandLogo } from '../common/BrandLogo';
 import { fileToDataUrl, uploadCatalogImage } from '../../lib/images';
 import { slugify } from '../../lib/slug';
-import { normalizeCouponCode } from '../../lib/pricing';
+import { normalizeCouponCode, couponKind } from '../../lib/pricing';
 import { isHttpUrl, isTrustedAvatarUrl } from '../../lib/external';
 import {
   Users, 
@@ -65,6 +65,9 @@ export const AdminPage: React.FC = () => {
   const [newSubName, setNewSubName] = useState('');
 
   // Unified 4-Type Discount Form State
+  const [discountKind, setDiscountKind] = useState<'amount' | 'items' | 'global' | 'category'>('global');
+  const [discountMinAmount, setDiscountMinAmount] = useState<string>('');
+  const [discountMinItems, setDiscountMinItems] = useState<string>('');
   const [discountMode, setDiscountMode] = useState<'percentage' | 'fixed'>('percentage');
   const [discountValue, setDiscountValue] = useState<number>(15);
   const [discountConditionCategory, setDiscountConditionCategory] = useState<string>('all');
@@ -190,18 +193,51 @@ export const AdminPage: React.FC = () => {
     alert(`Subcategoría agregada con éxito.`);
   };
 
-  // Crea un cupón. Todo descuento es un cupón que la clienta escribe: un solo cupón por compra y un solo uso por clienta.
+  // Crea un cupón. Todo descuento es un cupón que la clienta escribe. Cada cupón tiene UN tipo (su condición):
+  // por monto, por cantidad de prendas, global (toda la tienda) o por categoría.
   const handleCreateDiscount = async (e: React.FormEvent) => {
     e.preventDefault();
     setDiscountFormError('');
     const isFixed = discountMode === 'fixed';
     const val = Number(discountValue);
-    const maxUses = discountMaxUsers && Number(discountMaxUsers) > 0 ? Math.floor(Number(discountMaxUsers)) : undefined;
 
-    if (!Number.isFinite(val) || val < 1 || (!isFixed && val > 90)) {
-      setDiscountFormError(isFixed ? 'Ingresá un monto mayor a cero.' : 'El porcentaje tiene que estar entre 1 y 90.');
+    if (!Number.isFinite(val) || val <= 0 || (!isFixed && val > 100)) {
+      setDiscountFormError(isFixed ? 'Ingresá un monto mayor a cero.' : 'El porcentaje tiene que ser mayor a 0 y hasta 100.');
       return;
     }
+
+    let minAmount: number | undefined;
+    let minItems: number | undefined;
+    let targetCategory = 'all';
+    if (discountKind === 'amount') {
+      minAmount = Number(discountMinAmount);
+      if (!Number.isFinite(minAmount) || minAmount <= 0) {
+        setDiscountFormError('Ingresá la compra mínima: un monto mayor a cero.');
+        return;
+      }
+    } else if (discountKind === 'items') {
+      minItems = Number(discountMinItems);
+      if (!Number.isInteger(minItems) || minItems < 1) {
+        setDiscountFormError('Ingresá la cantidad mínima de prendas: un número entero desde 1.');
+        return;
+      }
+    } else if (discountKind === 'category') {
+      if (discountConditionCategory === 'all') {
+        setDiscountFormError('Elegí la categoría a la que aplica el cupón.');
+        return;
+      }
+      targetCategory = discountConditionCategory;
+    }
+
+    let maxUses: number | undefined;
+    if (discountMaxUsers.trim() !== '') {
+      maxUses = Number(discountMaxUsers);
+      if (!Number.isInteger(maxUses) || maxUses < 1) {
+        setDiscountFormError('El límite de personas tiene que ser un número entero desde 1 (o dejalo vacío).');
+        return;
+      }
+    }
+
     const code = normalizeCouponCode(discountCode);
     if (!/^[A-Z0-9_-]{3,30}$/.test(code)) {
       setDiscountFormError('El código tiene que tener entre 3 y 30 caracteres: letras sin tilde, números o guiones (los espacios pasan a guión).');
@@ -217,7 +253,9 @@ export const AdminPage: React.FC = () => {
       discountPercentage: isFixed ? 0 : val,
       fixedDiscount: isFixed ? val : undefined,
       maxUses,
-      targetCategory: discountConditionCategory,
+      targetCategory,
+      minAmount,
+      minItems,
       isActive: true,
     });
     if (couponError) {
@@ -228,6 +266,8 @@ export const AdminPage: React.FC = () => {
     setDiscountFormSuccess(true);
     setDiscountCode('');
     setDiscountMaxUsers('');
+    setDiscountMinAmount('');
+    setDiscountMinItems('');
     setTimeout(() => setDiscountFormSuccess(false), 3500);
   };
 
@@ -930,20 +970,20 @@ export const AdminPage: React.FC = () => {
                 <form onSubmit={handleCreateDiscount} className="space-y-5">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 
-                    {/* ALCANCE: TODA LA TIENDA O UNA CATEGORÍA */}
+                    {/* TIPO DE CUPÓN: define la condición para que valga */}
                     <div className="space-y-1.5">
                       <label className="block text-xs uppercase tracking-wider font-bold text-neutral-300 font-mono">
-                        1. Dónde vale
+                        1. Tipo de Cupón
                       </label>
                       <select
-                        value={discountConditionCategory}
-                        onChange={(e) => setDiscountConditionCategory(e.target.value)}
+                        value={discountKind}
+                        onChange={(e) => setDiscountKind(e.target.value as typeof discountKind)}
                         className="w-full px-3.5 py-2.5 text-xs bg-neutral-950 border border-neutral-700 rounded-xl text-white font-bold focus:outline-none focus:border-white transition-colors cursor-pointer"
                       >
-                        <option value="all">🌐 Toda la tienda</option>
-                        {categories.filter(c => c.slug !== 'all').map(c => (
-                          <option key={c.id} value={c.slug}>👗 Solo {c.name}</option>
-                        ))}
+                        <option value="amount">💵 Por monto de compra</option>
+                        <option value="items">📦 Por cantidad de prendas</option>
+                        <option value="global">🌐 Global (toda la tienda)</option>
+                        <option value="category">👗 Por categoría</option>
                       </select>
                     </div>
 
@@ -990,9 +1030,9 @@ export const AdminPage: React.FC = () => {
                         <input
                           type="number"
                           required
-                          min="1"
-                          max={discountMode === 'percentage' ? 90 : 500000}
-                          step={discountMode === 'percentage' ? 1 : 1000}
+                          min="0.01"
+                          max={discountMode === 'percentage' ? 100 : undefined}
+                          step="any"
                           value={discountValue}
                           onChange={(e) => setDiscountValue(Number(e.target.value))}
                           placeholder={discountMode === 'percentage' ? "Ej: 15" : "Ej: 10000"}
@@ -1007,10 +1047,56 @@ export const AdminPage: React.FC = () => {
                   </div>
 
                   <div className="p-4 bg-neutral-900/60 border border-neutral-800 rounded-xl space-y-4">
+                    {discountKind !== 'global' && (
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-bold text-neutral-300 font-mono">
+                          {discountKind === 'amount' && 'Compra mínima para usar el cupón ($):'}
+                          {discountKind === 'items' && 'Cantidad mínima de prendas en la bolsa:'}
+                          {discountKind === 'category' && 'Categoría a la que aplica:'}
+                        </label>
+                        {discountKind === 'amount' && (
+                          <input
+                            type="number"
+                            required
+                            min="0.01"
+                            step="any"
+                            placeholder="Ej: 80000"
+                            value={discountMinAmount}
+                            onChange={(e) => setDiscountMinAmount(e.target.value)}
+                            className="w-full sm:w-64 px-3.5 py-2 text-xs bg-neutral-950 border border-neutral-700 rounded-xl font-mono text-white focus:outline-none focus:border-white"
+                          />
+                        )}
+                        {discountKind === 'items' && (
+                          <input
+                            type="number"
+                            required
+                            min="1"
+                            step="1"
+                            placeholder="Ej: 3"
+                            value={discountMinItems}
+                            onChange={(e) => setDiscountMinItems(e.target.value)}
+                            className="w-full sm:w-64 px-3.5 py-2 text-xs bg-neutral-950 border border-neutral-700 rounded-xl font-mono text-white focus:outline-none focus:border-white"
+                          />
+                        )}
+                        {discountKind === 'category' && (
+                          <select
+                            value={discountConditionCategory}
+                            onChange={(e) => setDiscountConditionCategory(e.target.value)}
+                            className="w-full sm:w-64 px-3.5 py-2 text-xs bg-neutral-950 border border-neutral-700 rounded-xl font-bold text-white focus:outline-none focus:border-white cursor-pointer"
+                          >
+                            <option value="all">Elegí una categoría…</option>
+                            {categories.filter(c => c.slug !== 'all').map(c => (
+                              <option key={c.id} value={c.slug}>👗 Solo {c.name}</option>
+                            ))}
+                          </select>
+                        )}
+                      </div>
+                    )}
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
                         <label className="block text-xs font-bold text-neutral-300 font-mono">
-                          4. Código que escribe la clienta:
+                          Código que escribe la clienta:
                         </label>
                         <input
                           type="text"
@@ -1030,6 +1116,7 @@ export const AdminPage: React.FC = () => {
                         <input
                           type="number"
                           min="1"
+                          step="1"
                           placeholder="Ej: 50 (o dejar vacío para ilimitado)"
                           value={discountMaxUsers}
                           onChange={(e) => setDiscountMaxUsers(e.target.value)}
@@ -1038,10 +1125,11 @@ export const AdminPage: React.FC = () => {
                       </div>
                     </div>
                     <p className="text-xs text-neutral-400">
-                      💡 {discountConditionCategory === 'all'
-                        ? 'El descuento se calcula sobre toda la bolsa.'
-                        : 'El descuento se calcula únicamente sobre las prendas de la sección elegida.'}
-                      {' '}Cada persona puede usar el cupón una sola vez, por eso el límite cuenta personas.
+                      💡 {discountKind === 'amount' && `El cupón solo vale si el total de la bolsa llega a ${discountMinAmount ? formatPrice(Number(discountMinAmount)) : 'el monto mínimo'}. El descuento se calcula sobre todo el total.`}
+                      {discountKind === 'items' && `El cupón solo vale si la bolsa tiene ${discountMinItems || 'la cantidad mínima de'} prendas o más. El descuento se calcula sobre todo el total.`}
+                      {discountKind === 'global' && 'El cupón vale para cualquier compra de la tienda, sin condición. El descuento se calcula sobre todo el total.'}
+                      {discountKind === 'category' && 'El cupón descuenta únicamente sobre las prendas de la categoría elegida.'}
+                      {' '}Cada persona puede usar un cupón una sola vez y, después de usar uno, no puede usar otro durante 24 horas.
                     </p>
                   </div>
 
@@ -1092,7 +1180,7 @@ export const AdminPage: React.FC = () => {
                       <tr>
                         <th className="py-3.5 px-4">Código</th>
                         <th className="py-3.5 px-4">Beneficio</th>
-                        <th className="py-3.5 px-4">Alcance</th>
+                        <th className="py-3.5 px-4">Tipo y Condición</th>
                         <th className="py-3.5 px-4">Personas que lo usaron</th>
                         <th className="py-3.5 px-4 text-center">Estado</th>
                         <th className="py-3.5 px-4 text-right">Acciones</th>
@@ -1111,9 +1199,18 @@ export const AdminPage: React.FC = () => {
                       {/* 4. Descuentos por Categoría & Promos Creadas */}
                       {coupons.map((c) => {
                         const target = c.targetCategory || 'all';
-                        const catName = target === 'all' 
-                          ? 'Toda la Tienda' 
+                        const catName = target === 'all'
+                          ? 'Toda la Tienda'
                           : categories.find(cat => cat.slug === target)?.name || target.toUpperCase();
+                        const kind = couponKind(c);
+                        const kindLabel = { amount: 'Por monto', items: 'Por cantidad', category: 'Por categoría', global: 'Global' }[kind];
+                        const condition = kind === 'amount'
+                          ? `Compra desde ${formatPrice(c.minAmount || 0)}`
+                          : kind === 'items'
+                          ? `${c.minItems} prenda${c.minItems === 1 ? '' : 's'} o más`
+                          : kind === 'category'
+                          ? `Solo ${catName}`
+                          : 'Toda la tienda';
                         const isLimitReached = Boolean(c.maxUses && c.maxUses > 0 && (c.usedCount || 0) >= c.maxUses);
 
                         return (
@@ -1126,8 +1223,9 @@ export const AdminPage: React.FC = () => {
                               {c.discountPercentage > 0 ? `${c.discountPercentage}% OFF` : `${formatPrice(c.fixedDiscount || 0)} OFF`}
                             </td>
                             <td className="py-3.5 px-4 font-medium">
+                              <span className="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">{kindLabel}</span>
                               <span className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-neutral-900 text-neutral-300 border border-neutral-750">
-                                {catName}
+                                {condition}
                               </span>
                             </td>
                             <td className="py-3.5 px-4 font-mono text-neutral-300">

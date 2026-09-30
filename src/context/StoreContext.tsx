@@ -5,7 +5,7 @@ import { DEFAULT_SETTINGS } from '../data/defaultSettings';
 import { supabase, isSupabaseConfigured, openedFromRecoveryLink, openedFromExpiredLink } from '../lib/supabase';
 import { deleteCatalogImages } from '../lib/images';
 import { slugify } from '../lib/slug';
-import { calculateCartTotals, syncCartWithCatalog, normalizeCouponCode, MAX_ITEM_QUANTITY } from '../lib/pricing';
+import { calculateCartTotals, syncCartWithCatalog, normalizeCouponCode, couponShortfall, COUPON_COOLDOWN_HOURS, MAX_ITEM_QUANTITY } from '../lib/pricing';
 import { MIN_PASSWORD_LENGTH } from '../lib/constants';
 import type { SupabaseClient, User } from '@supabase/supabase-js';
 import type {
@@ -203,6 +203,8 @@ const mapCouponFromDb = (r: CouponInput): Coupon => ({
   maxUses: r.max_uses ?? undefined,
   usedCount: r.used_count ?? 0,
   targetCategory: r.target_category || 'all',
+  minAmount: Number(r.min_amount || 0) || undefined,
+  minItems: Number(r.min_items || 0) || undefined,
   isActive: r.is_active ?? true,
   expiresAt: r.expires_at || undefined,
 });
@@ -822,26 +824,44 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       };
     }
 
-    // Una sola vez por clienta (los pedidos cancelados liberan el cupón)
-    const alreadyUsed = async (): Promise<boolean> => {
-      if (!currentUser) return false;
-      const sameCode = (o: OrderRecord) =>
-        o.userId === currentUser.id && o.couponCode?.toUpperCase() === found.code.toUpperCase() && o.discountAmount > 0 && o.status !== 'cancelled';
+    // Reglas de uso: cada cupón una sola vez por clienta y ningún otro cupón durante las 24 horas siguientes a usar uno.
+    // Los pedidos cancelados no cuentan. La base vuelve a controlarlo al registrar el pedido.
+    const loadCouponUses = async (): Promise<{ code: string; at: number }[]> => {
+      if (!currentUser) return [];
       if (isSupabaseConfigured && supabase) {
         const { data } = await supabase
           .from('orders')
-          .select('id')
+          .select('coupon_code, created_at')
           .eq('user_id', currentUser.id)
-          .eq('coupon_code', found.code)
+          .not('coupon_code', 'is', null)
           .gt('discount_amount', 0)
           .neq('status', 'cancelled')
-          .limit(1);
-        return (data?.length ?? 0) > 0;
+          .order('created_at', { ascending: false })
+          .limit(200);
+        return (data ?? []).map(r => ({ code: String(r.coupon_code).toUpperCase(), at: new Date(r.created_at).getTime() }));
       }
-      return orders.some(sameCode);
+      return orders
+        .filter(o => o.userId === currentUser.id && o.discountAmount > 0 && o.status !== 'cancelled')
+        .flatMap(o => (o.couponCode ? [{ code: o.couponCode.toUpperCase(), at: new Date(o.createdAt).getTime() }] : []))
+        .sort((a, b) => b.at - a.at);
     };
-    if (await alreadyUsed()) {
+    const uses = await loadCouponUses();
+    if (uses.some(u => u.code === found.code.toUpperCase())) {
       return { success: false, message: `Ya usaste el cupón ${found.code}: es de un solo uso por clienta.` };
+    }
+    const cooldownMs = COUPON_COOLDOWN_HOURS * 60 * 60 * 1000;
+    // oxlint-disable-next-line react/purity
+    if (uses.length > 0 && Date.now() - uses[0].at < cooldownMs) {
+      const next = new Date(uses[0].at + cooldownMs);
+      const day = next.toDateString() === new Date().toDateString() ? 'hoy' : 'mañana';
+      const hour = next.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+      return { success: false, message: `Ya usaste un cupón en las últimas 24 horas. Podés usar otro ${day} a las ${hour}.` };
+    }
+
+    // Condición del cupón: compra mínima o prendas mínimas
+    const shortfall = couponShortfall(cart, found);
+    if (shortfall) {
+      return { success: false, message: shortfall };
     }
 
     // Check category targeting
@@ -1177,6 +1197,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           fixed_discount: newCoupon.fixedDiscount ?? 0,
           max_uses: newCoupon.maxUses ?? null,
           target_category: newCoupon.targetCategory,
+          min_amount: newCoupon.minAmount ?? 0,
+          min_items: newCoupon.minItems ?? 0,
           is_active: newCoupon.isActive,
           expires_at: newCoupon.expiresAt ?? null,
         }])

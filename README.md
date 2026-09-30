@@ -22,7 +22,7 @@ El pago **no se procesa en el sitio**: la clienta arma su bolsa, el sitio genera
 **Tienda**
 - Catálogo con categorías, subcategorías, búsqueda, orden y paginación.
 - Detalle de prenda con galería, talles, colores, guía de talles y favoritos.
-- Bolsa con cupones de descuento (un cupón por compra y un uso por clienta; porcentaje o valor fijo, en toda la tienda o en una categoría).
+- Bolsa con cupones de descuento: por monto, por cantidad de prendas, globales o por categoría (porcentaje o valor fijo). Un cupón por compra, un uso por clienta y un cupón cada 24 horas.
 - Checkout por WhatsApp, cuenta de clienta (correo y contraseña, o **Google**), recuperación de contraseña y "Mis pedidos" con el estado real.
 - Textos de ayuda, devoluciones, términos y **Botón de Arrepentimiento**.
 
@@ -96,7 +96,7 @@ Los scripts están en [`supabase/`](./supabase). Ejecutarlos en el **SQL Editor*
 | 4 | `cupones.sql` | Conteo automático de usos de cupones |
 | 5 | `hardening_seguridad.sql` | **Endurecimiento:** valida cada pedido en el servidor y protege perfiles y cupones |
 | 6 | `showroom_foto.sql` | Columna de la foto editable del showroom |
-| 7 | `descuentos_solo_cupones.sql` | Descuentos solo por cupón, un uso por clienta (reemplaza la validación de pedidos) |
+| 7 | `descuentos_solo_cupones.sql` | Cupones con tipo y condición, un uso por clienta y un cupón cada 24 horas (reemplaza la validación de pedidos) |
 | 8 | `categorias_iniciales.sql` | Categorías de arranque (opcional) |
 
 `schema.sql` es una versión anterior e **insegura**: no ejecutarla.
