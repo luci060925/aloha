@@ -64,7 +64,7 @@ Panel → **Descuentos & Promociones**. Todos los descuentos son **cupones**: la
 - Una compra admite **un solo cupón** (no se acumulan).
 - Cada clienta puede usar cada cupón **una sola vez**.
 - Después de usar un cupón, la clienta **no puede usar otro durante 24 horas**. El sitio le avisa a qué hora puede volver a usar uno.
-- Si cancelás un pedido, ese cupón y la espera de 24 horas quedan libres.
+- Si cancelás un pedido, ese cupón y la espera de 24 horas quedan libres, y el uso se descuenta del contador de personas del cupón. Si reactivás el pedido, se vuelve a contar.
 
 **Crear un cupón** (cada cupón tiene un solo tipo)
 1. **Tipo de cupón:**

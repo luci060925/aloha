@@ -194,6 +194,22 @@ describe('SEC-002 · Cupones: se validan al usarlos y no se pueden agotar sin ap
     });
   });
 
+  test('cancelar un pedido devuelve el uso del cupón, y reactivarlo lo vuelve a contar', async () => {
+    const usos = async () => (await db.query(`select used_count from public.coupons where code = 'ALOHA10'`)).rows[0] as { used_count: number };
+    await as(db, 'authenticated', IDS.ana, async q => {
+      const r = await insertOrder(q, { userId: IDS.ana, items: [blazer()], subtotal: 50000, discount: 5000, coupon: 'ALOHA10', id: 'ORD-CANCEL1' });
+      expect(r.ok, !r.ok ? r.error : '').toBe(true);
+      await db.exec('reset role');
+      expect((await usos()).used_count).toBe(1);
+      await db.exec(`update public.orders set status = 'cancelled' where id = 'ORD-CANCEL1'`);
+      expect((await usos()).used_count).toBe(0);
+      await db.exec(`update public.orders set status = 'cancelled' where id = 'ORD-CANCEL1'`); // repetirlo no resta de nuevo
+      expect((await usos()).used_count).toBe(0);
+      await db.exec(`update public.orders set status = 'contacted' where id = 'ORD-CANCEL1'`);
+      expect((await usos()).used_count).toBe(1);
+    });
+  });
+
   test('cupón por monto: solo vale si la compra llega al mínimo', async () => {
     await as(db, 'authenticated', IDS.ana, async q => {
       const corto = await insertOrder(q, { userId: IDS.ana, items: [blazer()], subtotal: 50000, discount: 5000, coupon: 'GRANDE10' });

@@ -97,7 +97,8 @@ Los scripts están en [`supabase/`](./supabase). Ejecutarlos en el **SQL Editor*
 | 5 | `hardening_seguridad.sql` | **Endurecimiento:** valida cada pedido en el servidor y protege perfiles y cupones |
 | 6 | `showroom_foto.sql` | Columna de la foto editable del showroom |
 | 7 | `descuentos_solo_cupones.sql` | Cupones con tipo y condición, un uso por clienta y un cupón cada 24 horas (reemplaza la validación de pedidos) |
-| 8 | `categorias_iniciales.sql` | Categorías de arranque (opcional) |
+| 8 | `cupones_cancelados.sql` | Cancelar un pedido devuelve el uso del cupón |
+| 9 | `categorias_iniciales.sql` | Categorías de arranque (opcional) |
 
 `schema.sql` es una versión anterior e **insegura**: no ejecutarla.
 

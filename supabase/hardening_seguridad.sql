@@ -280,6 +280,43 @@ $$;
 
 revoke all on function public.count_coupon_use() from public, anon, authenticated;
 
+-- Si un pedido con cupón se cancela, el uso del cupón se devuelve (y si se reactiva, se vuelve a contar).
+-- Así el cupo de "límite de personas" y el recuento reflejan solo las compras que siguen en pie.
+create or replace function public.sync_coupon_use_on_status()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_was_active boolean;
+  v_is_active boolean;
+begin
+  if coalesce(new.coupon_code, '') = '' or coalesce(new.discount_amount, 0) <= 0 then
+    return new;
+  end if;
+  v_was_active := coalesce(old.status, '') <> 'cancelled';
+  v_is_active := coalesce(new.status, '') <> 'cancelled';
+  if v_was_active and not v_is_active then
+    update public.coupons set used_count = greatest(coalesce(used_count, 0) - 1, 0)
+    where upper(code) = upper(new.coupon_code);
+  elsif not v_was_active and v_is_active then
+    update public.coupons set used_count = coalesce(used_count, 0) + 1
+    where upper(code) = upper(new.coupon_code);
+  end if;
+  return new;
+end;
+$$;
+
+revoke all on function public.sync_coupon_use_on_status() from public, anon, authenticated;
+
+drop trigger if exists orders_sync_coupon on public.orders;
+create trigger orders_sync_coupon
+  after update of status on public.orders
+  for each row
+  when (old.status is distinct from new.status)
+  execute function public.sync_coupon_use_on_status();
+
 -- 5. Verificación --------------------------------------------------------------------------------
 
 select event_object_table as tabla, trigger_name as disparador, event_manipulation as evento

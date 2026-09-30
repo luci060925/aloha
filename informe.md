@@ -118,7 +118,7 @@ Prioridad de corrección: SEC-001 → 002 → 003 → 005 → 004 → 006 → 00
 
 **Estado:** 🟡 En corrección · **Fecha de detección:** 2026-09-29 · **Fecha de corrección:** —
 
-**Situación:** Corregido y probado en el repositorio (52 pruebas) y `supabase/hardening_seguridad.sql` **aplicado en Supabase** el 2026-09-29. La aplicación se comprobó de forma indirecta (el primer cambio del script, la revocación de `get_coupon`, está en efecto y el script no tiene transacciones propias, por lo que se aplica entero o nada). **Pendiente:** confirmar el comportamiento real con un pedido de prueba de una cuenta de clienta (uno sin cupón y otro con cupón) y con el intento de un precio adulterado; hasta entonces no se marca 🟢.
+**Situación:** Corregido y probado en el repositorio (54 pruebas) y `supabase/hardening_seguridad.sql` **aplicado en Supabase** el 2026-09-29. La aplicación se comprobó de forma indirecta (el primer cambio del script, la revocación de `get_coupon`, está en efecto y el script no tiene transacciones propias, por lo que se aplica entero o nada). **Pendiente:** confirmar el comportamiento real con un pedido de prueba de una cuenta de clienta (uno sin cupón y otro con cupón) y con el intento de un precio adulterado; hasta entonces no se marca 🟢.
 
 **Corrección aplicada:** Disparador `validate_order` (BEFORE INSERT en `orders`): valida prendas existentes y en stock, precio vigente, cantidades enteras 1–50, subtotal, total y que el descuento no supere el máximo legítimo (cupón; al principio también volumen, monto y global, que se eliminaron después: ver `supabase/descuentos_solo_cupones.sql`, que además define los tipos de cupón con condición, exige un solo uso de cada cupón por clienta y un cupón cada 24 horas). En el sitio, la bolsa usa siempre el precio y stock vigentes (`src/lib/pricing.ts`, `syncCartWithCatalog`) y el checkout avisa si el pedido no quedó registrado.
 
@@ -147,7 +147,7 @@ Prioridad de corrección: SEC-001 → 002 → 003 → 005 → 004 → 006 → 00
 
 **Estado:** 🟡 En corrección · **Fecha de detección:** 2026-09-29 · **Fecha de corrección:** —
 
-**Situación:** Corregido y probado en el repositorio (52 pruebas) y `supabase/hardening_seguridad.sql` **aplicado en Supabase** el 2026-09-29. La aplicación se comprobó de forma indirecta (el primer cambio del script, la revocación de `get_coupon`, está en efecto y el script no tiene transacciones propias, por lo que se aplica entero o nada). **Pendiente:** confirmar el comportamiento real con un pedido de prueba de una cuenta de clienta (uno sin cupón y otro con cupón) y con el intento de un precio adulterado; hasta entonces no se marca 🟢.
+**Situación:** Corregido y probado en el repositorio (54 pruebas) y `supabase/hardening_seguridad.sql` **aplicado en Supabase** el 2026-09-29. La aplicación se comprobó de forma indirecta (el primer cambio del script, la revocación de `get_coupon`, está en efecto y el script no tiene transacciones propias, por lo que se aplica entero o nada). **Pendiente:** confirmar el comportamiento real con un pedido de prueba de una cuenta de clienta (uno sin cupón y otro con cupón) y con el intento de un precio adulterado; hasta entonces no se marca 🟢.
 
 **Corrección aplicada:** El mismo disparador exige un cupón real, activo, vigente y con cupo, con `SELECT … FOR UPDATE` sobre la fila (serializa pedidos simultáneos). `count_coupon_use` solo cuenta cuando el pedido realmente descuenta.
 
@@ -179,7 +179,7 @@ Prioridad de corrección: SEC-001 → 002 → 003 → 005 → 004 → 006 → 00
 
 **Estado:** 🟡 En corrección · **Fecha de detección:** 2026-09-29 · **Fecha de corrección:** —
 
-**Situación:** Corregido y probado en el repositorio (52 pruebas) y `supabase/hardening_seguridad.sql` **aplicado en Supabase** el 2026-09-29. La aplicación se comprobó de forma indirecta (el primer cambio del script, la revocación de `get_coupon`, está en efecto y el script no tiene transacciones propias, por lo que se aplica entero o nada). **Pendiente:** confirmar el comportamiento real con un pedido de prueba de una cuenta de clienta (uno sin cupón y otro con cupón) y con el intento de un precio adulterado; hasta entonces no se marca 🟢.
+**Situación:** Corregido y probado en el repositorio (54 pruebas) y `supabase/hardening_seguridad.sql` **aplicado en Supabase** el 2026-09-29. La aplicación se comprobó de forma indirecta (el primer cambio del script, la revocación de `get_coupon`, está en efecto y el script no tiene transacciones propias, por lo que se aplica entero o nada). **Pendiente:** confirmar el comportamiento real con un pedido de prueba de una cuenta de clienta (uno sin cupón y otro con cupón) y con el intento de un precio adulterado; hasta entonces no se marca 🟢.
 
 **Corrección aplicada:** Disparador `protect_profile_columns`: el email sale siempre de `auth.users`, `id` y `created_at` no cambian y `is_admin` solo lo modifica una administradora o el panel de Supabase (sin sesión de usuaria).
 
@@ -206,7 +206,7 @@ Prioridad de corrección: SEC-001 → 002 → 003 → 005 → 004 → 006 → 00
 
 **Estado:** 🟡 En corrección · **Fecha de detección:** 2026-09-29 · **Fecha de corrección:** —
 
-**Situación:** Corregido y probado en el repositorio (52 pruebas) y `supabase/hardening_seguridad.sql` **aplicado en Supabase** el 2026-09-29. La aplicación se comprobó de forma indirecta (el primer cambio del script, la revocación de `get_coupon`, está en efecto y el script no tiene transacciones propias, por lo que se aplica entero o nada). **Pendiente:** confirmar el comportamiento real con un pedido de prueba de una cuenta de clienta (uno sin cupón y otro con cupón) y con el intento de un precio adulterado; hasta entonces no se marca 🟢.
+**Situación:** Corregido y probado en el repositorio (54 pruebas) y `supabase/hardening_seguridad.sql` **aplicado en Supabase** el 2026-09-29. La aplicación se comprobó de forma indirecta (el primer cambio del script, la revocación de `get_coupon`, está en efecto y el script no tiene transacciones propias, por lo que se aplica entero o nada). **Pendiente:** confirmar el comportamiento real con un pedido de prueba de una cuenta de clienta (uno sin cupón y otro con cupón) y con el intento de un precio adulterado; hasta entonces no se marca 🟢.
 
 **Corrección aplicada:** Tope de 10 pedidos por usuaria y hora dentro de `validate_order`, y restricciones `CHECK` (`orders_limits_chk`, `profiles_limits_chk`) de longitud, formato de identificador y estructura JSON.
 
@@ -396,11 +396,11 @@ Prioridad de corrección: SEC-001 → 002 → 003 → 005 → 004 → 006 → 00
 
 **Estado:** 🟢 Corregido · **Fecha de detección:** 2026-09-29 · **Fecha de corrección:** 2026-09-29
 
-**Situación:** Verificado localmente: lint, 52 pruebas, compilación y `npm audit --omit=dev` sin hallazgos. El flujo de CI se activa al subir estos archivos a GitHub.
+**Situación:** Verificado localmente: lint, 54 pruebas, compilación y `npm audit --omit=dev` sin hallazgos. El flujo de CI se activa al subir estos archivos a GitHub.
 
 **Corrección aplicada:** `.github/workflows/ci.yml` (lint, pruebas, compilación con TS estricto y auditoría de dependencias), `.github/dependabot.yml`, script `npm test` y baterías `tests/unit` y `tests/db`.
 
-**Test / verificación:** `npm test`: 52 pruebas.
+**Test / verificación:** `npm test`: 54 pruebas.
 
 ---
 
@@ -453,11 +453,11 @@ Sospechas **sin evidencia suficiente** (dependen de configuración que no pude l
 | SEC-009 | `AdminPage.tsx:1801`, enlaces en `Header/Footer/InfoModal` | `src/lib/external.ts` | `tests/unit/lib.test.ts`, `tests/db/seguridad.test.ts` | Pruebas verdes |
 | SEC-010 | 10 llamadas a `window.open` | `openExternal` | Búsqueda de código | 0 usos sueltos |
 | SEC-012 | `StoreContext.tsx:1260,1406` | `MIN_PASSWORD_LENGTH = 8` | `tests/unit/lib.test.ts` | Pruebas verdes; falta el ajuste en Supabase |
-| SEC-013 | Sin `.github/` ni `npm test` | CI, Dependabot y 52 pruebas | `npm test` | 52/52 |
+| SEC-013 | Sin `.github/` ni `npm test` | CI, Dependabot y 54 pruebas | `npm test` | 54/54 |
 
 ## Verificación posterior (re-auditoría)
 
-**Pruebas automáticas** (`npm test`): 52 pruebas, todas verdes: 35 de seguridad de la base (PostgreSQL local con los scripts reales) y 17 unitarias.
+**Pruebas automáticas** (`npm test`): 54 pruebas, todas verdes: 36 de seguridad de la base (PostgreSQL local con los scripts reales) y 18 unitarias.
 
 **Prueba de detección:** con `AUDIT_BASELINE=1` (base sin el endurecimiento) fallan 20 de las 31 pruebas de la base. Las 11 que pasan son controles que ya funcionaban o pedidos legítimos que deben seguir aceptándose.
 
