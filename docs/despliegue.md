@@ -6,7 +6,23 @@ El sitio es estático (`dist/`), así que se publica en **Cloudflare Pages** con
 
 Si es un proyecto nuevo, seguir el orden de [base-de-datos.md](./base-de-datos.md) y crear la cuenta de administradora.
 
-## 2. Crear el proyecto en Cloudflare Pages
+## 2. Crear el proyecto en Cloudflare
+
+Cloudflare ofrece dos asistentes que dan el mismo resultado: **Workers & Pages → Create → Import a repository** (el actual, publica como *Workers con archivos estáticos*) y **Pages → Connect to Git** (el clásico). El repositorio ya trae `wrangler.jsonc`, que le indica al asistente nuevo que publique `dist/` y que las rutas como `/admin` devuelvan `index.html`.
+
+**Con el asistente actual (Workers):**
+
+| Campo | Valor |
+|---|---|
+| Nombre del proyecto | `aloha-indumentaria` (define la dirección `…workers.dev`; debe coincidir con `name` de `wrangler.jsonc`) |
+| Rama de producción | `main` |
+| Build command | `npm run build` |
+| Deploy command | `npx wrangler deploy` |
+| Variables de compilación (*Build variables*) | las tres de la tabla de abajo |
+
+**Con Pages clásico:** *Framework preset* Vite, *Build command* `npm run build`, *Output directory* `dist`, y las mismas variables.
+
+### Detalle de la configuración de Pages clásico
 
 1. Cloudflare → **Workers & Pages → Create → Pages → Connect to Git** → elegir el repositorio `aloha` (privado; hay que autorizar a Cloudflare a leerlo).
 2. Configuración de compilación:

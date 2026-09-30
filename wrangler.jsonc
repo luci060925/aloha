@@ -1,0 +1,12 @@
+{
+  // Cloudflare (Workers con archivos estáticos): publica la carpeta dist/ que genera "npm run build".
+  // _headers (CSP, HSTS, etc.) se toma automáticamente de dist/_headers.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "aloha-indumentaria",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./dist",
+    // Es una SPA: cualquier ruta que no sea un archivo (por ejemplo /admin) devuelve index.html
+    "not_found_handling": "single-page-application"
+  }
+}
