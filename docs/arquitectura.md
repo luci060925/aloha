@@ -94,6 +94,8 @@ Reglas de diseño:
 
 **Ingreso.** Correo + contraseña, o **Google** (ver [login-google.md](./login-google.md)), con Supabase Auth. La primera vez que una cuenta entra se crea su perfil en `profiles`. El rol de administradora (`profiles.is_admin`) se lee de la base; el sitio nunca lo escribe. `/admin` (o `#admin`) muestra "Acceso restringido" si la cuenta no es de administradora.
 
+**Recuperar contraseña.** En el ingreso, *¿Olvidaste tu contraseña?* pide el correo y Supabase envía un enlace. Al abrirlo, el sitio detecta que viene de una recuperación (lo registra al arrancar, antes de que Supabase borre esos datos de la dirección) y muestra la pantalla para elegir la contraseña nueva (`PasswordRecoveryModal`). Si el enlace ya venció, se abre el ingreso con un aviso para pedir otro.
+
 **Compra.** Bolsa → cupón opcional (se valida en la base) → "Finalizar compra vía WhatsApp": el sitio abre WhatsApp con el mensaje y registra el pedido (`orders`). Un disparador en la base suma el uso del cupón.
 
 **Descuentos.** Se aplica **uno solo por compra**, en este orden: cupón → volumen (cantidad de prendas) → monto mínimo → descuento global.

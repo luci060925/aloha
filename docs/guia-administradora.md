@@ -95,4 +95,5 @@ Panel → **Métricas & Clientas**: cantidad de cuentas, pedidos, monto pedido (
 | No se guarda algo y sale un mensaje rojo | Revisá la conexión, volvé a ingresar y reintentá; anotá el mensaje |
 | Una foto no se sube | Probá con otra; la web las achica sola, pero un archivo dañado puede fallar |
 | El sitio no carga el catálogo | Puede estar pausado el proyecto de Supabase (plan gratuito, 7 días sin uso): avisá al desarrollo |
-| Una clienta olvidó su contraseña | Todavía no hay recuperación automática: hay que restablecerla desde Supabase (Authentication → Users) |
+| Una clienta olvidó su contraseña | Que use **¿Olvidaste tu contraseña?** en la ventana de ingreso: recibe un correo con un enlace para elegir una nueva. Si no le llega, que revise el spam; el enlace vence en poco tiempo y se puede pedir otro |
+| Vos olvidaste tu contraseña de administradora | Lo mismo: **¿Olvidaste tu contraseña?** con el correo de tu cuenta |

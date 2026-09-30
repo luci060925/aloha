@@ -41,7 +41,7 @@ Revisión archivo por archivo del sitio completo (septiembre de 2026), en tres b
 | Métricas incluían pedidos cancelados; nombre fijo "Camila Teixeira" en el panel | ✅ |
 | Valores por defecto de ciudad/provincia falsos en el registro | ⏳ Pendiente ([pendientes.md](./pendientes.md)) |
 | No se pide la calle para envíos | ⏳ Pendiente |
-| Sin recuperación de contraseña | ⏳ Pendiente |
+| Sin recuperación de contraseña | ✅ "¿Olvidaste tu contraseña?" con enlace por correo |
 
 ## Contenido y presentación
 

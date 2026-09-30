@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
-import { X, Mail, User, Lock, Phone, MapPin, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { X, Mail, User, Lock, Phone, MapPin, Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { BrandLogo } from '../common/BrandLogo';
 import { isSupabaseConfigured } from '../../lib/supabase';
 
@@ -11,10 +11,16 @@ const AuthModalContent: React.FC = () => {
     loginWithSocial,
     loginWithEmail,
     registerUser,
+    requestPasswordReset,
+    authNotice,
+    setAuthNotice,
   } = useStore();
 
   // Form states
-  const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const [mode, setMode] = useState<'login' | 'register' | 'forgot'>(authNotice ? 'forgot' : 'login');
+  const isRegisterMode = mode === 'register';
+  const isForgotMode = mode === 'forgot';
+  const [infoMessage, setInfoMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -27,14 +33,12 @@ const AuthModalContent: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const resetForm = () => {
+  const handleChangeMode = (next: 'login' | 'register' | 'forgot') => {
+    setMode(next);
     setErrorMessage('');
+    setInfoMessage('');
+    setAuthNotice('');
     setShowPassword(false);
-  };
-
-  const handleToggleMode = (register: boolean) => {
-    setIsRegisterMode(register);
-    resetForm();
   };
 
   const handleGoogle = async () => {
@@ -51,9 +55,23 @@ const AuthModalContent: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
+    setInfoMessage('');
 
     if (!email.trim()) {
       setErrorMessage('Por favor ingresá tu correo electrónico.');
+      return;
+    }
+
+    if (isForgotMode) {
+      setLoading(true);
+      const error = await requestPasswordReset(email);
+      setLoading(false);
+      if (error) {
+        setErrorMessage(error);
+      } else {
+        setAuthNotice('');
+        setInfoMessage('Si el correo está registrado, te enviamos un enlace para elegir una contraseña nueva. Revisá también la carpeta de spam.');
+      }
       return;
     }
 
@@ -118,14 +136,32 @@ const AuthModalContent: React.FC = () => {
         <div className="text-center mb-6">
           <BrandLogo className="h-8 w-auto mx-auto mb-2" variant="light" />
           <h2 className="text-xs uppercase tracking-[0.2em] text-neutral-300 font-mono font-bold">
-            {isRegisterMode ? 'Crear Cuenta' : 'Acceso a tu Cuenta'}
+            {isRegisterMode ? 'Crear Cuenta' : isForgotMode ? 'Recuperar Contraseña' : 'Acceso a tu Cuenta'}
           </h2>
           <p className="text-xs text-neutral-400 mt-1 max-w-xs mx-auto">
             {isRegisterMode 
               ? 'Registrate para agilizar tus compras y cotizaciones.'
+              : isForgotMode
+              ? 'Ingresá tu correo y te enviamos un enlace para elegir una contraseña nueva.'
               : 'Ingresá con tu cuenta para gestionar pedidos.'}
           </p>
         </div>
+
+        {/* Aviso (p. ej. enlace del correo vencido) */}
+        {authNotice && (
+          <div className="mb-4 p-3 bg-amber-950/60 border border-amber-800 text-amber-200 text-xs rounded-xl flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+            <span>{authNotice}</span>
+          </div>
+        )}
+
+        {/* Confirmación */}
+        {infoMessage && (
+          <div className="mb-4 p-3 bg-emerald-950/60 border border-emerald-800 text-emerald-200 text-xs rounded-xl flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>{infoMessage}</span>
+          </div>
+        )}
 
         {/* Error Notification */}
         {errorMessage && (
@@ -136,7 +172,7 @@ const AuthModalContent: React.FC = () => {
         )}
 
         {/* Acceso con Google (requiere habilitar el proveedor en Supabase: ver docs/login-google.md) */}
-        {isSupabaseConfigured && (
+        {isSupabaseConfigured && !isForgotMode && (
           <>
             <button
               type="button"
@@ -241,7 +277,8 @@ const AuthModalContent: React.FC = () => {
             </div>
           </div>
 
-          {/* Contraseña */}
+          {/* Contraseña (no se pide al recuperarla) */}
+          {!isForgotMode && (
           <div>
             <label className="block text-xs uppercase tracking-wider font-bold text-neutral-300 mb-1">
               Contraseña *
@@ -265,7 +302,17 @@ const AuthModalContent: React.FC = () => {
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
+            {mode === 'login' && isSupabaseConfigured && (
+              <button
+                type="button"
+                onClick={() => handleChangeMode('forgot')}
+                className="mt-1.5 text-[11px] text-neutral-400 hover:text-white underline cursor-pointer"
+              >
+                ¿Olvidaste tu contraseña?
+              </button>
+            )}
           </div>
+          )}
 
           {/* Submit Button */}
           <button
@@ -277,6 +324,8 @@ const AuthModalContent: React.FC = () => {
               <span>Procesando...</span>
             ) : isRegisterMode ? (
               <span>Crear cuenta</span>
+            ) : isForgotMode ? (
+              <span>Enviarme el enlace</span>
             ) : (
               <span>Ingresar a mi cuenta</span>
             )}
@@ -287,10 +336,10 @@ const AuthModalContent: React.FC = () => {
         <div className="mt-4 pt-3 border-t border-neutral-800/80 text-center">
           <button
             type="button"
-            onClick={() => handleToggleMode(!isRegisterMode)}
+            onClick={() => handleChangeMode(mode === 'login' ? 'register' : 'login')}
             className="text-xs text-neutral-400 hover:text-white underline font-semibold cursor-pointer"
           >
-            {isRegisterMode ? '¿Ya tenés cuenta? Iniciar sesión' : '¿No tenés cuenta? Registrate acá'}
+            {mode === 'login' ? '¿No tenés cuenta? Registrate acá' : mode === 'register' ? '¿Ya tenés cuenta? Iniciar sesión' : 'Volver a iniciar sesión'}
           </button>
         </div>
 

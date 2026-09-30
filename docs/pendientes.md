@@ -11,10 +11,10 @@ Buscá `TODO(` en el código para ubicar cada marca.
 | 3 | Confirmar enlaces reales de Instagram, Facebook y TikTok (se editan en el panel) | Dueña |
 | 4 | Foto real del showroom, historia de la marca y logo original en vector (`StoreLocationSection.tsx`, `InfoModal.tsx`, `BrandLogo.tsx`) | Dueña / diseño |
 | 5 | `index.html`: URL canónica e imagen para compartir; sitemap en `robots.txt` | Desarrollo (con el dominio final) |
-| 6 | Recuperación de contraseña ("Olvidé mi contraseña") con `supabase.auth.resetPasswordForEmail` | Desarrollo |
+| 6 | Correo propio (SMTP, ej. Resend o Brevo) y plantillas de correo en español en Supabase. El envío por defecto tiene un límite muy bajo por hora, suele caer en spam y está en inglés (afecta la confirmación de cuenta y la recuperación de contraseña) | Desarrollo |
 | 7 | Decidir el plan de Supabase (el gratuito se pausa tras 7 días sin actividad) | Dueña |
 | 8 | Activar la protección contra contraseñas filtradas en Supabase, si el plan lo permite | Desarrollo |
-| 9 | Habilitar el ingreso con Google (Google Cloud + Supabase, ver [login-google.md](./login-google.md)); mientras no esté habilitado, el botón muestra un error de Supabase | Desarrollo |
+| 9 | Ingreso con Google: ya está habilitado y funciona en desarrollo. Al publicar, agregar la dirección del sitio en Google Cloud (orígenes autorizados) y en Supabase (Redirect URLs), ver [login-google.md](./login-google.md) | Desarrollo |
 
 ## Mejoras recomendadas
 

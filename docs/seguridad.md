@@ -33,6 +33,7 @@ un visitante no lee perfiles ni pedidos; una clienta no puede ascenderse a admin
 
 - Correo y contraseña con Supabase Auth; el sitio exige sesión real (un usuario guardado a mano en el navegador se descarta al cargar).
 - El ingreso con Google usa el mismo circuito de sesión; una cuenta nueva siempre nace con `is_admin = false` (ver [login-google.md](./login-google.md)).
+- **Recuperar contraseña:** el enlace llega por correo y abre una sesión temporal solo para elegir la contraseña nueva. El sitio responde igual exista o no la cuenta (no permite averiguar qué correos están registrados). Supabase limita los pedidos repetidos (uno por minuto por correo).
 - El registro exige contraseña de al menos 6 caracteres y maneja la confirmación por correo si está activada.
 - La cuenta de administradora **no tiene contraseña en el código**. Se crea en Supabase con una contraseña única y larga, guardada en un gestor de contraseñas.
 
@@ -47,7 +48,6 @@ un visitante no lee perfiles ni pedidos; una clienta no puede ascenderse a admin
 | Precios del pedido confiados al navegador | Un usuario técnico podría enviar un pedido con un total alterado | El cobro es manual por WhatsApp: la dueña confirma cada pedido contra el catálogo. A futuro: calcular el total en una función de la base |
 | Contador de cupones | Cuenta usos al crear el pedido; no bloquea un pedido con un cupón ya agotado | Aceptable con confirmación manual. A futuro: validar dentro de la base al insertar |
 | Contraseñas filtradas | La protección contra contraseñas comprometidas (Supabase → Password) está desactivada | Activarla si el plan lo permite |
-| Sin recuperación de contraseña | El sitio no ofrece "Olvidé mi contraseña" | Ver [pendientes.md](./pendientes.md) |
 | Sin CSP | No hay política de contenido (`Content-Security-Policy`) | Definirla al publicar, contemplando fuentes de Google, Supabase y WhatsApp |
 | Pausa del proyecto (plan gratuito) | Tras 7 días sin actividad la base se pausa y el catálogo deja de cargar | Plan Pro para producción |
 | Datos personales | Nombre, teléfono y dirección de clientas en `profiles` y `orders` | Solo visibles para la titular y la administradora; respetar la Ley 25.326 de Protección de Datos Personales |

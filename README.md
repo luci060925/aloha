@@ -23,7 +23,7 @@ El pago **no se procesa en el sitio**: la clienta arma su bolsa, el sitio genera
 - Catálogo con categorías, subcategorías, búsqueda, orden y paginación.
 - Detalle de prenda con galería, talles, colores, guía de talles y favoritos.
 - Bolsa con descuentos automáticos (por cantidad, por monto, global) y cupones (uno por compra).
-- Checkout por WhatsApp, cuenta de clienta (correo y contraseña, o **Google**) y "Mis pedidos" con el estado real.
+- Checkout por WhatsApp, cuenta de clienta (correo y contraseña, o **Google**), recuperación de contraseña y "Mis pedidos" con el estado real.
 - Textos de ayuda, devoluciones, términos y **Botón de Arrepentimiento**.
 
 **Panel de administración** (`/admin`, solo cuentas con rol de administradora)

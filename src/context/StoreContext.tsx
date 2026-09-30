@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import type { Product, Category, CartItem, UserProfile, Coupon, OrderRecord, StoreSettings, InfoModalType } from '../types';
 import { DEMO_CATEGORIES, DEMO_PRODUCTS, DEMO_COUPONS } from '../data/demoData';
 import { DEFAULT_SETTINGS } from '../data/defaultSettings';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { supabase, isSupabaseConfigured, openedFromRecoveryLink, openedFromExpiredLink } from '../lib/supabase';
 import { deleteCatalogImages } from '../lib/images';
 import { slugify } from '../lib/slug';
 import type { SupabaseClient, User } from '@supabase/supabase-js';
@@ -98,6 +98,13 @@ interface StoreContextType {
     province?: string;
   }) => Promise<{ success: boolean; message?: string }>;
   logout: () => void;
+  // Recuperar contraseña
+  requestPasswordReset: (email: string) => Promise<string | null>; // null = enviado (o correo desconocido); texto = error
+  updatePassword: (newPassword: string) => Promise<string | null>; // null = cambiada; texto = error
+  isPasswordRecovery: boolean; // el sitio se abrió desde el enlace del correo: falta elegir la contraseña nueva
+  closePasswordRecovery: () => void;
+  authNotice: string; // aviso para el modal de ingreso (p. ej. enlace vencido)
+  setAuthNotice: (notice: string) => void;
   updateUserProfile: (profileData: Partial<UserProfile>) => Promise<void>;
 
   // Navigation & Page Routing
@@ -326,7 +333,17 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Modals
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  // Si se llega con un enlace de correo vencido, se abre el ingreso con un aviso; si es de recuperación, se pide la contraseña nueva
+  const [isAuthModalOpen, setAuthModalOpenRaw] = useState(openedFromExpiredLink);
+  const [authNotice, setAuthNotice] = useState(
+    openedFromExpiredLink ? 'El enlace del correo venció o ya se usó. Pedí uno nuevo desde acá.' : ''
+  );
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(openedFromRecoveryLink);
+  // Al cerrar el ingreso se descarta el aviso, para que no reaparezca la próxima vez que se abra
+  const setIsAuthModalOpen = (open: boolean) => {
+    setAuthModalOpenRaw(open);
+    if (!open) setAuthNotice('');
+  };
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -587,6 +604,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!isSupabaseConfigured || !client) return;
 
     const { data } = client.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsPasswordRecovery(true);
+        return;
+      }
       if (event === 'SIGNED_OUT') {
         setCurrentUser(null);
         return;
@@ -1363,6 +1384,40 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   };
 
+  // Envía el enlace para elegir una contraseña nueva. Por privacidad responde igual exista o no la cuenta.
+  const requestPasswordReset = async (email: string): Promise<string | null> => {
+    const cleanEmail = email.toLowerCase().trim();
+    if (!cleanEmail) return 'Por favor ingresá tu correo electrónico.';
+    if (!isSupabaseConfigured || !supabase) return 'La recuperación de contraseña no está disponible en modo demostración.';
+
+    const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, { redirectTo: window.location.origin });
+    if (error) {
+      console.warn('No se pudo enviar el enlace de recuperación:', error.status, error.message);
+      return error.status === 429
+        ? 'Ya pediste un enlace hace instantes. Esperá un minuto y volvé a intentar.'
+        : 'No pudimos enviar el correo. Intentá nuevamente en unos minutos.';
+    }
+    return null;
+  };
+
+  // Guarda la contraseña nueva. Funciona con la sesión temporal que abre el enlace del correo.
+  const updatePassword = async (newPassword: string): Promise<string | null> => {
+    if (!isSupabaseConfigured || !supabase) return 'No disponible en modo demostración.';
+    if (newPassword.length < 6) return 'La contraseña debe tener al menos 6 caracteres.';
+
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) {
+      console.warn('No se pudo cambiar la contraseña:', error.status, error.message);
+      const msg = error.message.toLowerCase();
+      if (msg.includes('different') || msg.includes('same')) return 'La contraseña nueva tiene que ser distinta de la anterior.';
+      if (msg.includes('session')) return 'El enlace venció. Pedí uno nuevo desde "¿Olvidaste tu contraseña?".';
+      return 'No pudimos cambiar la contraseña. Intentá nuevamente.';
+    }
+    return null;
+  };
+
+  const closePasswordRecovery = () => setIsPasswordRecovery(false);
+
   const logout = () => {
     setCurrentUser(null);
     if (isSupabaseConfigured && supabase) {
@@ -1455,6 +1510,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         loginWithEmail,
         registerUser,
         logout,
+        requestPasswordReset,
+        updatePassword,
+        isPasswordRecovery,
+        closePasswordRecovery,
+        authNotice,
+        setAuthNotice,
         updateUserProfile,
         isCartOpen,
         setIsCartOpen,

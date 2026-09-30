@@ -9,6 +9,7 @@ import { ProductDetailModal } from './components/catalog/ProductDetailModal';
 import { CartDrawer } from './components/cart/CartDrawer';
 import { AuthModal } from './components/auth/AuthModal';
 import { CustomerProfileModal } from './components/auth/CustomerProfileModal';
+import { PasswordRecoveryModal } from './components/auth/PasswordRecoveryModal';
 import { StoreLocationModal } from './components/home/StoreLocationModal';
 import { InfoModal } from './components/common/InfoModal';
 import { WishlistDrawer } from './components/wishlist/WishlistDrawer';
@@ -51,6 +52,7 @@ const MainLayout: React.FC = () => {
       <CartDrawer />
       <WishlistDrawer />
       <AuthModal />
+      <PasswordRecoveryModal />
       <CustomerProfileModal />
       <StoreLocationModal />
       <InfoModal />

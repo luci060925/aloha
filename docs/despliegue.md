@@ -60,6 +60,7 @@ Cloudflare Pages → el proyecto → **Custom domains → Set up a domain**. Lue
 1. **Tienda:** carga el catálogo, el menú de categorías y la portada con datos reales.
 2. **Ruta directa:** abrir `https://TU-SITIO/admin` directamente (no debe dar 404; debe mostrar "Acceso restringido").
 3. **Clienta de prueba:** registrarse, confirmar el correo si corresponde, comprar una prenda y comprobar que abre WhatsApp y que el pedido aparece en el panel.
+3b. **Recuperar contraseña:** desde el ingreso, *¿Olvidaste tu contraseña?* con el correo de esa clienta; abrir el enlace del correo, elegir una contraseña nueva e ingresar con ella.
 4. **Cupón:** crear uno, usarlo y ver que el contador sube.
 5. **Fotos:** subir una prenda con fotos desde el celular.
 6. **Seguridad:** sin sesión, comprobar que no se pueden leer pedidos ni perfiles (ver el método en [seguridad.md](./seguridad.md)).
