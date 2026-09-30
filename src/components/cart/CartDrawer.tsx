@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { openExternal } from '../../lib/external';
 import { couponShortfall } from '../../lib/pricing';
+import { OrderItemThumb } from '../common/OrderItemThumb';
 
 export const CartDrawer: React.FC = () => {
   const {
@@ -571,6 +572,7 @@ export const CartDrawer: React.FC = () => {
                           {ord.items.map((item, idx) => (
                             <div key={idx} className="flex items-center justify-between text-neutral-300 gap-2">
                               <div className="flex items-center gap-2 truncate min-w-0">
+                                <OrderItemThumb productId={item.productId} name={item.name} size={36} />
                                 <span className="font-mono text-neutral-500 shrink-0">{item.quantity}x</span>
                                 <span className="text-white font-medium truncate">{item.name}</span>
                                 <span className="text-[10px] font-mono px-1.5 py-0.2 bg-neutral-800 rounded text-neutral-400 shrink-0">

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useStore } from '../../context/StoreContext';
 import type { StoreSettings, OrderRecord } from '../../types';
 import { BrandLogo } from '../common/BrandLogo';
+import { OrderItemThumb } from '../common/OrderItemThumb';
 import { fileToDataUrl, uploadCatalogImage } from '../../lib/images';
 import { slugify } from '../../lib/slug';
 import { normalizeCouponCode, couponKind } from '../../lib/pricing';
@@ -1336,14 +1337,17 @@ export const AdminPage: React.FC = () => {
 
                       <div className="border-t border-b border-neutral-800 py-3 space-y-2 max-h-60 overflow-y-auto">
                         {selectedOrderForInspect.items.map((it, idx) => (
-                          <div key={idx} className="flex justify-between items-center text-xs p-2.5 bg-neutral-900 border border-neutral-800 rounded-xl">
-                            <div>
-                              <span className="font-bold block text-white">{it.name}</span>
-                              <span className="text-neutral-400 text-[11px] font-mono">
-                                Talle: {it.size} | Color: {it.color} (x{it.quantity})
-                              </span>
+                          <div key={idx} className="flex justify-between items-center gap-3 text-xs p-2.5 bg-neutral-900 border border-neutral-800 rounded-xl">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <OrderItemThumb productId={it.productId} name={it.name} size={48} />
+                              <div className="min-w-0">
+                                <span className="font-bold block text-white">{it.name}</span>
+                                <span className="text-neutral-400 text-[11px] font-mono">
+                                  Talle: {it.size} | Color: {it.color} (x{it.quantity})
+                                </span>
+                              </div>
                             </div>
-                            <span className="font-mono font-bold text-white">{formatPrice(it.price * it.quantity)}</span>
+                            <span className="font-mono font-bold text-white shrink-0">{formatPrice(it.price * it.quantity)}</span>
                           </div>
                         ))}
                       </div>
