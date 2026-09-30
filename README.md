@@ -23,7 +23,7 @@ El pago **no se procesa en el sitio**: la clienta arma su bolsa, el sitio genera
 - Catálogo con categorías, subcategorías, búsqueda, orden y paginación.
 - Detalle de prenda con galería, talles, colores, guía de talles y favoritos.
 - Bolsa con descuentos automáticos (por cantidad, por monto, global) y cupones (uno por compra).
-- Checkout por WhatsApp, cuenta de clienta y "Mis pedidos" con el estado real.
+- Checkout por WhatsApp, cuenta de clienta (correo y contraseña, o **Google**) y "Mis pedidos" con el estado real.
 - Textos de ayuda, devoluciones, términos y **Botón de Arrepentimiento**.
 
 **Panel de administración** (`/admin`, solo cuentas con rol de administradora)
@@ -104,7 +104,7 @@ Los scripts están en [`supabase/`](./supabase). Ejecutarlos en el **SQL Editor*
 ```
 aloha/
 ├── docs/                     Documentación técnica y guía de la administradora
-├── public/                   Favicon, robots.txt, _redirects, _headers, logo de referencia
+├── public/                   Favicon, robots.txt, _redirects, _headers
 ├── supabase/                 Scripts SQL (esquema, seguridad, cupones, categorías)
 ├── src/
 │   ├── main.tsx              Punto de entrada
@@ -121,8 +121,8 @@ aloha/
 │   │   ├── home/             Portada y sección del showroom
 │   │   └── wishlist/         Favoritos
 │   ├── lib/                  Cliente de Supabase, subida de fotos, slugs
-│   ├── data/                 Datos de demostración (modo sin Supabase)
-│   └── types/                Modelos de datos
+│   ├── data/                 Ajustes por defecto y datos de demostración (modo sin Supabase)
+│   └── types/                Modelos de la aplicación y filas de la base
 ├── index.html                SEO, datos estructurados y fuentes
 ├── .env.example              Variables de entorno (sin valores reales)
 └── vite.config.ts
@@ -154,6 +154,7 @@ Más en [`docs/arquitectura.md`](./docs/arquitectura.md) y [`docs/seguridad.md`]
 | [`docs/seguridad.md`](./docs/seguridad.md) | Roles, permisos por tabla y riesgos abiertos |
 | [`docs/guia-administradora.md`](./docs/guia-administradora.md) | Uso diario del panel para la dueña |
 | [`docs/despliegue.md`](./docs/despliegue.md) | Cloudflare Pages, Supabase y checklist de lanzamiento |
+| [`docs/login-google.md`](./docs/login-google.md) | Cómo habilitar el ingreso con Google |
 | [`docs/auditoria.md`](./docs/auditoria.md) | Revisión de punta a punta y estado de cada hallazgo |
 | [`docs/pendientes.md`](./docs/pendientes.md) | Qué falta antes de lanzar y mejoras futuras |
 

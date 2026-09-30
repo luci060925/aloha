@@ -40,8 +40,8 @@ El pago **no se procesa en el sitio**: la clienta arma su bolsa, el sitio genera
 
 ```
 aloha/
-├── docs/                          Esta documentación
-├── public/                        Archivos estáticos (favicon, robots.txt, _redirects, _headers, logo.png)
+├── docs/                          Esta documentación (y assets/ con el logo original de referencia)
+├── public/                        Archivos estáticos (favicon, robots.txt, _redirects, _headers)
 ├── supabase/                      Scripts SQL (esquema, seguridad, cupones, categorías)
 ├── src/
 │   ├── main.tsx                   Punto de entrada
@@ -61,8 +61,12 @@ aloha/
 │   │   ├── supabase.ts            Cliente de Supabase (según variables de entorno)
 │   │   ├── images.ts              Compresión a WebP y subida/borrado en Storage
 │   │   └── slug.ts                Identificadores de texto sin tildes
-│   ├── data/initialData.ts        Datos de demostración (solo modo sin Supabase)
-│   └── types/index.ts             Modelos de datos
+│   ├── data/
+│   │   ├── defaultSettings.ts     Valores por defecto de los ajustes de la tienda
+│   │   └── demoData.ts            Prendas, categorías y cupones de demostración (solo modo sin Supabase)
+│   └── types/
+│       ├── index.ts               Modelos de la aplicación
+│       └── database.ts            Filas de las tablas de Supabase
 ├── index.html                     SEO, datos estructurados y fuentes
 └── vite.config.ts
 ```
@@ -88,7 +92,7 @@ Reglas de diseño:
 
 ## Flujos principales
 
-**Ingreso.** Correo + contraseña con Supabase Auth. El rol de administradora (`profiles.is_admin`) se lee de la base; el sitio nunca lo escribe. `/admin` (o `#admin`) muestra "Acceso restringido" si la cuenta no es de administradora.
+**Ingreso.** Correo + contraseña, o **Google** (ver [login-google.md](./login-google.md)), con Supabase Auth. La primera vez que una cuenta entra se crea su perfil en `profiles`. El rol de administradora (`profiles.is_admin`) se lee de la base; el sitio nunca lo escribe. `/admin` (o `#admin`) muestra "Acceso restringido" si la cuenta no es de administradora.
 
 **Compra.** Bolsa → cupón opcional (se valida en la base) → "Finalizar compra vía WhatsApp": el sitio abre WhatsApp con el mensaje y registra el pedido (`orders`). Un disparador en la base suma el uso del cupón.
 
@@ -105,5 +109,6 @@ Sin variables de entorno de Supabase, el sitio funciona con datos de demostraci�
 ## Convenciones
 
 - TypeScript estricto y `oxlint` sin advertencias (`npm run build` y `npm run lint`).
-- Las filas de Supabase se tipan como `DbRow` en `StoreContext.tsx` (no se usan tipos generados).
+- Las filas de Supabase se tipan en `src/types/database.ts` (escritas a mano; hay que mantenerlas al día con `supabase/`).
+- Las librerías (React, Supabase) se compilan en archivos aparte (`vite.config.ts`) para que el navegador las guarde en caché entre versiones del sitio.
 - Las marcas `TODO(...)` señalan contenido a confirmar con la dueña o tareas previas a publicar (ver [pendientes.md](./pendientes.md)).

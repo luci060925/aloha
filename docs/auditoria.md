@@ -36,7 +36,7 @@ Revisión archivo por archivo del sitio completo (septiembre de 2026), en tres b
 | Cupones nunca se agotaban; los de demostración eran públicos | ✅ Conteo automático; demostración eliminada |
 | Categorías con prendas podían borrarse dejándolas sin sección | ✅ Se rechaza con aviso |
 | Identificadores sin tildes ni ñ (`pantal-n`) | ✅ |
-| Botón de Google que no hacía nada | ✅ Oculto hasta configurar el proveedor |
+| Botón de Google que no hacía nada | ✅ Ingreso con Google implementado (falta habilitar el proveedor: [login-google.md](./login-google.md)) |
 | Registro fingía éxito si Supabase fallaba | ✅ Informa el error |
 | Métricas incluían pedidos cancelados; nombre fijo "Camila Teixeira" en el panel | ✅ |
 | Valores por defecto de ciudad/provincia falsos en el registro | ⏳ Pendiente ([pendientes.md](./pendientes.md)) |
@@ -56,6 +56,7 @@ Revisión archivo por archivo del sitio completo (septiembre de 2026), en tres b
 | Título, descripción, favicon y datos estructurados genéricos | ✅ |
 | Código inicial de 713 KB; 5 familias de fuentes | ✅ 649 KB + panel aparte; 4 familias |
 | TypeScript sin `strict`; lint mínimo; restos de plantilla y 4 dependencias sin uso | ✅ |
+| Deuda técnica menor: envoltorio `AdminDashboard` sin uso, datos de demostración mezclados con los valores por defecto, logo de referencia dentro de `public/`, filas de la base tipadas con `any`, código inicial de 649 KB | ✅ Resuelta |
 
 ## Estado final
 

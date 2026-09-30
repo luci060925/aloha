@@ -9,6 +9,7 @@
 | [seguridad.md](./seguridad.md) | Desarrollo | Modelo de seguridad, roles, permisos por tabla y riesgos abiertos |
 | [guia-administradora.md](./guia-administradora.md) | Dueña del negocio | Uso diario del panel: prendas, pedidos, cupones, ajustes |
 | [despliegue.md](./despliegue.md) | Desarrollo | Publicación en Cloudflare Pages, configuración de Supabase y checklist |
+| [login-google.md](./login-google.md) | Desarrollo | Cómo habilitar el ingreso con Google (Google Cloud + Supabase) |
 | [auditoria.md](./auditoria.md) | Desarrollo | Resultado de la revisión de punta a punta y estado de cada hallazgo |
 | [pendientes.md](./pendientes.md) | Todos | Qué falta antes de lanzar y qué queda para después |
 

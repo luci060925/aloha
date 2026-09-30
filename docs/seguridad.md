@@ -32,6 +32,7 @@ un visitante no lee perfiles ni pedidos; una clienta no puede ascenderse a admin
 ## Autenticación
 
 - Correo y contraseña con Supabase Auth; el sitio exige sesión real (un usuario guardado a mano en el navegador se descarta al cargar).
+- El ingreso con Google usa el mismo circuito de sesión; una cuenta nueva siempre nace con `is_admin = false` (ver [login-google.md](./login-google.md)).
 - El registro exige contraseña de al menos 6 caracteres y maneja la confirmación por correo si está activada.
 - La cuenta de administradora **no tiene contraseña en el código**. Se crea en Supabase con una contraseña única y larga, guardada en un gestor de contraseñas.
 

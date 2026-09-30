@@ -37,6 +37,8 @@ En Supabase → **Authentication → URL Configuration**:
 
 Sin esto, los correos de confirmación de cuenta apuntan a una dirección equivocada.
 
+Para el ingreso con Google hay que agregar además las dos direcciones (`https://TU-SITIO/**` y `http://localhost:5173/**`) y habilitar el proveedor: ver [login-google.md](./login-google.md).
+
 ## 4. Dominio propio (opcional)
 
 Cloudflare Pages → el proyecto → **Custom domains → Set up a domain**. Luego actualizar el **Site URL** de Supabase y las marcas `TODO(al publicar)` de `index.html` (URL canónica e imagen para compartir en redes).
@@ -48,6 +50,7 @@ Cloudflare Pages → el proyecto → **Custom domains → Set up a domain**. Lue
 - [ ] Cuenta de administradora creada con contraseña única y larga; `is_admin` solo en las cuentas correctas.
 - [ ] `supabase/rls_policies.sql` aplicado (comprobar en Supabase → Authentication → Policies).
 - [ ] Categorías cargadas y al menos una prenda de prueba con fotos.
+- [ ] Ingreso con Google habilitado y probado (o ocultar el botón si no se usará).
 - [ ] Protección contra contraseñas filtradas activada (si el plan lo permite).
 - [ ] Decidido el plan de Supabase (el gratuito se pausa tras 7 días sin actividad).
 - [ ] `index.html`: URL canónica e imagen para compartir; `robots.txt` con el sitemap.

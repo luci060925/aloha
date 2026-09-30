@@ -14,6 +14,7 @@ Buscá `TODO(` en el código para ubicar cada marca.
 | 6 | Recuperación de contraseña ("Olvidé mi contraseña") con `supabase.auth.resetPasswordForEmail` | Desarrollo |
 | 7 | Decidir el plan de Supabase (el gratuito se pausa tras 7 días sin actividad) | Dueña |
 | 8 | Activar la protección contra contraseñas filtradas en Supabase, si el plan lo permite | Desarrollo |
+| 9 | Habilitar el ingreso con Google (Google Cloud + Supabase, ver [login-google.md](./login-google.md)); mientras no esté habilitado, el botón muestra un error de Supabase | Desarrollo |
 
 ## Mejoras recomendadas
 
@@ -30,10 +31,6 @@ Buscá `TODO(` en el código para ubicar cada marca.
 - **Pruebas automatizadas** de los cálculos de descuento y de los permisos RLS.
 - **Copias de seguridad** programadas de la base.
 
-## Deuda técnica menor
+## Deuda técnica
 
-- `src/components/admin/AdminDashboard.tsx` es un envoltorio sin uso; puede eliminarse.
-- `src/data/initialData.ts` se usa solo en modo demostración (sin Supabase).
-- `public/logo.png` no se usa en el sitio (es solo la referencia del logo real; 150 px de ancho).
-- Filas de Supabase tipadas como `DbRow`; se puede pasar a tipos generados (`supabase gen types`).
-- Dividir el código restante (649 KB) con `build.rolldownOptions.output.codeSplitting`.
+Sin deuda menor conocida. Una mejora opcional: reemplazar `src/types/database.ts` (escrito a mano) por tipos generados con `supabase gen types typescript` cuando se use la CLI de Supabase.
