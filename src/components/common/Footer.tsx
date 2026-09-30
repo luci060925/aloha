@@ -85,10 +85,10 @@ export const Footer: React.FC = () => {
 
       {/* Main Footer Links */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 sm:gap-8">
+        <div className="grid grid-cols-2 lg:grid-cols-12 gap-x-6 gap-y-10 sm:gap-8">
           
           {/* Brand & Socials Column */}
-          <div className="lg:col-span-5 space-y-4 flex flex-col items-center sm:items-start text-center sm:text-left">
+          <div className="col-span-2 lg:col-span-5 space-y-4 flex flex-col items-center sm:items-start text-center sm:text-left">
             <div className="flex justify-center sm:justify-start w-full">
               <BrandLogo className="h-10 w-auto mx-auto sm:mx-0" variant="light" />
             </div>
@@ -161,15 +161,15 @@ export const Footer: React.FC = () => {
           </div>
 
           {/* Navigation Links */}
-          <div className="lg:col-span-4 space-y-3 flex flex-col items-center sm:items-start text-center sm:text-left">
+          <div className="lg:col-span-4 space-y-3 flex flex-col items-start text-left">
             <p className="text-xs uppercase tracking-[0.2em] font-mono text-neutral-200 font-bold">
               Información & Ayuda
             </p>
-            <ul className="space-y-2 text-xs font-medium text-neutral-300 w-full flex flex-col items-center sm:items-start">
+            <ul className="space-y-2 text-xs font-medium text-neutral-300 w-full flex flex-col items-start">
               <li>
                 <button 
                   onClick={() => setActiveInfoModal('como-comprar')} 
-                  className="hover:text-white transition-colors cursor-pointer text-center sm:text-left font-medium"
+                  className="hover:text-white transition-colors cursor-pointer text-left font-medium"
                 >
                   ¿Cómo Comprar en Aloha?
                 </button>
@@ -177,7 +177,7 @@ export const Footer: React.FC = () => {
               <li>
                 <button 
                   onClick={() => setActiveInfoModal('devoluciones')} 
-                  className="hover:text-white transition-colors cursor-pointer text-center sm:text-left font-medium"
+                  className="hover:text-white transition-colors cursor-pointer text-left font-medium"
                 >
                   Política de Cambios y Devolución
                 </button>
@@ -185,7 +185,7 @@ export const Footer: React.FC = () => {
               <li>
                 <button 
                   onClick={() => setActiveInfoModal('terminos')} 
-                  className="hover:text-white transition-colors cursor-pointer text-center sm:text-left font-medium"
+                  className="hover:text-white transition-colors cursor-pointer text-left font-medium"
                 >
                   Términos y Condiciones
                 </button>
@@ -193,7 +193,7 @@ export const Footer: React.FC = () => {
               <li>
                 <button
                   onClick={() => setActiveInfoModal('arrepentimiento')}
-                  className="hover:text-white transition-colors cursor-pointer text-center sm:text-left font-medium"
+                  className="hover:text-white transition-colors cursor-pointer text-left font-medium"
                 >
                   Botón de Arrepentimiento
                 </button>
@@ -201,7 +201,7 @@ export const Footer: React.FC = () => {
               <li>
                 <button 
                   onClick={() => setActiveInfoModal('contacto')} 
-                  className="hover:text-white transition-colors cursor-pointer text-center sm:text-left font-medium"
+                  className="hover:text-white transition-colors cursor-pointer text-left font-medium"
                 >
                   Contacto y Redes Oficiales
                 </button>
@@ -213,7 +213,7 @@ export const Footer: React.FC = () => {
                     const el = document.getElementById('catalogo');
                     el?.scrollIntoView({ behavior: 'smooth' });
                   }} 
-                  className="hover:text-white transition-colors cursor-pointer text-center sm:text-left font-medium"
+                  className="hover:text-white transition-colors cursor-pointer text-left font-medium"
                 >
                   Últimos Ingresos
                 </button>
@@ -222,11 +222,11 @@ export const Footer: React.FC = () => {
           </div>
 
           {/* Showroom & Location info */}
-          <div className="lg:col-span-3 space-y-3 flex flex-col items-center sm:items-start text-center sm:text-left">
+          <div className="lg:col-span-3 space-y-3 flex flex-col items-start text-left">
             <p className="text-xs uppercase tracking-[0.2em] font-mono text-neutral-200 font-bold">
               Showroom
             </p>
-            <div className="text-xs font-medium text-neutral-300 space-y-1.5 flex flex-col items-center sm:items-start">
+            <div className="text-xs font-medium text-neutral-300 space-y-1.5 flex flex-col items-start">
               <p className="text-white font-bold">{settings.address}</p>
               <p>{settings.city}, {settings.province}</p>
               <p className="text-neutral-400 font-mono text-[11px] pt-1">{settings.openingHours}</p>
