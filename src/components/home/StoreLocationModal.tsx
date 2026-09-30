@@ -63,6 +63,7 @@ export const StoreLocationModal: React.FC = () => {
             <div>
               <p className="font-bold text-white">Horarios de Atención:</p>
               <p className="text-neutral-300 font-medium">{settings.openingHours}</p>
+              <p className="text-[11px] text-neutral-500 mt-0.5">Consultar por WhatsApp</p>
             </div>
           </div>
 

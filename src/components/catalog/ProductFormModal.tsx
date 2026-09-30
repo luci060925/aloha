@@ -38,6 +38,7 @@ export const ProductFormModal: React.FC = () => {
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState<string>('');
   const [originalPrice, setOriginalPrice] = useState<string>('');
+  const [featured, setFeatured] = useState(false);
   const [category, setCategory] = useState('pantalones');
   const [subcategory, setSubcategory] = useState('sastreros');
   
@@ -61,6 +62,7 @@ export const ProductFormModal: React.FC = () => {
       setDescription(editingProduct.description || '');
       setPrice(editingProduct.price ? String(editingProduct.price) : '');
       setOriginalPrice(editingProduct.originalPrice ? String(editingProduct.originalPrice) : '');
+      setFeatured(Boolean(editingProduct.featured));
       setCategory(editingProduct.category || categories[0]?.slug || 'pantalones');
       setSubcategory(editingProduct.subcategory || '');
       
@@ -82,6 +84,7 @@ export const ProductFormModal: React.FC = () => {
       setDescription('');
       setPrice('');
       setOriginalPrice('');
+      setFeatured(false);
       setImagesList([]);
       setSizes([]);
       setColors([]);
@@ -308,13 +311,14 @@ export const ProductFormModal: React.FC = () => {
         images: finalImages,
         sizes,
         colors: finalColors,
+        featured,
       };
 
       if (isEditing && editingProduct?.id) {
-        // Al editar no se tocan stock, destacado ni "nuevo ingreso"
+        // Al editar no se tocan stock ni "nuevo ingreso"
         await updateProduct(editingProduct.id, payload);
       } else {
-        await addProduct({ ...payload, inStock: true, featured: false, isNewArrival: true });
+        await addProduct({ ...payload, inStock: true, isNewArrival: true });
       }
 
       closeProductModal();
@@ -456,6 +460,23 @@ export const ProductFormModal: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            <label className="flex items-start gap-3 p-3.5 bg-[#171717] border border-neutral-700 rounded-xl cursor-pointer hover:border-neutral-500 transition-colors">
+              <input
+                type="checkbox"
+                checked={featured}
+                onChange={(e) => setFeatured(e.target.checked)}
+                className="mt-0.5 w-4 h-4 accent-white cursor-pointer shrink-0"
+              />
+              <span>
+                <span className="block uppercase tracking-wider font-semibold text-neutral-200">
+                  Mostrar en Prendas Destacadas
+                </span>
+                <span className="block text-[11px] text-neutral-500 mt-0.5 normal-case">
+                  Aparece en la sección de inicio "Prendas Destacadas". Si no marcás ninguna prenda, esa sección muestra toda la colección.
+                </span>
+              </span>
+            </label>
 
             <div>
               <label className="block uppercase tracking-wider font-semibold text-neutral-300 mb-1.5">

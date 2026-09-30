@@ -50,6 +50,7 @@ export const Footer: React.FC = () => {
               <h4 className="font-mono text-xs uppercase tracking-wider font-bold text-white">Showroom Exclusivo</h4>
               <p className="text-xs text-neutral-300 mt-1 font-medium max-w-xs mx-auto sm:mx-0">
                 {settings.openingHours}
+                <span className="block text-[11px] text-neutral-400 mt-0.5">Consultar por WhatsApp</span>
               </p>
             </div>
           </div>
@@ -229,7 +230,6 @@ export const Footer: React.FC = () => {
             <div className="text-xs font-medium text-neutral-300 space-y-1.5 flex flex-col items-start">
               <p className="text-white font-bold">{settings.address}</p>
               <p>{settings.city}, {settings.province}</p>
-              <p className="text-neutral-400 font-mono text-[11px] pt-1">{settings.openingHours}</p>
               <button
                 onClick={() => setIsLocationModalOpen(true)}
                 className="inline-flex items-center gap-1.5 text-xs text-white underline underline-offset-4 hover:text-neutral-300 pt-1 cursor-pointer font-bold"

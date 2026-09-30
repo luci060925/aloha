@@ -58,6 +58,7 @@ export const StoreLocationSection: React.FC = () => {
                   <span className="text-xs uppercase tracking-wider font-semibold">Horarios</span>
                 </div>
                 <p className="text-sm text-white font-serif">{settings.openingHours}</p>
+                <p className="text-[11px] text-neutral-400 mt-0.5">Consultar por WhatsApp</p>
               </div>
             </div>
 

@@ -29,7 +29,8 @@ export const CatalogGrid: React.FC = () => {
   } = useStore();
 
   // Pagination state (8 products per page). La página vuelve a 1 sola cuando cambia algún filtro.
-  const filterKey = `${selectedCategory}|${selectedSubcategory}|${searchQuery}|${sortBy}`;
+  const [showAll, setShowAll] = useState(false);
+  const filterKey = `${selectedCategory}|${selectedSubcategory}|${searchQuery}|${sortBy}|${showAll}`;
   const [pageState, setPageState] = useState({ key: filterKey, page: 1 });
   const currentPage = pageState.key === filterKey ? pageState.page : 1;
   const setCurrentPage = (page: number) => setPageState({ key: filterKey, page });
@@ -40,9 +41,15 @@ export const CatalogGrid: React.FC = () => {
   const availableSubcategories = activeCategoryObj?.subcategories || [];
   const activeSubcategoryObj = availableSubcategories.find(s => s.slug === selectedSubcategory);
 
+  // En el inicio (sin filtros ni búsqueda) "Prendas Destacadas" muestra solo las marcadas como destacadas.
+  // Si no hay ninguna marcada, muestra toda la colección.
+  const hasFeatured = products.some(p => p.featured);
+  const onlyFeatured = hasFeatured && !showAll && selectedCategory === 'all' && selectedSubcategory === 'all' && !searchQuery.trim();
+
   // Filter & Sort logic
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
+      if (onlyFeatured && !product.featured) return false;
       // Category filter
       if (selectedCategory !== 'all' && product.category !== selectedCategory) {
         return false;
@@ -71,7 +78,7 @@ export const CatalogGrid: React.FC = () => {
       if (sortBy === 'newest') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       return (b.featured ? 1 : 0) - (a.featured ? 1 : 0);
     });
-  }, [products, selectedCategory, selectedSubcategory, searchQuery, sortBy]);
+  }, [products, selectedCategory, selectedSubcategory, searchQuery, sortBy, onlyFeatured]);
 
   // Pagination calculation
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / itemsPerPage));
@@ -100,7 +107,7 @@ export const CatalogGrid: React.FC = () => {
         
         <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-wide uppercase text-white">
           {selectedCategory === 'all' || !activeCategoryObj 
-            ? 'Prendas Destacadas' 
+            ? (hasFeatured && showAll ? 'Toda la Colección' : 'Prendas Destacadas')
             : activeSubcategoryObj 
               ? `${activeCategoryObj.name} • ${activeSubcategoryObj.name}`
               : activeCategoryObj.name}
@@ -111,6 +118,16 @@ export const CatalogGrid: React.FC = () => {
             ? 'Explorá todas las prendas y piezas esenciales de la temporada.'
             : activeCategoryObj?.description || 'Prendas seleccionadas de la nueva temporada.'}
         </p>
+
+        {hasFeatured && selectedCategory === 'all' && !searchQuery.trim() && (
+          <button
+            type="button"
+            onClick={() => setShowAll(v => !v)}
+            className="mt-3 text-xs font-mono font-bold uppercase tracking-wider text-neutral-300 hover:text-white underline underline-offset-4 cursor-pointer"
+          >
+            {showAll ? 'Ver solo las destacadas' : 'Ver toda la colección'}
+          </button>
+        )}
 
         {/* Integrated Catalog Search Bar */}
         <div className="mt-6 max-w-xl mx-auto">

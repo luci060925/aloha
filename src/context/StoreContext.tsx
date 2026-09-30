@@ -224,7 +224,8 @@ const settingsFromDb = (row: StoreSettingsRow): StoreSettings => {
 };
 
 const settingsToDb = (settings: Partial<StoreSettings>): DbWrite => {
-  const dbObj: DbWrite = { updated_at: new Date().toISOString() };
+  // Sin updated_at: en algunas bases la tabla store_settings no tiene esa columna y rechazaba todo el guardado
+  const dbObj: DbWrite = {};
   settingsKeys.forEach(key => {
     if (settings[key] !== undefined) dbObj[SETTINGS_DB_KEYS[key]] = settings[key];
   });
