@@ -1,0 +1,41 @@
+name: CI
+
+# Verifica cada cambio antes de que llegue a producción: tipos, lint, pruebas (incluye las de seguridad de la base),
+# compilación y dependencias con vulnerabilidades conocidas.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependencias (versiones exactas del lockfile)
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Pruebas (unitarias y de seguridad de la base)
+        run: npm test
+
+      - name: Compilar (TypeScript estricto + Vite)
+        run: npm run build
+        env:
+          # Valores de ejemplo: la compilación no necesita el proyecto real de Supabase
+          VITE_SUPABASE_URL: https://ejemplo.supabase.co
+          VITE_SUPABASE_ANON_KEY: clave-de-ejemplo
+
+      - name: Auditar dependencias de producción
+        run: npm audit --omit=dev --audit-level=high
