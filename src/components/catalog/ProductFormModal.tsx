@@ -473,7 +473,7 @@ export const ProductFormModal: React.FC = () => {
                   Mostrar en Prendas Destacadas
                 </span>
                 <span className="block text-[11px] text-neutral-500 mt-0.5 normal-case">
-                  Aparece en la sección de inicio "Prendas Destacadas". Si no marcás ninguna prenda, esa sección muestra toda la colección.
+                  Aparece en el carrusel "Prendas Destacadas" del inicio. Las prendas nuevas también entran solas en "Últimas Agregadas".
                 </span>
               </span>
             </label>

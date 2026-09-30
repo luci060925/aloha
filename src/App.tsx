@@ -1,11 +1,11 @@
-import React, { lazy, Suspense } from 'react';
+import React, { lazy, Suspense, useMemo } from 'react';
 import { StoreProvider, useStore } from './context/StoreContext';
 import { Header } from './components/common/Header';
 import { Footer } from './components/common/Footer';
 import { HeroBanner } from './components/home/HeroBanner';
 import { StoreLocationSection } from './components/home/StoreLocationSection';
 import { CatalogGrid } from './components/catalog/CatalogGrid';
-import { NewArrivalsCarousel } from './components/catalog/NewArrivalsCarousel';
+import { ProductCarousel } from './components/catalog/ProductCarousel';
 import { ProductDetailModal } from './components/catalog/ProductDetailModal';
 import { CartDrawer } from './components/cart/CartDrawer';
 import { AuthModal } from './components/auth/AuthModal';
@@ -21,7 +21,14 @@ import { openExternal } from './lib/external';
 const AdminPage = lazy(() => import('./components/admin/AdminPage').then(m => ({ default: m.AdminPage })));
 
 const MainLayout: React.FC = () => {
-  const { settings } = useStore();
+  const { settings, products } = useStore();
+
+  // Carruseles del inicio: las destacadas (marcadas en la prenda) y las últimas cargadas, solo con stock
+  const featuredProducts = useMemo(() => products.filter(p => p.featured && p.inStock).slice(0, 12), [products]);
+  const latestProducts = useMemo(
+    () => products.filter(p => p.inStock).sort((x, y) => new Date(y.createdAt).getTime() - new Date(x.createdAt).getTime()).slice(0, 10),
+    [products],
+  );
 
   const handleFloatingWhatsApp = () => {
     const phone = settings.whatsappNumber.replace(/[^0-9]/g, '');
@@ -39,10 +46,11 @@ const MainLayout: React.FC = () => {
         {/* Lookbook Hero */}
         <HeroBanner />
 
-        {/* Últimas prendas cargadas */}
-        <NewArrivalsCarousel />
+        {/* Carruseles chicos: prendas marcadas como destacadas y últimas agregadas */}
+        <ProductCarousel id="prendas-destacadas" title="Prendas Destacadas" products={featuredProducts} />
+        <ProductCarousel id="ultimas-agregadas" title="Últimas Agregadas" products={latestProducts} />
 
-        {/* Catálogo: "Prendas Destacadas" y filtros, con paginación */}
+        {/* Todas las prendas, con filtros y paginación */}
         <CatalogGrid />
 
         {/* Physical Store Location Section in Comodoro Rivadavia */}

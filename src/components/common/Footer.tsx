@@ -36,7 +36,7 @@ export const Footer: React.FC = () => {
             <div>
               <h4 className="font-mono text-xs uppercase tracking-wider font-bold text-white">Envíos a Todo el País</h4>
               <p className="text-xs text-neutral-300 mt-1 font-medium max-w-xs mx-auto sm:mx-0">
-                Coordinamos tu envío directamente por WhatsApp.
+                Despachamos tu pedido a cualquier punto del país.
               </p>
             </div>
           </div>
@@ -49,7 +49,7 @@ export const Footer: React.FC = () => {
             <div>
               <h4 className="font-mono text-xs uppercase tracking-wider font-bold text-white">Showroom Exclusivo</h4>
               <p className="text-xs text-neutral-300 mt-1 font-medium max-w-xs mx-auto sm:mx-0">
-                Retirá tus compras en persona.
+                Retirá y probate tus prendas en el showroom.
               </p>
             </div>
           </div>
@@ -62,7 +62,7 @@ export const Footer: React.FC = () => {
             <div>
               <h4 className="font-mono text-xs uppercase tracking-wider font-bold text-white">Compra Segura</h4>
               <p className="text-xs text-neutral-300 mt-1 font-medium max-w-xs mx-auto sm:mx-0">
-                Asesoramiento directo y confirmación vía WhatsApp.
+                Asesoramiento personalizado y confirmación de cada pedido.
               </p>
             </div>
           </div>
@@ -75,7 +75,7 @@ export const Footer: React.FC = () => {
             <div>
               <h4 className="font-mono text-xs uppercase tracking-wider font-bold text-white">Medios de Pago</h4>
               <p className="text-xs text-neutral-300 mt-1 font-medium max-w-xs mx-auto sm:mx-0">
-                Transferencia bancaria; efectivo o débito en el showroom.
+                Trabajamos con todos los medios de pago.
               </p>
             </div>
           </div>
@@ -210,12 +210,12 @@ export const Footer: React.FC = () => {
                 <button 
                   onClick={() => {
                     setSelectedCategory('all');
-                    const el = document.getElementById('ultimos-ingresos') ?? document.getElementById('catalogo');
+                    const el = document.getElementById('ultimas-agregadas') ?? document.getElementById('catalogo');
                     el?.scrollIntoView({ behavior: 'smooth' });
                   }} 
                   className="hover:text-white transition-colors cursor-pointer text-left font-medium"
                 >
-                  Últimos Ingresos
+                  Últimas Agregadas
                 </button>
               </li>
             </ul>
