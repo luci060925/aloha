@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useStore } from '../../context/StoreContext';
 import type { StoreSettings, OrderRecord } from '../../types';
 import { BrandLogo } from '../common/BrandLogo';
@@ -114,6 +115,20 @@ export const AdminPage: React.FC = () => {
   // Orders Filter & Inspect State
   const [orderSearch, setOrderSearch] = useState('');
   const [selectedOrderForInspect, setSelectedOrderForInspect] = useState<OrderRecord | null>(null);
+
+  // El detalle del pedido se cierra con la tecla Esc
+  React.useEffect(() => {
+    if (!selectedOrderForInspect) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSelectedOrderForInspect(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selectedOrderForInspect]);
+
+  // Los pedidos viejos pueden traer la dirección vacía (", ()"): sin letras ni números se muestra "No indicada"
+  const formatLocation = (location?: string) =>
+    location && /[\p{L}\p{N}]/u.test(location) ? location : 'No indicada';
 
   const formatPrice = (amount: number) => {
     return new Intl.NumberFormat('es-AR', {
@@ -1474,53 +1489,83 @@ export const AdminPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Order Inspect Modal (Dark) */}
-              {selectedOrderForInspect && (
-                <div className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-                  <div className="bg-[#121212] text-white max-w-lg w-full p-6 sm:p-8 rounded-2xl shadow-2xl space-y-4 border border-neutral-800">
-                    <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-                      <div>
-                        <h4 className="text-base font-bold uppercase tracking-wide font-serif">Prendas del Pedido</h4>
-                        <span className="font-mono text-xs text-neutral-400 font-bold">{selectedOrderForInspect.id}</span>
+              {/* Detalle del pedido: se dibuja en <body> (portal). Dentro de la pestaña, la animación de entrada deja una
+                  transformación CSS que haría que "fixed" se ubique respecto de la pestaña y no de la pantalla (modal cortado). */}
+              {selectedOrderForInspect && createPortal(
+                <div
+                  className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm overflow-y-auto animate-fade-in"
+                  onClick={() => setSelectedOrderForInspect(null)}
+                >
+                  <div className="min-h-full flex items-center justify-center p-4">
+                    <div
+                      role="dialog"
+                      aria-modal="true"
+                      aria-labelledby="detalle-pedido-titulo"
+                      onClick={(e) => e.stopPropagation()}
+                      className="bg-[#121212] text-white max-w-lg w-full p-6 sm:p-8 rounded-2xl shadow-2xl space-y-4 border border-neutral-800"
+                    >
+                      <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+                        <div>
+                          <h4 id="detalle-pedido-titulo" className="text-base font-bold uppercase tracking-wide font-serif">Prendas del Pedido</h4>
+                          <span className="font-mono text-xs text-neutral-400 font-bold">{selectedOrderForInspect.id}</span>
+                        </div>
+                        <button
+                          onClick={() => setSelectedOrderForInspect(null)}
+                          className="p-1.5 text-neutral-400 hover:text-white rounded-lg cursor-pointer hover:bg-neutral-800"
+                          aria-label="Cerrar detalle"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
                       </div>
-                      <button onClick={() => setSelectedOrderForInspect(null)} className="p-1.5 text-neutral-400 hover:text-white rounded-lg cursor-pointer hover:bg-neutral-800">
-                        <X className="w-5 h-5" />
+
+                      <div className="space-y-1.5 text-xs">
+                        <div><strong className="text-white">Clienta:</strong> <span className="text-neutral-300">{selectedOrderForInspect.customerName}</span></div>
+                        <div><strong className="text-white">Teléfono:</strong> <span className="text-neutral-300">{selectedOrderForInspect.customerPhone || 'N/A'}</span></div>
+                        <div><strong className="text-white">Dirección:</strong> <span className="text-neutral-300">{formatLocation(selectedOrderForInspect.customerLocation)}</span></div>
+                      </div>
+
+                      <div className="border-t border-b border-neutral-800 py-3 space-y-2 max-h-60 overflow-y-auto">
+                        {selectedOrderForInspect.items.map((it, idx) => (
+                          <div key={idx} className="flex justify-between items-center text-xs p-2.5 bg-neutral-900 border border-neutral-800 rounded-xl">
+                            <div>
+                              <span className="font-bold block text-white">{it.name}</span>
+                              <span className="text-neutral-400 text-[11px] font-mono">
+                                Talle: {it.size} | Color: {it.color} (x{it.quantity})
+                              </span>
+                            </div>
+                            <span className="font-mono font-bold text-white">{formatPrice(it.price * it.quantity)}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {selectedOrderForInspect.discountAmount > 0 && (
+                        <div className="space-y-1 text-xs font-mono text-neutral-300">
+                          <div className="flex justify-between">
+                            <span>Subtotal:</span>
+                            <span>{formatPrice(selectedOrderForInspect.subtotal)}</span>
+                          </div>
+                          <div className="flex justify-between text-emerald-400">
+                            <span>Descuento{selectedOrderForInspect.couponCode ? ` (${selectedOrderForInspect.couponCode})` : ''}:</span>
+                            <span>-{formatPrice(selectedOrderForInspect.discountAmount)}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex justify-between items-center text-base font-bold font-mono">
+                        <span>Total del Pedido:</span>
+                        <span className="text-white">{formatPrice(selectedOrderForInspect.total)}</span>
+                      </div>
+
+                      <button
+                        onClick={() => setSelectedOrderForInspect(null)}
+                        className="w-full py-3 bg-white hover:bg-neutral-200 text-black text-xs uppercase tracking-wider font-bold rounded-xl cursor-pointer transition-colors shadow-sm"
+                      >
+                        Cerrar Detalle
                       </button>
                     </div>
-
-                    <div className="space-y-1.5 text-xs">
-                      <div><strong className="text-white">Clienta:</strong> <span className="text-neutral-300">{selectedOrderForInspect.customerName}</span></div>
-                      <div><strong className="text-white">Teléfono:</strong> <span className="text-neutral-300">{selectedOrderForInspect.customerPhone || 'N/A'}</span></div>
-                      <div><strong className="text-white">Dirección:</strong> <span className="text-neutral-300">{selectedOrderForInspect.customerLocation || 'Comodoro Rivadavia'}</span></div>
-                    </div>
-
-                    <div className="border-t border-b border-neutral-800 py-3 space-y-2 max-h-60 overflow-y-auto">
-                      {selectedOrderForInspect.items.map((it, idx) => (
-                        <div key={idx} className="flex justify-between items-center text-xs p-2.5 bg-neutral-900 border border-neutral-800 rounded-xl">
-                          <div>
-                            <span className="font-bold block text-white">{it.name}</span>
-                            <span className="text-neutral-400 text-[11px] font-mono">
-                              Talle: {it.size} | Color: {it.color} (x{it.quantity})
-                            </span>
-                          </div>
-                          <span className="font-mono font-bold text-white">{formatPrice(it.price * it.quantity)}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="flex justify-between items-center text-base font-bold font-mono">
-                      <span>Total del Carrito:</span>
-                      <span className="text-white">{formatPrice(selectedOrderForInspect.total)}</span>
-                    </div>
-
-                    <button
-                      onClick={() => setSelectedOrderForInspect(null)}
-                      className="w-full py-3 bg-white hover:bg-neutral-200 text-black text-xs uppercase tracking-wider font-bold rounded-xl cursor-pointer transition-colors shadow-sm"
-                    >
-                      Cerrar Detalle
-                    </button>
                   </div>
-                </div>
+                </div>,
+                document.body
               )}
             </div>
           )}
