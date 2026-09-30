@@ -25,8 +25,8 @@ export const Footer: React.FC = () => {
     <footer className="bg-black text-white border-t border-neutral-800">
       
       {/* Value Proposition Bar */}
-      <div className="border-b border-neutral-800 py-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div className="border-b border-neutral-800 py-8 sm:py-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-8 sm:gap-8">
           
           {/* 1. Envíos */}
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3.5 sm:gap-4 text-center sm:text-left justify-center sm:justify-start">
