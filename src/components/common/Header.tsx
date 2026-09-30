@@ -140,6 +140,7 @@ export const Header: React.FC = () => {
                     <img 
                       src={currentUser.avatarUrl} 
                       alt={currentUser.fullName} 
+                      referrerPolicy="no-referrer"
                       className="w-5 h-5 rounded-full object-cover border border-neutral-500"
                     />
                   ) : (

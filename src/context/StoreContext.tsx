@@ -1,14 +1,15 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { Product, Category, CartItem, UserProfile, Coupon, OrderRecord, StoreSettings, InfoModalType } from '../types';
-import { 
-  INITIAL_CATEGORIES, 
-  INITIAL_PRODUCTS, 
-  INITIAL_COUPONS, 
-  INITIAL_SETTINGS
-} from '../data/initialData';
+import { DEMO_CATEGORIES, DEMO_PRODUCTS, DEMO_COUPONS } from '../data/demoData';
+import { DEFAULT_SETTINGS } from '../data/defaultSettings';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { deleteCatalogImages } from '../lib/images';
 import { slugify } from '../lib/slug';
+import type { SupabaseClient, User } from '@supabase/supabase-js';
+import type {
+  CategoryRow, SubcategoryRow, ProductRow, ProfileRow, OrderRow, CouponRow, CouponRpcRow,
+  StoreSettingsRow, DbWrite,
+} from '../types/database';
 import type { Options as ConfettiOptions } from 'canvas-confetti';
 
 // El confeti se descarga recién cuando se usa (no pesa en la carga inicial)
@@ -84,7 +85,7 @@ interface StoreContextType {
   // Auth & Profile
   currentUser: UserProfile | null;
   registeredUsers: UserProfile[];
-  loginWithSocial: (provider: 'google' | 'facebook') => Promise<void>;
+  loginWithSocial: (provider: 'google') => Promise<string | null>; // null = redirigiendo a Google; texto = error
   loginWithEmail: (email: string, password?: string) => Promise<{ success: boolean; message?: string }>;
   registerUser: (data: {
     fullName: string;
@@ -143,10 +144,6 @@ const LOCAL_STORAGE_KEYS = {
   WISHLIST: 'aloha_wishlist_v3',
 };
 
-// Fila tal como llega de Supabase (el proyecto no usa tipos generados de la base)
-// oxlint-disable-next-line typescript/no-explicit-any
-type DbRow = Record<string, any>;
-
 // Correspondencia entre los campos de la app y las columnas de la tabla store_settings
 const SETTINGS_DB_KEYS: Record<keyof StoreSettings, string> = {
   whatsappNumber: 'whatsapp_number',
@@ -176,13 +173,13 @@ const SETTINGS_DB_KEYS: Record<keyof StoreSettings, string> = {
   heroSecondaryBtnText: 'hero_secondary_btn_text',
 };
 
-const mapOrderFromDb = (r: DbRow): OrderRecord => ({
+const mapOrderFromDb = (r: OrderRow): OrderRecord => ({
   id: r.id,
-  userId: r.user_id || undefined,
+  userId: r.user_id ?? undefined,
   customerName: r.customer_name,
   customerPhone: r.customer_phone || undefined,
   customerLocation: r.customer_location || undefined,
-  items: Array.isArray(r.items) ? r.items : [],
+  items: r.items ?? [],
   subtotal: Number(r.subtotal || 0),
   discountAmount: Number(r.discount_amount || 0),
   couponCode: r.coupon_code || undefined,
@@ -192,7 +189,10 @@ const mapOrderFromDb = (r: DbRow): OrderRecord => ({
   createdAt: r.created_at || new Date().toISOString(),
 });
 
-const mapCouponFromDb = (r: DbRow): Coupon => ({
+// El cupón puede venir completo (tabla, para la administradora) o reducido (función get_coupon)
+type CouponInput = CouponRpcRow & Partial<CouponRow>;
+
+const mapCouponFromDb = (r: CouponInput): Coupon => ({
   id: r.id,
   code: r.code,
   discountPercentage: Number(r.discount_percentage || 0),
@@ -206,18 +206,20 @@ const mapCouponFromDb = (r: DbRow): Coupon => ({
 
 const settingsKeys = Object.keys(SETTINGS_DB_KEYS) as (keyof StoreSettings)[];
 
-const settingsFromDb = (row: DbRow): StoreSettings => {
-  const result: DbRow = { ...INITIAL_SETTINGS };
+const settingsFromDb = (row: StoreSettingsRow): StoreSettings => {
+  const result: StoreSettings = { ...DEFAULT_SETTINGS };
+  // Se escribe por nombre de campo: la conversión es segura porque el tipo de cada valor sale de DEFAULT_SETTINGS
+  const target = result as unknown as Record<string, unknown>;
   settingsKeys.forEach(key => {
     const value = row[SETTINGS_DB_KEYS[key]];
     if (value === null || value === undefined) return;
-    result[key] = typeof INITIAL_SETTINGS[key] === 'number' ? Number(value) : value;
+    target[key] = typeof DEFAULT_SETTINGS[key] === 'number' ? Number(value) : value;
   });
-  return result as StoreSettings;
+  return result;
 };
 
-const settingsToDb = (settings: Partial<StoreSettings>): DbRow => {
-  const dbObj: DbRow = { updated_at: new Date().toISOString() };
+const settingsToDb = (settings: Partial<StoreSettings>): DbWrite => {
+  const dbObj: DbWrite = { updated_at: new Date().toISOString() };
   settingsKeys.forEach(key => {
     if (settings[key] !== undefined) dbObj[SETTINGS_DB_KEYS[key]] = settings[key];
   });
@@ -228,14 +230,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Initial states with LocalStorage persistence fallback
   const [products, setProducts] = useState<Product[]>(() => {
     const saved = localStorage.getItem(LOCAL_STORAGE_KEYS.PRODUCTS);
-    return saved ? JSON.parse(saved) : INITIAL_PRODUCTS;
+    return saved ? JSON.parse(saved) : DEMO_PRODUCTS;
   });
 
   // Con Supabase las categorías vienen de la base (sin caché ni categorías de fábrica)
   const [categories, setCategories] = useState<Category[]>(() => {
     if (isSupabaseConfigured) return [];
     const saved = localStorage.getItem(LOCAL_STORAGE_KEYS.CATEGORIES);
-    return saved ? JSON.parse(saved) : INITIAL_CATEGORIES;
+    return saved ? JSON.parse(saved) : DEMO_CATEGORIES;
   });
 
   const [cart, setCart] = useState<CartItem[]>(() => {
@@ -247,7 +249,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [coupons, setCoupons] = useState<Coupon[]>(() => {
     if (isSupabaseConfigured) return [];
     const saved = localStorage.getItem(LOCAL_STORAGE_KEYS.COUPONS);
-    return saved ? JSON.parse(saved) : INITIAL_COUPONS;
+    return saved ? JSON.parse(saved) : DEMO_COUPONS;
   });
 
   const [settings, setSettings] = useState<StoreSettings>(() => {
@@ -255,12 +257,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (saved) {
       try {
         // Copia local (caché): la fuente de verdad es la tabla store_settings de Supabase
-        return { ...INITIAL_SETTINGS, ...JSON.parse(saved) };
+        return { ...DEFAULT_SETTINGS, ...JSON.parse(saved) };
       } catch {
-        return INITIAL_SETTINGS;
+        return DEFAULT_SETTINGS;
       }
     }
-    return INITIAL_SETTINGS;
+    return DEFAULT_SETTINGS;
   });
 
   // Con Supabase, pedidos y clientas se leen de la base según la sesión: no se guardan en el navegador
@@ -444,7 +446,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     });
   };
 
-  const mapProductFromDb = (row: DbRow): Product => ({
+  const mapProductFromDb = (row: ProductRow): Product => ({
     id: row.id,
     name: row.name,
     slug: row.slug || slugify(row.name),
@@ -463,7 +465,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
 
   const mapProductToDb = (product: Partial<Product>) => {
-    const dbObj: DbRow = {};
+    const dbObj: DbWrite = {};
     if (product.id !== undefined) dbObj.id = product.id;
     if (product.name !== undefined) dbObj.name = product.name;
     if (product.slug !== undefined) dbObj.slug = product.slug;
@@ -481,20 +483,20 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return dbObj;
   };
 
-  const mapProfileFromDb = (p: DbRow): UserProfile => ({
+  const mapProfileFromDb = (p: ProfileRow): UserProfile => ({
     id: p.id,
     email: p.email,
     fullName: p.full_name || 'Cliente Aloha',
     avatarUrl: p.avatar_url || '',
     phone: p.phone || '',
-    address: p.address || undefined,
-    provider: p.provider || 'email',
+    address: p.address?.city ? p.address : undefined,
+    provider: (p.provider as UserProfile['provider']) || 'email',
     isAdmin: Boolean(p.is_admin),
     createdAt: p.created_at || new Date().toISOString(),
   });
 
   const mapProfileToDb = (profile: Partial<UserProfile>) => {
-    const dbObj: DbRow = {};
+    const dbObj: DbWrite = {};
     if (profile.id !== undefined) dbObj.id = profile.id;
     if (profile.email !== undefined) dbObj.email = profile.email;
     if (profile.fullName !== undefined) dbObj.full_name = profile.fullName;
@@ -504,6 +506,29 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (profile.provider !== undefined) dbObj.provider = profile.provider;
     // is_admin nunca se escribe desde el cliente: se asigna solo desde el panel de Supabase.
     return dbObj;
+  };
+
+  // Perfil de una cuenta con sesión: se lee de la base y, si es la primera vez (p. ej. el primer ingreso con Google
+  // o una cuenta recién confirmada por correo), se crea con los datos que trae la cuenta.
+  const resolveProfile = async (client: SupabaseClient, authUser: User): Promise<UserProfile> => {
+    const { data, error } = await client.from('profiles').select('*').eq('id', authUser.id).maybeSingle();
+    if (error) console.warn('No se pudo leer el perfil:', error.code, error.message);
+    if (data) return mapProfileFromDb(data as ProfileRow);
+
+    const meta = authUser.user_metadata || {};
+    const created: UserProfile = {
+      id: authUser.id,
+      email: (authUser.email || '').toLowerCase(),
+      fullName: meta.full_name || meta.name || 'Cliente Aloha',
+      phone: meta.phone || '',
+      avatarUrl: meta.avatar_url || meta.picture || '',
+      provider: authUser.app_metadata?.provider === 'google' ? 'google' : 'email',
+      isAdmin: false,
+      createdAt: new Date().toISOString(),
+    };
+    const { error: upsertError } = await client.from('profiles').upsert([mapProfileToDb(created)]);
+    if (upsertError) console.warn('No se pudo crear el perfil:', upsertError.code, upsertError.message);
+    return created;
   };
 
   // If Supabase is configured, initialize remote fetch
@@ -517,28 +542,28 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             console.warn('Supabase product query notice:', prodError.message);
           } else if (dbProducts) {
             // La base es la fuente de verdad: si está vacía, el catálogo queda vacío (sin prendas de demostración)
-            setProducts(dbProducts.map(mapProductFromDb));
+            setProducts((dbProducts as ProductRow[]).map(mapProductFromDb));
           }
 
           const { data: dbSettings, error: settingsError } = await client.from('store_settings').select('*').eq('id', 1).maybeSingle();
           if (settingsError) console.warn('Supabase settings query notice:', settingsError.message);
-          else if (dbSettings) setSettings(settingsFromDb(dbSettings));
+          else if (dbSettings) setSettings(settingsFromDb(dbSettings as StoreSettingsRow));
 
           const { data: dbCategories, error: catError } = await client.from('categories').select('*').order('display_order');
           const { data: dbSubcategories, error: subError } = await client.from('subcategories').select('*').order('created_at');
           if (catError || subError) {
             console.warn('Supabase categories query notice:', (catError || subError)?.message);
           } else if (dbCategories) {
-            setCategories(dbCategories.map((c: DbRow): Category => ({
+            setCategories((dbCategories as CategoryRow[]).map((c): Category => ({
               id: c.id,
               name: c.name,
               slug: c.slug,
               description: c.description || undefined,
               image: c.image_url || undefined,
               order: c.display_order ?? 0,
-              subcategories: (dbSubcategories || [])
-                .filter((s: DbRow) => s.category_id === c.id)
-                .map((s: DbRow) => ({ id: s.id, name: s.name, slug: s.slug })),
+              subcategories: ((dbSubcategories || []) as SubcategoryRow[])
+                .filter(s => s.category_id === c.id)
+                .map(s => ({ id: s.id, name: s.name, slug: s.slug })),
             })));
           }
 
@@ -546,17 +571,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           // Si no hay sesión se descarta, y si la hay se toma el perfil (y el rol admin) de la base.
           const { data: sessionData } = await client.auth.getSession();
           const sessionUser = sessionData.session?.user;
-          if (!sessionUser) {
-            setCurrentUser(null);
-          } else {
-            const { data: ownProfile, error: ownProfileError } = await client.from('profiles').select('*').eq('id', sessionUser.id).maybeSingle();
-            if (ownProfileError) console.warn('[sesión] No se pudo leer el perfil:', ownProfileError.code, ownProfileError.message);
-            if (ownProfile) {
-              setCurrentUser(mapProfileFromDb(ownProfile));
-            } else {
-              setCurrentUser(prev => (prev ? { ...prev, isAdmin: false } : null));
-            }
-          }
+          setCurrentUser(sessionUser ? await resolveProfile(client, sessionUser) : null);
 
         } catch (e) {
           console.warn('Using offline database cache:', e);
@@ -564,6 +579,30 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       };
       fetchSupabaseData();
     }
+  }, []);
+
+  // Cambios de sesión (ingreso con Google al volver de la redirección, cierre en otra pestaña, sesión vencida)
+  useEffect(() => {
+    const client = supabase;
+    if (!isSupabaseConfigured || !client) return;
+
+    const { data } = client.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        setCurrentUser(null);
+        return;
+      }
+      if (event === 'SIGNED_IN' && session?.user) {
+        const authUser = session.user;
+        // No se hacen consultas dentro del callback (bloquearía al cliente de Supabase): se difieren
+        setTimeout(() => {
+          resolveProfile(client, authUser).then(profile => {
+            setCurrentUser(prev => (prev && prev.id === profile.id && prev.isAdmin === profile.isAdmin ? prev : profile));
+          });
+        }, 0);
+      }
+    });
+    return () => data.subscription.unsubscribe();
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Pedidos y clientas: la base decide qué se ve (RLS). La admin recibe todo; cada clienta, solo lo suyo.
@@ -993,7 +1032,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const updateCategory = async (id: string, categoryData: Partial<Category>): Promise<string | null> => {
     if (isSupabaseConfigured && supabase) {
-      const dbObj: DbRow = { updated_at: new Date().toISOString() };
+      const dbObj: DbWrite = { updated_at: new Date().toISOString() };
       if (categoryData.name !== undefined) dbObj.name = categoryData.name;
       if (categoryData.description !== undefined) dbObj.description = categoryData.description;
       if (categoryData.image !== undefined) dbObj.image_url = categoryData.image;
@@ -1146,15 +1185,17 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   // Auth & Profile
-  const loginWithSocial = async (provider: 'google' | 'facebook') => {
-    // El acceso social requiere configurar el proveedor en Supabase (Authentication > Providers).
-    if (isSupabaseConfigured && supabase) {
-      try {
-        await supabase.auth.signInWithOAuth({ provider });
-      } catch (err) {
-        console.warn('Supabase social login error:', err);
-      }
+  // El proveedor debe estar habilitado en Supabase (Authentication > Sign In / Providers). Ver docs/login-google.md
+  const loginWithSocial = async (provider: 'google'): Promise<string | null> => {
+    if (!isSupabaseConfigured || !supabase) {
+      return 'El ingreso con Google no está disponible en modo demostración.';
     }
+    const { error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo: window.location.origin } });
+    if (error) {
+      console.warn('Supabase social login error:', error.message);
+      return 'No pudimos iniciar el ingreso con Google. Intentá nuevamente.';
+    }
+    return null; // el navegador se redirige a Google
   };
 
   const registerUser = async (data: {
@@ -1296,35 +1337,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           };
         }
 
-        const authUser = authData.user;
-        const { data: dbProf, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', authUser.id)
-          .maybeSingle();
-        if (profileError) console.warn('[login] No se pudo leer el perfil:', profileError.code, profileError.message);
-        else if (!dbProf) console.warn('[login] No hay fila en profiles con id', authUser.id);
-
-        let mapped: UserProfile;
-        if (dbProf) {
-          mapped = mapProfileFromDb(dbProf);
-        } else {
-          // Cuenta creada en Supabase Auth sin perfil todavía (p. ej. tras confirmar el correo): se completa acá.
-          const meta = authUser.user_metadata || {};
-          mapped = {
-            id: authUser.id,
-            email: cleanEmail,
-            fullName: meta.full_name || 'Cliente Aloha',
-            phone: meta.phone || '',
-            avatarUrl: '',
-            address: { city: 'Comodoro Rivadavia', province: 'Chubut', postalCode: '' },
-            provider: 'email',
-            isAdmin: false,
-            createdAt: new Date().toISOString(),
-          };
-          const { error: upsertError } = await supabase.from('profiles').upsert([mapProfileToDb(mapped)]);
-          if (upsertError) console.warn('Supabase profile creation notice:', upsertError.message);
-        }
+        const mapped = await resolveProfile(supabase, authData.user);
 
         setCurrentUser(mapped);
         setRegisteredUsers(prev => [mapped, ...prev.filter(u => u.email.toLowerCase() !== cleanEmail)]);

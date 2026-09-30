@@ -64,6 +64,7 @@ const ProfileModalContent: React.FC<{ currentUser: UserProfile }> = ({ currentUs
               <img
                 src={avatarUrl}
                 alt={fullName}
+                referrerPolicy="no-referrer"
                 className="w-16 h-16 rounded-full object-cover border-2 border-neutral-700 shadow-md"
               />
             ) : (

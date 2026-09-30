@@ -35,6 +35,7 @@ export const CartDrawer: React.FC = () => {
     checkoutViaWhatsApp,
     currentUser,
     setIsAuthModalOpen,
+    setIsProfileModalOpen,
     settings,
     orders,
     refreshOrders,
@@ -458,15 +459,35 @@ export const CartDrawer: React.FC = () => {
                         </div>
                       )}
 
-                      <button
-                        onClick={handleCheckout}
-                        disabled={isSubmittingOrder}
-                        className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white text-xs uppercase tracking-[0.2em] font-bold flex items-center justify-center gap-3 transition-all duration-300 shadow-lg cursor-pointer rounded-xl"
-                      >
-                        <MessageSquare className="w-4 h-4 fill-white shrink-0" />
-                        <span>{isSubmittingOrder ? 'Generando Pedido...' : 'Finalizar Compra vía WhatsApp'}</span>
-                        <ArrowRight className="w-4 h-4 shrink-0" />
-                      </button>
+                      {!currentUser.phone?.trim() ? (
+                        // Sin teléfono no se puede coordinar la entrega (pasa con las cuentas creadas con Google)
+                        <div className="p-3 bg-neutral-900 border border-neutral-750 rounded-xl space-y-2">
+                          <div className="flex items-center gap-2 text-xs text-amber-300 font-medium">
+                            <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                            <span>Sumá tu teléfono para coordinar la entrega.</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsCartOpen(false);
+                              setIsProfileModalOpen(true);
+                            }}
+                            className="w-full py-3 bg-white text-black text-xs uppercase tracking-wider font-bold hover:bg-neutral-200 transition-colors rounded-xl cursor-pointer"
+                          >
+                            Completar mi perfil
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={handleCheckout}
+                          disabled={isSubmittingOrder}
+                          className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white text-xs uppercase tracking-[0.2em] font-bold flex items-center justify-center gap-3 transition-all duration-300 shadow-lg cursor-pointer rounded-xl"
+                        >
+                          <MessageSquare className="w-4 h-4 fill-white shrink-0" />
+                          <span>{isSubmittingOrder ? 'Generando Pedido...' : 'Finalizar Compra vía WhatsApp'}</span>
+                          <ArrowRight className="w-4 h-4 shrink-0" />
+                        </button>
+                      )}
                     </>
                   )}
                 </div>
