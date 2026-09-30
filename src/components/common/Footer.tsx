@@ -9,6 +9,7 @@ import {
   Lock
 } from 'lucide-react';
 import { BrandLogo } from './BrandLogo';
+import { openExternal, safeUrl } from '../../lib/external';
 
 export const Footer: React.FC = () => {
   const { 
@@ -103,7 +104,7 @@ export const Footer: React.FC = () => {
               <div className="flex items-center justify-center sm:justify-start gap-2.5">
                 {/* Instagram */}
                 <a
-                  href={settings.instagramUrl}
+                  href={safeUrl(settings.instagramUrl)}
                   target="_blank"
                   rel="noreferrer"
                   className="p-2.5 bg-neutral-900 border border-neutral-800 rounded-full text-neutral-200 hover:text-white hover:border-white transition-colors"
@@ -119,7 +120,7 @@ export const Footer: React.FC = () => {
                 <button
                   onClick={() => {
                     const phone = settings.whatsappNumber.replace(/[^0-9]/g, '');
-                    window.open(`https://wa.me/${phone}`, '_blank');
+                    openExternal(`https://wa.me/${phone}`);
                   }}
                   className="p-2.5 bg-neutral-900 border border-neutral-800 rounded-full text-neutral-200 hover:text-emerald-400 hover:border-emerald-400 transition-colors cursor-pointer"
                   title="WhatsApp Directo"
@@ -130,7 +131,7 @@ export const Footer: React.FC = () => {
 
                 {/* Facebook */}
                 <a
-                  href={settings.facebookUrl}
+                  href={safeUrl(settings.facebookUrl)}
                   target="_blank"
                   rel="noreferrer"
                   className="p-2.5 bg-neutral-900 border border-neutral-800 rounded-full text-neutral-200 hover:text-[#1877F2] hover:border-[#1877F2] transition-colors"
@@ -144,7 +145,7 @@ export const Footer: React.FC = () => {
 
                 {/* TikTok */}
                 <a
-                  href={settings.tiktokUrl}
+                  href={safeUrl(settings.tiktokUrl)}
                   target="_blank"
                   rel="noreferrer"
                   className="p-2.5 bg-neutral-900 border border-neutral-800 rounded-full text-neutral-200 hover:text-white hover:border-white transition-colors"

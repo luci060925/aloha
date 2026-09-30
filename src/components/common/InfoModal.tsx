@@ -13,6 +13,7 @@ import {
   ArrowRight,
   Tag
 } from 'lucide-react';
+import { openExternal, safeUrl } from '../../lib/external';
 
 export const InfoModal: React.FC = () => {
   const { activeInfoModal, setActiveInfoModal, settings } = useStore();
@@ -22,7 +23,7 @@ export const InfoModal: React.FC = () => {
   const handleWhatsApp = () => {
     const phone = settings.whatsappNumber.replace(/[^0-9]/g, '');
     const msg = encodeURIComponent(`Hola Aloha! Tengo una consulta sobre una compra.`);
-    window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
+    openExternal(`https://wa.me/${phone}?text=${msg}`);
   };
 
   return (
@@ -299,7 +300,7 @@ export const InfoModal: React.FC = () => {
               onClick={() => {
                 const phone = settings.whatsappNumber.replace(/[^0-9]/g, '');
                 const msg = encodeURIComponent('Hola Aloha! Quiero ejercer mi derecho de arrepentimiento sobre mi compra.\nNúmero de pedido: \nNombre y apellido: ');
-                window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
+                openExternal(`https://wa.me/${phone}?text=${msg}`);
               }}
               className="w-full py-3.5 bg-white text-black text-xs uppercase tracking-[0.2em] font-bold hover:bg-neutral-200 transition-colors flex items-center justify-center gap-2 cursor-pointer rounded-xl shadow-sm"
             >
@@ -532,7 +533,7 @@ export const InfoModal: React.FC = () => {
 
               {/* Instagram */}
               <a
-                href={settings.instagramUrl}
+                href={safeUrl(settings.instagramUrl)}
                 target="_blank"
                 rel="noreferrer"
                 className="p-4 bg-neutral-900 border border-neutral-800 rounded-xl flex items-center gap-3 hover:bg-neutral-800/80 transition-colors group"

@@ -15,6 +15,7 @@ import {
   ExternalLink,
   Lock
 } from 'lucide-react';
+import { openExternal } from '../../lib/external';
 
 export const CartDrawer: React.FC = () => {
   const {
@@ -89,7 +90,10 @@ export const CartDrawer: React.FC = () => {
     }
     setIsSubmittingOrder(true);
     try {
-      await checkoutViaWhatsApp();
+      const { recorded } = await checkoutViaWhatsApp();
+      if (!recorded) {
+        alert('Tu mensaje de WhatsApp está listo para enviar, pero no pudimos registrar el pedido en el sitio (por ejemplo, porque cambió un precio o venció un cupón). Confirmá el detalle con Aloha por WhatsApp.');
+      }
       setTimeout(() => {
         setIsSubmittingOrder(false);
         setActiveTab('orders'); // Switch to orders tab to show tracking
@@ -607,7 +611,7 @@ export const CartDrawer: React.FC = () => {
                             onClick={() => {
                               const phone = settings.whatsappNumber.replace(/[^0-9]/g, '');
                               const msg = encodeURIComponent(`Hola Aloha! Quería consultar sobre el estado de mi pedido ${ord.id}.`);
-                              window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
+                              openExternal(`https://wa.me/${phone}?text=${msg}`);
                             }}
                             className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white rounded-xl text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer border border-neutral-700 shadow-sm"
                             title="Consultar por WhatsApp"

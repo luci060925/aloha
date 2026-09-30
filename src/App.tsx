@@ -14,6 +14,7 @@ import { StoreLocationModal } from './components/home/StoreLocationModal';
 import { InfoModal } from './components/common/InfoModal';
 import { WishlistDrawer } from './components/wishlist/WishlistDrawer';
 import { Lock, MessageSquare } from 'lucide-react';
+import { openExternal } from './lib/external';
 
 // El panel de administración solo lo usa la dueña: se descarga únicamente al entrar a /admin
 const AdminPage = lazy(() => import('./components/admin/AdminPage').then(m => ({ default: m.AdminPage })));
@@ -24,7 +25,7 @@ const MainLayout: React.FC = () => {
   const handleFloatingWhatsApp = () => {
     const phone = settings.whatsappNumber.replace(/[^0-9]/g, '');
     const msg = encodeURIComponent(`Hola Aloha Indumentaria! Me comunico desde la tienda web para consultar sobre la colección.`);
-    window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
+    openExternal(`https://wa.me/${phone}?text=${msg}`);
   };
 
   return (
@@ -111,10 +112,11 @@ const AdminGate: React.FC = () => {
 };
 
 const RootView: React.FC = () => {
-  const { currentView, currentUser } = useStore();
+  const { currentView, currentUser, authReady } = useStore();
 
   if (currentView === 'admin') {
-    // Barrera de interfaz: la protección real de los datos debe hacerla la RLS de Supabase.
+    // Barrera de interfaz: la protección real de los datos la hace la RLS de Supabase.
+    if (!authReady) return <div className="min-h-screen bg-[#0a0a0a]" />; // verificando la sesión
     return currentUser?.isAdmin ? (
       <Suspense fallback={<div className="min-h-screen bg-[#0a0a0a]" />}>
         <AdminPage />

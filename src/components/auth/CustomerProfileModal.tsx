@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { X, LogOut, Check, ShieldCheck, PackageCheck } from 'lucide-react';
 import type { UserProfile } from '../../types';
+import { isTrustedAvatarUrl } from '../../lib/external';
 
 // Se monta al abrir el perfil, así el formulario arranca con los datos actuales sin efectos de sincronización
 const ProfileModalContent: React.FC<{ currentUser: UserProfile }> = ({ currentUser }) => {
@@ -14,7 +15,7 @@ const ProfileModalContent: React.FC<{ currentUser: UserProfile }> = ({ currentUs
   } = useStore();
 
   const [fullName, setFullName] = useState(currentUser?.fullName || '');
-  const avatarUrl = currentUser.avatarUrl || '';
+  const avatarUrl = isTrustedAvatarUrl(currentUser.avatarUrl) ? currentUser.avatarUrl || '' : '';
   const [phone, setPhone] = useState(currentUser?.phone || '');
   const [city, setCity] = useState(currentUser?.address?.city || 'Comodoro Rivadavia');
   const [province, setProvince] = useState(currentUser?.address?.province || 'Chubut');

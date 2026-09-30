@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import { BrandLogo } from './BrandLogo';
+import { safeUrl, isTrustedAvatarUrl } from '../../lib/external';
 
 export const Header: React.FC = () => {
   const {
@@ -136,7 +137,7 @@ export const Header: React.FC = () => {
                   title={`Perfil de ${currentUser.fullName}`}
                   aria-label="Mi Perfil"
                 >
-                  {currentUser.avatarUrl ? (
+                  {isTrustedAvatarUrl(currentUser.avatarUrl) ? (
                     <img 
                       src={currentUser.avatarUrl} 
                       alt={currentUser.fullName} 
@@ -374,7 +375,7 @@ export const Header: React.FC = () => {
                 <div className="grid grid-cols-4 gap-2">
                   {/* Instagram */}
                   <a
-                    href={settings.instagramUrl}
+                    href={safeUrl(settings.instagramUrl)}
                     target="_blank"
                     rel="noreferrer"
                     className="flex flex-col items-center justify-center p-2.5 bg-neutral-900/80 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 rounded-xl transition-all group"
@@ -402,7 +403,7 @@ export const Header: React.FC = () => {
 
                   {/* TikTok */}
                   <a
-                    href={settings.tiktokUrl}
+                    href={safeUrl(settings.tiktokUrl)}
                     target="_blank"
                     rel="noreferrer"
                     className="flex flex-col items-center justify-center p-2.5 bg-neutral-900/80 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 rounded-xl transition-all group"
@@ -417,7 +418,7 @@ export const Header: React.FC = () => {
 
                   {/* Facebook */}
                   <a
-                    href={settings.facebookUrl}
+                    href={safeUrl(settings.facebookUrl)}
                     target="_blank"
                     rel="noreferrer"
                     className="flex flex-col items-center justify-center p-2.5 bg-neutral-900/80 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 rounded-xl transition-all group"

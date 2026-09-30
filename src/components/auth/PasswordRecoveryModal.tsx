@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { Lock, Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { BrandLogo } from '../common/BrandLogo';
+import { MIN_PASSWORD_LENGTH } from '../../lib/constants';
 
 // Se muestra cuando la clienta vuelve desde el enlace "restablecer contraseña" del correo.
 // Supabase ya abrió una sesión temporal con ese enlace: solo falta elegir la contraseña nueva.
@@ -19,8 +20,8 @@ const PasswordRecoveryContent: React.FC = () => {
     e.preventDefault();
     setErrorMessage('');
 
-    if (password.length < 6) {
-      setErrorMessage('La contraseña debe tener al menos 6 caracteres.');
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      setErrorMessage(`La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.`);
       return;
     }
     if (password !== confirm) {
@@ -96,7 +97,7 @@ const PasswordRecoveryContent: React.FC = () => {
                   autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder={`Mínimo ${MIN_PASSWORD_LENGTH} caracteres`}
                   className="w-full pl-9 pr-10 py-2 text-xs border border-neutral-700 bg-neutral-900 text-white rounded-lg focus:outline-none focus:border-white font-medium placeholder:text-neutral-500"
                 />
                 <button

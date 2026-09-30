@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, MapPin, Clock, Phone, Navigation, ExternalLink } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
+import { openExternal } from '../../lib/external';
 
 export const StoreLocationModal: React.FC = () => {
   const { isLocationModalOpen, setIsLocationModalOpen, settings } = useStore();
@@ -9,13 +10,13 @@ export const StoreLocationModal: React.FC = () => {
 
   const handleOpenGoogleMaps = () => {
     const query = encodeURIComponent(`${settings.address}, ${settings.city}, ${settings.province}, Argentina`);
-    window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
+    openExternal(`https://www.google.com/maps/search/?api=1&query=${query}`);
   };
 
   const handleWhatsApp = () => {
     const message = encodeURIComponent(`Hola Aloha! Quisiera consultar sobre el stock disponible en el local de ${settings.city}.`);
     const phone = settings.whatsappNumber.replace(/[^0-9]/g, '');
-    window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
+    openExternal(`https://wa.me/${phone}?text=${message}`);
   };
 
   return (

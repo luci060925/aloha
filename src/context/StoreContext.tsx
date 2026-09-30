@@ -1,16 +1,19 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import type { Product, Category, CartItem, UserProfile, Coupon, OrderRecord, StoreSettings, InfoModalType } from '../types';
 import { DEMO_CATEGORIES, DEMO_PRODUCTS, DEMO_COUPONS } from '../data/demoData';
 import { DEFAULT_SETTINGS } from '../data/defaultSettings';
 import { supabase, isSupabaseConfigured, openedFromRecoveryLink, openedFromExpiredLink } from '../lib/supabase';
 import { deleteCatalogImages } from '../lib/images';
 import { slugify } from '../lib/slug';
+import { calculateCartTotals, syncCartWithCatalog, MAX_ITEM_QUANTITY } from '../lib/pricing';
+import { MIN_PASSWORD_LENGTH } from '../lib/constants';
 import type { SupabaseClient, User } from '@supabase/supabase-js';
 import type {
   CategoryRow, SubcategoryRow, ProductRow, ProfileRow, OrderRow, CouponRow, CouponRpcRow,
   StoreSettingsRow, DbWrite,
 } from '../types/database';
 import type { Options as ConfettiOptions } from 'canvas-confetti';
+import { openExternal } from '../lib/external';
 
 // El confeti se descarga recién cuando se usa (no pesa en la carga inicial)
 const confetti = (options: ConfettiOptions) => {
@@ -67,7 +70,7 @@ interface StoreContextType {
   removeCoupon: () => void;
 
   // Checkout WhatsApp
-  checkoutViaWhatsApp: () => Promise<string>;
+  checkoutViaWhatsApp: () => Promise<{ url: string; recorded: boolean }>; // recorded=false: se abrió WhatsApp pero la base no registró el pedido
   
   // Orders / WhatsApp logs (Admin & User)
   orders: OrderRecord[];
@@ -101,6 +104,7 @@ interface StoreContextType {
   // Recuperar contraseña
   requestPasswordReset: (email: string) => Promise<string | null>; // null = enviado (o correo desconocido); texto = error
   updatePassword: (newPassword: string) => Promise<string | null>; // null = cambiada; texto = error
+  authReady: boolean; // ya se sabe si hay sesión iniciada
   isPasswordRecovery: boolean; // el sitio se abrió desde el enlace del correo: falta elegir la contraseña nueva
   closePasswordRecovery: () => void;
   authNotice: string; // aviso para el modal de ingreso (p. ej. enlace vencido)
@@ -247,7 +251,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return saved ? JSON.parse(saved) : DEMO_CATEGORIES;
   });
 
-  const [cart, setCart] = useState<CartItem[]>(() => {
+  const [storedCart, setCart] = useState<CartItem[]>(() => {
     const saved = localStorage.getItem(LOCAL_STORAGE_KEYS.CART);
     return saved ? JSON.parse(saved) : [];
   });
@@ -288,6 +292,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
 
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
+    if (isSupabaseConfigured) {
+      localStorage.removeItem(LOCAL_STORAGE_KEYS.CURRENT_USER); // restos de versiones anteriores
+      return null; // el usuario sale de la sesión de Supabase (ver bootstrap más abajo)
+    }
     const saved = localStorage.getItem(LOCAL_STORAGE_KEYS.CURRENT_USER);
     if (saved) {
       try {
@@ -322,6 +330,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const saved = localStorage.getItem(LOCAL_STORAGE_KEYS.WISHLIST);
     return saved ? JSON.parse(saved) : [];
   });
+
+  // Con Supabase, la bolsa que se muestra y se envía usa SIEMPRE el precio y el stock vigentes del catálogo
+  // (una bolsa guardada días atrás no debe viajar con precios viejos: la base rechazaría ese pedido).
+  const [catalogLoaded, setCatalogLoaded] = useState(!isSupabaseConfigured);
+  // false hasta saber si hay sesión: evita que /admin parpadee en "Acceso restringido" mientras se verifica
+  const [authReady, setAuthReady] = useState(!isSupabaseConfigured);
+  const cart = useMemo(
+    () => (isSupabaseConfigured && catalogLoaded ? syncCartWithCatalog(storedCart, products) : storedCart),
+    [storedCart, products, catalogLoaded]
+  );
 
   // Filter & Navigation states
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -410,8 +428,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [categories]);
 
   useEffect(() => {
-    localStorage.setItem(LOCAL_STORAGE_KEYS.CART, JSON.stringify(cart));
-  }, [cart]);
+    localStorage.setItem(LOCAL_STORAGE_KEYS.CART, JSON.stringify(storedCart));
+  }, [storedCart]);
 
   useEffect(() => {
     if (isSupabaseConfigured) {
@@ -434,7 +452,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [registeredUsers]);
 
   useEffect(() => {
-    if (currentUser) {
+    // Con Supabase la sesión la conserva Supabase: el perfil (nombre, teléfono, dirección) no se copia al navegador
+    if (currentUser && !isSupabaseConfigured) {
       localStorage.setItem(LOCAL_STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
     } else {
       localStorage.removeItem(LOCAL_STORAGE_KEYS.CURRENT_USER);
@@ -560,6 +579,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           } else if (dbProducts) {
             // La base es la fuente de verdad: si está vacía, el catálogo queda vacío (sin prendas de demostración)
             setProducts((dbProducts as ProductRow[]).map(mapProductFromDb));
+            setCatalogLoaded(true);
           }
 
           const { data: dbSettings, error: settingsError } = await client.from('store_settings').select('*').eq('id', 1).maybeSingle();
@@ -584,16 +604,24 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             })));
           }
 
-          // La sesión real es la de Supabase Auth: el usuario guardado en localStorage no alcanza.
-          // Si no hay sesión se descarta, y si la hay se toma el perfil (y el rol admin) de la base.
-          const { data: sessionData } = await client.auth.getSession();
-          const sessionUser = sessionData.session?.user;
-          setCurrentUser(sessionUser ? await resolveProfile(client, sessionUser) : null);
-
         } catch (e) {
           console.warn('Using offline database cache:', e);
         }
       };
+      // La sesión real es la de Supabase Auth. Si hay una, se toma el perfil (y el rol admin) de la base.
+      const bootstrapSession = async () => {
+        try {
+          const { data: sessionData } = await client.auth.getSession();
+          const sessionUser = sessionData.session?.user;
+          setCurrentUser(sessionUser ? await resolveProfile(client, sessionUser) : null);
+        } catch (e) {
+          console.warn('No se pudo verificar la sesión:', e);
+          setCurrentUser(null);
+        } finally {
+          setAuthReady(true);
+        }
+      };
+      bootstrapSession();
       fetchSupabaseData();
     }
   }, []);
@@ -700,37 +728,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  // Cart Calculations: Strict single-discount rule (coupons are single-use per cart, no stacking)
-  const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
-  const cartSubtotal = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
-  
-  let cartDiscount = 0;
-  let isVolumeDiscountApplied = false;
-
-  // 1. Single Coupon Discount (takes priority when applied, only 1 coupon allowed)
-  if (appliedCoupon && appliedCoupon.isActive) {
-    const eligibleSubtotal = appliedCoupon.targetCategory && appliedCoupon.targetCategory !== 'all'
-      ? cart.filter(it => it.product.category === appliedCoupon.targetCategory).reduce((acc, it) => acc + (it.price * it.quantity), 0)
-      : cartSubtotal;
-
-    if (appliedCoupon.discountPercentage > 0) {
-      cartDiscount = Math.round((eligibleSubtotal * appliedCoupon.discountPercentage) / 100);
-    } else if (appliedCoupon.fixedDiscount) {
-      cartDiscount = Math.min(appliedCoupon.fixedDiscount, eligibleSubtotal);
-    }
-  } else if (settings.volumeDiscountActive && cartCount >= settings.volumeDiscountMinItems && settings.volumeDiscountPercentage > 0) {
-    // 2. Volume Discount calculation (only if no coupon is active)
-    cartDiscount = Math.round((cartSubtotal * settings.volumeDiscountPercentage) / 100);
-    isVolumeDiscountApplied = true;
-  } else if (settings.priceDiscountActive && settings.priceDiscountMinAmount && cartSubtotal >= settings.priceDiscountMinAmount && (settings.priceDiscountPercentage || 0) > 0) {
-    // 3. Price Threshold Discount
-    cartDiscount = Math.round((cartSubtotal * (settings.priceDiscountPercentage || 0)) / 100);
-  } else if (settings.globalDiscountActive && settings.globalDiscountPercentage > 0) {
-    // 4. Global Store Discount
-    cartDiscount = Math.round((cartSubtotal * settings.globalDiscountPercentage) / 100);
-  }
-
-  const cartTotal = Math.max(0, cartSubtotal - cartDiscount);
+  // Totales: un solo descuento por compra (ver src/lib/pricing.ts; la base valida con las mismas reglas)
+  const {
+    count: cartCount,
+    subtotal: cartSubtotal,
+    discount: cartDiscount,
+    total: cartTotal,
+    isVolumeDiscountApplied,
+  } = calculateCartTotals(cart, settings, appliedCoupon);
 
   // Cart actions
   const addToCart = (product: Product, size: string, color: { name: string; hex: string }, quantity = 1) => {
@@ -746,7 +751,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (existing) {
         return prev.map(item => 
           item.id === cartItemId 
-            ? { ...item, quantity: item.quantity + quantity }
+            ? { ...item, quantity: Math.min(item.quantity + quantity, MAX_ITEM_QUANTITY) }
             : item
         );
       }
@@ -758,7 +763,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           product,
           selectedSize: size,
           selectedColor: color,
-          quantity,
+          quantity: Math.min(quantity, MAX_ITEM_QUANTITY),
           price: product.price,
         }
       ];
@@ -775,7 +780,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setCart(prev => prev.map(item => {
       if (item.id === cartItemId) {
         const newQty = item.quantity + delta;
-        return newQty > 0 ? { ...item, quantity: newQty } : null;
+        return newQty > 0 ? { ...item, quantity: Math.min(newQty, MAX_ITEM_QUANTITY) } : null;
       }
       return item;
     }).filter(Boolean) as CartItem[]);
@@ -862,8 +867,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   // Checkout via WhatsApp matching exact requested structure
-  const checkoutViaWhatsApp = async (): Promise<string> => {
-    if (cart.length === 0) return '';
+  const checkoutViaWhatsApp = async (): Promise<{ url: string; recorded: boolean }> => {
+    if (cart.length === 0) return { url: '', recorded: false };
 
     // Build exact item lines: [- Producto 1, Talle: M, Color: Negro, Precio: $15.000]
     const itemsLines = cart.map(item => {
@@ -918,8 +923,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const whatsappUrl = `https://wa.me/${targetPhone}?text=${encodedMessage}`;
 
     // WhatsApp se abre ANTES de esperar a la base: en celulares el navegador bloquea ventanas abiertas después de un await
-    window.open(whatsappUrl, '_blank');
+    openExternal(whatsappUrl);
 
+    let recorded = true;
     setOrders(prev => [newOrder, ...prev]);
 
     if (isSupabaseConfigured && supabase) {
@@ -937,7 +943,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         status: 'whatsapp_sent',
         whatsapp_message: whatsappMessage,
       }]);
-      if (error) console.error('No se pudo registrar el pedido en la base (el mensaje de WhatsApp sí se envió):', error.message);
+      if (error) {
+        console.error('No se pudo registrar el pedido en la base (el mensaje de WhatsApp sí se envió):', error.message);
+        recorded = false;
+      }
     }
 
     try {
@@ -947,7 +956,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Clear cart so the order resides exclusively in "Mis Pedidos"
     clearCart();
 
-    return whatsappUrl;
+    return { url: whatsappUrl, recorded };
   };
 
   // Solo la administradora puede cambiar estados: la base rechaza a cualquier otra cuenta
@@ -1257,8 +1266,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     let userId = generateUUID();
 
     if (isSupabaseConfigured && supabase) {
-      if (!data.password || data.password.length < 6) {
-        return { success: false, message: 'La contraseña debe tener al menos 6 caracteres.' };
+      if (!data.password || data.password.length < MIN_PASSWORD_LENGTH) {
+        return { success: false, message: `La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.` };
       }
       try {
         const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -1403,7 +1412,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Guarda la contraseña nueva. Funciona con la sesión temporal que abre el enlace del correo.
   const updatePassword = async (newPassword: string): Promise<string | null> => {
     if (!isSupabaseConfigured || !supabase) return 'No disponible en modo demostración.';
-    if (newPassword.length < 6) return 'La contraseña debe tener al menos 6 caracteres.';
+    if (newPassword.length < MIN_PASSWORD_LENGTH) return `La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.`;
 
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     if (error) {
@@ -1512,6 +1521,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         logout,
         requestPasswordReset,
         updatePassword,
+        authReady,
         isPasswordRecovery,
         closePasswordRecovery,
         authNotice,

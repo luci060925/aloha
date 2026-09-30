@@ -1,19 +1,20 @@
 import React from 'react';
 import { MapPin, Clock, Phone, Navigation, ShieldCheck, ShoppingBag } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
+import { openExternal } from '../../lib/external';
 
 export const StoreLocationSection: React.FC = () => {
   const { settings } = useStore();
 
   const handleOpenGoogleMaps = () => {
     const query = encodeURIComponent(`${settings.address}, ${settings.city}, ${settings.province}, Argentina`);
-    window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
+    openExternal(`https://www.google.com/maps/search/?api=1&query=${query}`);
   };
 
   const handleWhatsAppInquiry = () => {
     const message = encodeURIComponent(`Hola Aloha! Quisiera consultar por horarios y disponibilidad en el local de Comodoro Rivadavia (${settings.address}).`);
     const phone = settings.whatsappNumber.replace(/[^0-9]/g, '');
-    window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
+    openExternal(`https://wa.me/${phone}?text=${message}`);
   };
 
   return (

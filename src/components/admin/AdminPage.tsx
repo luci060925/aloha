@@ -4,6 +4,7 @@ import type { StoreSettings, OrderRecord } from '../../types';
 import { BrandLogo } from '../common/BrandLogo';
 import { fileToDataUrl, uploadCatalogImage } from '../../lib/images';
 import { slugify } from '../../lib/slug';
+import { isHttpUrl, isTrustedAvatarUrl } from '../../lib/external';
 import {
   Users, 
   MessageSquare, 
@@ -255,6 +256,16 @@ export const AdminPage: React.FC = () => {
   const handleSaveStoreSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaveSettingsError('');
+    // Los enlaces a redes se publican en el sitio: solo se aceptan direcciones http(s) completas
+    const badLink = ([
+      ['Instagram', settingsForm.instagramUrl],
+      ['Facebook', settingsForm.facebookUrl],
+      ['TikTok', settingsForm.tiktokUrl],
+    ] as const).find(([, url]) => url.trim() !== '' && !isHttpUrl(url));
+    if (badLink) {
+      setSaveSettingsError(`El enlace de ${badLink[0]} no es válido: tiene que empezar con https://`);
+      return;
+    }
     const saved = await updateSettings(settingsForm);
     if (!saved) {
       setSaveSettingsError('No se pudieron guardar los ajustes en la base. Revisá tu conexión y que tu cuenta sea de administradora.');
@@ -1797,8 +1808,8 @@ export const AdminPage: React.FC = () => {
                       {registeredUsers.map((u) => (
                         <tr key={u.id} className="hover:bg-neutral-900/50 transition-colors">
                           <td className="py-3.5 px-4 font-bold text-white flex items-center gap-2.5">
-                            {u.avatarUrl ? (
-                              <img src={u.avatarUrl} alt="" className="w-7 h-7 rounded-full object-cover border border-neutral-700" />
+                            {isTrustedAvatarUrl(u.avatarUrl) ? (
+                              <img src={u.avatarUrl} alt="" referrerPolicy="no-referrer" loading="lazy" className="w-7 h-7 rounded-full object-cover border border-neutral-700" />
                             ) : (
                               <div className="w-7 h-7 rounded-full bg-white text-black flex items-center justify-center font-bold text-xs">
                                 {u.fullName ? u.fullName.charAt(0) : 'U'}

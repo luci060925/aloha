@@ -3,6 +3,7 @@ import { useStore } from '../../context/StoreContext';
 import { X, Mail, User, Lock, Phone, MapPin, Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { BrandLogo } from '../common/BrandLogo';
 import { isSupabaseConfigured } from '../../lib/supabase';
+import { MIN_PASSWORD_LENGTH } from '../../lib/constants';
 
 // Se monta al abrir el modal: al cerrarlo se descarta el correo, la contraseña y el resto de los campos
 const AuthModalContent: React.FC = () => {
@@ -290,7 +291,7 @@ const AuthModalContent: React.FC = () => {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder={isRegisterMode ? 'Creá una contraseña segura' : 'Ingresá tu contraseña'}
+                placeholder={isRegisterMode ? `Creá una contraseña (mínimo ${MIN_PASSWORD_LENGTH} caracteres)` : 'Ingresá tu contraseña'}
                 className="w-full pl-9 pr-10 py-2 text-xs border border-neutral-700 bg-neutral-900 text-white rounded-lg focus:outline-none focus:border-white font-medium placeholder:text-neutral-500"
               />
               <button
