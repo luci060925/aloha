@@ -9,7 +9,6 @@ import {
   CheckCircle2, 
   MessageSquare, 
   AlertCircle, 
-  Sparkles,
   PackageCheck,
   Clock,
   ExternalLink,
@@ -28,7 +27,6 @@ export const CartDrawer: React.FC = () => {
     clearCart,
     cartSubtotal,
     cartDiscount,
-    isVolumeDiscountApplied,
     cartTotal,
     appliedCoupon,
     applyCoupon,
@@ -141,10 +139,6 @@ export const CartDrawer: React.FC = () => {
     }
   };
 
-  const itemsNeededForVolume = settings.volumeDiscountActive 
-    ? Math.max(0, settings.volumeDiscountMinItems - cartCount) 
-    : 0;
-
   return (
     <div className="fixed inset-0 z-50 overflow-hidden animate-fade-in">
       {/* Backdrop */}
@@ -219,26 +213,6 @@ export const CartDrawer: React.FC = () => {
           {/* TAB 1: MI BOLSA DE COMPRAS */}
           {activeTab === 'cart' && (
             <>
-              {/* Volume Discount Alert Banner */}
-              {settings.volumeDiscountActive && cart.length > 0 && (
-                <div className={`py-2 px-4 text-xs font-mono flex items-center gap-2 border-b shrink-0 ${
-                  isVolumeDiscountApplied
-                    ? 'bg-emerald-950/60 text-emerald-300 border-emerald-800/80 font-bold'
-                    : 'bg-neutral-900 text-neutral-300 border-neutral-800 font-semibold'
-                }`}>
-                  <Sparkles className="w-3.5 h-3.5 shrink-0 text-white" />
-                  {isVolumeDiscountApplied ? (
-                    <span className="truncate">
-                      ¡Descuento activado! <strong>-{settings.volumeDiscountPercentage}% OFF</strong>
-                    </span>
-                  ) : (
-                    <span className="truncate">
-                      Sumá <strong>{itemsNeededForVolume} prenda{itemsNeededForVolume > 1 ? 's' : ''} más</strong> y obtené <strong>{settings.volumeDiscountPercentage}% OFF</strong>
-                    </span>
-                  )}
-                </div>
-              )}
-
               {/* Cart Items Scrollable List */}
               <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3">
                 {cart.length === 0 ? (
@@ -420,14 +394,20 @@ export const CartDrawer: React.FC = () => {
                       <span className="font-mono font-bold text-white">{formatPrice(cartSubtotal)}</span>
                     </div>
 
+                    {appliedCoupon && cartDiscount === 0 && (
+                      <div className="flex items-start gap-1.5 text-amber-300 text-[11px] font-medium">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-px" />
+                        <span>
+                          El cupón {appliedCoupon.code} no descuenta nada con las prendas de tu bolsa
+                          {appliedCoupon.targetCategory && appliedCoupon.targetCategory !== 'all' ? ' (es válido solo para una sección)' : ''}.
+                        </span>
+                      </div>
+                    )}
+
                     {cartDiscount > 0 && (
                       <div className="flex justify-between text-emerald-400 font-bold">
                         <span>
-                          {appliedCoupon 
-                            ? `Cupón (${appliedCoupon.code}):`
-                            : isVolumeDiscountApplied 
-                            ? `Descuento por volumen (${settings.volumeDiscountPercentage}%):` 
-                            : 'Descuento aplicado:'}
+                          Cupón ({appliedCoupon?.code}):
                         </span>
                         <span className="font-mono">-{formatPrice(cartDiscount)}</span>
                       </div>

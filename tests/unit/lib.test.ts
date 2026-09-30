@@ -1,21 +1,16 @@
 // Pruebas de las funciones puras de src/lib (informe.md: SEC-001, SEC-009, SEC-010, SEC-012).
 import { describe, expect, test } from 'vitest';
-import { calculateCartTotals, syncCartWithCatalog, MAX_ITEM_QUANTITY } from '../../src/lib/pricing';
+import { calculateCartTotals, syncCartWithCatalog, normalizeCouponCode, MAX_ITEM_QUANTITY } from '../../src/lib/pricing';
 import { isHttpUrl, isTrustedAvatarUrl, safeUrl } from '../../src/lib/external';
 import { slugify } from '../../src/lib/slug';
 import { MIN_PASSWORD_LENGTH } from '../../src/lib/constants';
-import { DEFAULT_SETTINGS } from '../../src/data/defaultSettings';
-import type { CartItem, Coupon, Product, StoreSettings } from '../../src/types';
+import type { CartItem, Coupon, Product } from '../../src/types';
 
 const product = (id: string, price: number, category = 'abrigos-blazers', inStock = true): Product => ({
   id, name: id, slug: id, description: '', price, category, images: [], sizes: ['M'], colors: [], inStock, createdAt: '2026-01-01',
 });
 const line = (p: Product, quantity = 1): CartItem => ({
   id: `${p.id}-M-Negro`, productId: p.id, product: p, selectedSize: 'M', selectedColor: { name: 'Negro', hex: '#000' }, quantity, price: p.price,
-});
-const settings = (over: Partial<StoreSettings> = {}): StoreSettings => ({
-  ...DEFAULT_SETTINGS,
-  volumeDiscountActive: false, priceDiscountActive: false, globalDiscountActive: false, ...over,
 });
 const coupon = (over: Partial<Coupon>): Coupon => ({
   id: 'c', code: 'X', discountPercentage: 0, usedCount: 0, isActive: true, targetCategory: 'all', ...over,
@@ -25,44 +20,37 @@ const blazer = product('p1', 50000);
 const vestido = product('p2', 30000, 'vestidos');
 
 describe('pricing · calculateCartTotals (debe coincidir con validate_order en supabase/hardening_seguridad.sql)', () => {
-  test('sin promociones no hay descuento', () => {
-    const t = calculateCartTotals([line(blazer), line(vestido)], settings(), null);
-    expect(t).toMatchObject({ count: 2, subtotal: 80000, discount: 0, total: 80000, isVolumeDiscountApplied: false });
-  });
-
-  test('descuento por volumen: 15 % desde 3 prendas', () => {
-    const s = settings({ volumeDiscountActive: true, volumeDiscountMinItems: 3, volumeDiscountPercentage: 15 });
-    expect(calculateCartTotals([line(blazer, 3)], s, null)).toMatchObject({ discount: 22500, total: 127500, isVolumeDiscountApplied: true });
-    expect(calculateCartTotals([line(blazer, 2)], s, null).discount).toBe(0);
-  });
-
-  test('descuento por monto mínimo y global', () => {
-    const porMonto = settings({ priceDiscountActive: true, priceDiscountMinAmount: 80000, priceDiscountPercentage: 10 });
-    expect(calculateCartTotals([line(blazer, 2)], porMonto, null).discount).toBe(10000);
-    expect(calculateCartTotals([line(blazer)], porMonto, null).discount).toBe(0);
-    const global = settings({ globalDiscountActive: true, globalDiscountPercentage: 5 });
-    expect(calculateCartTotals([line(blazer)], global, null).discount).toBe(2500);
+  test('sin cupón no hay descuento, por más prendas que lleve', () => {
+    expect(calculateCartTotals([line(blazer), line(vestido)], null)).toMatchObject({ count: 2, subtotal: 80000, discount: 0, total: 80000 });
+    expect(calculateCartTotals([line(blazer, 5)], null)).toMatchObject({ discount: 0, total: 250000 }); // ya no hay descuento por cantidad
   });
 
   test('cupón porcentual, fijo y por categoría', () => {
-    expect(calculateCartTotals([line(blazer)], settings(), coupon({ discountPercentage: 10 })).discount).toBe(5000);
-    expect(calculateCartTotals([line(blazer)], settings(), coupon({ fixedDiscount: 8000 })).discount).toBe(8000);
-    expect(calculateCartTotals([line(blazer)], settings(), coupon({ fixedDiscount: 999999 })).discount).toBe(50000); // nunca más que lo elegible
+    expect(calculateCartTotals([line(blazer)], coupon({ discountPercentage: 10 })).discount).toBe(5000);
+    expect(calculateCartTotals([line(blazer)], coupon({ fixedDiscount: 8000 })).discount).toBe(8000);
+    expect(calculateCartTotals([line(blazer)], coupon({ fixedDiscount: 999999 })).discount).toBe(50000); // nunca más que lo elegible
     const soloVestidos = coupon({ discountPercentage: 20, targetCategory: 'vestidos' });
-    expect(calculateCartTotals([line(vestido), line(blazer)], settings(), soloVestidos).discount).toBe(6000);
-    expect(calculateCartTotals([line(blazer)], settings(), soloVestidos).discount).toBe(0);
+    expect(calculateCartTotals([line(vestido), line(blazer)], soloVestidos).discount).toBe(6000);
+    expect(calculateCartTotals([line(blazer)], soloVestidos).discount).toBe(0);
   });
 
-  test('un solo descuento por compra: el cupón tiene prioridad sobre el volumen', () => {
-    const s = settings({ volumeDiscountActive: true, volumeDiscountMinItems: 3, volumeDiscountPercentage: 15 });
-    const t = calculateCartTotals([line(blazer, 3)], s, coupon({ discountPercentage: 10 }));
-    expect(t.discount).toBe(15000);
-    expect(t.isVolumeDiscountApplied).toBe(false);
+  test('con muchas prendas el cupón descuenta igual (no compite con nada automático)', () => {
+    const t = calculateCartTotals([line(blazer, 3)], coupon({ discountPercentage: 10 }));
+    expect(t).toMatchObject({ discount: 15000, total: 135000 });
   });
 
   test('un cupón inactivo no descuenta y el total nunca es negativo', () => {
-    expect(calculateCartTotals([line(blazer)], settings(), coupon({ discountPercentage: 10, isActive: false })).discount).toBe(0);
-    expect(calculateCartTotals([line(blazer)], settings(), coupon({ discountPercentage: 100 })).total).toBe(0);
+    expect(calculateCartTotals([line(blazer)], coupon({ discountPercentage: 10, isActive: false })).discount).toBe(0);
+    expect(calculateCartTotals([line(blazer)], coupon({ discountPercentage: 100 })).total).toBe(0);
+  });
+});
+
+describe('pricing · normalizeCouponCode (lo que escribe la clienta = lo que guarda la administradora)', () => {
+  test('mayúsculas, sin espacios en los bordes y guiones en lugar de espacios', () => {
+    expect(normalizeCouponCode('  aloha10 ')).toBe('ALOHA10');
+    expect(normalizeCouponCode('verano 10')).toBe('VERANO-10');
+    expect(normalizeCouponCode('verano   10')).toBe('VERANO-10');
+    expect(normalizeCouponCode('Verano-10')).toBe('VERANO-10');
   });
 });
 

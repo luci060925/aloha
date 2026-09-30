@@ -108,38 +108,19 @@ describe('SEC-001 · Pedidos: precios, cantidades, totales y descuentos se valid
     });
   });
 
-  test('REGRESIÓN: acepta el descuento por volumen (3 prendas, 15 %) y rechaza uno mayor', async () => {
-    await as(db, 'authenticated', IDS.ana, async q => {
-      const ok = await insertOrder(q, { userId: IDS.ana, items: [blazer(3)], subtotal: 150000, discount: 22500, coupon: 'VOLUMEN-15%' });
-      expect(ok.ok, !ok.ok ? ok.error : '').toBe(true);
-      const mal = await insertOrder(q, { userId: IDS.ana, items: [blazer(3)], subtotal: 150000, discount: 60000, coupon: 'VOLUMEN-15%' });
-      expect(mal.ok).toBe(false);
-    });
-  });
-
-  test('el descuento por volumen no se puede usar con menos prendas', async () => {
-    await as(db, 'authenticated', IDS.ana, async q => {
-      const r = await insertOrder(q, { userId: IDS.ana, items: [blazer(2)], subtotal: 100000, discount: 15000, coupon: 'VOLUMEN-15%' });
-      expect(r.ok).toBe(false);
-    });
-  });
-
-  test('descuento por monto y global: se aceptan solo si están activos', async () => {
-    await db.exec(`update public.store_settings set price_discount_active = true, price_discount_min_amount = 80000,
-                   price_discount_percentage = 10, volume_discount_active = false where id = 1`);
-    await as(db, 'authenticated', IDS.ana, async q => {
-      const ok = await insertOrder(q, { userId: IDS.ana, items: [blazer(2)], subtotal: 100000, discount: 10000 });
-      expect(ok.ok, !ok.ok ? ok.error : '').toBe(true);
-      const poco = await insertOrder(q, { userId: IDS.ana, items: [blazer()], subtotal: 50000, discount: 5000 });
-      expect(poco.ok).toBe(false); // no llega al mínimo
-    });
-    await db.exec(`update public.store_settings set price_discount_active = false, volume_discount_active = true,
+  test('no hay descuentos automáticos: ni por cantidad, ni por monto, ni global (aunque estén activados en la base)', async () => {
+    await db.exec(`update public.store_settings set volume_discount_active = true, volume_discount_min_items = 3, volume_discount_percentage = 15,
+                   price_discount_active = true, price_discount_min_amount = 80000, price_discount_percentage = 10,
                    global_discount_active = true, global_discount_percentage = 5 where id = 1`);
     await as(db, 'authenticated', IDS.ana, async q => {
-      const ok = await insertOrder(q, { userId: IDS.ana, items: [blazer()], subtotal: 50000, discount: 2500 });
-      expect(ok.ok, !ok.ok ? ok.error : '').toBe(true);
+      const volumen = await insertOrder(q, { userId: IDS.ana, items: [blazer(3)], subtotal: 150000, discount: 22500, coupon: 'VOLUMEN-15%' });
+      expect(volumen.ok).toBe(false); // la etiqueta VOLUMEN ya no existe
+      const sinEtiqueta = await insertOrder(q, { userId: IDS.ana, items: [blazer(3)], subtotal: 150000, discount: 22500 });
+      expect(sinEtiqueta.ok).toBe(false);
+      const global = await insertOrder(q, { userId: IDS.ana, items: [blazer()], subtotal: 50000, discount: 2500 });
+      expect(global.ok).toBe(false);
     });
-    await db.exec(`update public.store_settings set global_discount_active = false, volume_discount_active = true where id = 1`);
+    await db.exec(`update public.store_settings set volume_discount_active = false, price_discount_active = false, global_discount_active = false where id = 1`);
   });
 });
 
@@ -171,18 +152,48 @@ describe('SEC-002 · Cupones: se validan al usarlos y no se pueden agotar sin ap
     });
   });
 
+  test('una clienta usa cada cupón una sola vez, y un pedido cancelado lo libera', async () => {
+    await as(db, 'authenticated', IDS.ana, async q => {
+      const primero = await insertOrder(q, { userId: IDS.ana, items: [blazer()], subtotal: 50000, discount: 5000, coupon: 'ALOHA10', id: 'ORD-UNAVEZ1' });
+      expect(primero.ok, !primero.ok ? primero.error : '').toBe(true);
+      const segundo = await insertOrder(q, { userId: IDS.ana, items: [blazer()], subtotal: 50000, discount: 5000, coupon: 'aloha10' });
+      expect(segundo.ok).toBe(false);
+      expect(!segundo.ok && segundo.error).toMatch(/solo uso|ya usaste/i);
+      // otro cupón sí puede usarlo
+      const otro = await insertOrder(q, { userId: IDS.ana, items: [vestido()], subtotal: 30000, discount: 6000, coupon: 'VESTIDOS20' });
+      expect(otro.ok, !otro.ok ? otro.error : '').toBe(true);
+      // si el primer pedido se cancela, el cupón queda libre otra vez
+      await db.exec('reset role');
+      await db.exec(`update public.orders set status = 'cancelled' where id = 'ORD-UNAVEZ1'`);
+      await db.exec('set local role authenticated');
+      const tercero = await insertOrder(q, { userId: IDS.ana, items: [blazer()], subtotal: 50000, discount: 5000, coupon: 'ALOHA10' });
+      expect(tercero.ok, !tercero.ok ? tercero.error : '').toBe(true);
+    });
+  });
+
+  test('un pedido con cupón pero sin descuento real no gasta el cupón ni lo bloquea', async () => {
+    await as(db, 'authenticated', IDS.ana, async q => {
+      // El blazer no es de vestidos: el cupón no descuenta nada, pero el pedido es válido
+      const sinDescuento = await insertOrder(q, { userId: IDS.ana, items: [blazer()], subtotal: 50000, discount: 0, coupon: 'VESTIDOS20' });
+      expect(sinDescuento.ok, !sinDescuento.ok ? sinDescuento.error : '').toBe(true);
+      const conDescuento = await insertOrder(q, { userId: IDS.ana, items: [vestido()], subtotal: 30000, discount: 6000, coupon: 'VESTIDOS20' });
+      expect(conDescuento.ok, !conDescuento.ok ? conDescuento.error : '').toBe(true);
+    });
+  });
+
   test('el cupo se respeta: con 2 usos el tercer pedido es rechazado (no se puede agotar de más)', async () => {
     await db.exec('begin');
     await db.exec(`set local role authenticated`);
-    await db.query(`select set_config('request.jwt.claims', $1, true)`, [JSON.stringify({ sub: IDS.eva })]);
     const resultados: boolean[] = [];
-    for (let i = 0; i < 5; i++) {
+    // Tres clientas distintas (cada una puede usarlo una vez) contra un cupón con cupo de 2
+    for (const [i, uid] of [IDS.ana, IDS.eva, IDS.admin].entries()) {
+      await db.query(`select set_config('request.jwt.claims', $1, true)`, [JSON.stringify({ sub: uid })]);
       await db.exec('savepoint s');
       try {
         await db.query(
           `insert into public.orders(id,user_id,customer_name,items,subtotal,discount_amount,coupon_code,total,status)
            values ($1,$2,'X',$3::jsonb,50000,5000,'ALOHA10',45000,'whatsapp_sent')`,
-          [`ORD-CUPO${i}`, IDS.eva, JSON.stringify([blazer()])]
+          [`ORD-CUPO${i}`, uid, JSON.stringify([blazer()])]
         );
         await db.exec('release s');
         resultados.push(true);

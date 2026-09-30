@@ -28,7 +28,7 @@ Ejecutar en **SQL Editor**, en este orden. Todos son re-ejecutables (no duplican
 | `subcategories` | Nombre, `slug`, `category_id` | Se borran en cascada con su categoría |
 | `orders` | Pedido: cliente, teléfono, ubicación, `items` (JSON), subtotal, descuento, cupón, total, `status`, mensaje enviado | `id` es texto tipo `ORD-…`; `user_id` → `profiles` |
 | `coupons` | Código único, % o monto fijo, `max_uses`, `used_count`, categoría destino, `is_active`, `expires_at` | |
-| `store_settings` | **Una sola fila** (`id = 1`): WhatsApp, dirección, horarios, descuentos automáticos, marquesina, redes, textos y foto de portada, foto del showroom | |
+| `store_settings` | **Una sola fila** (`id = 1`): WhatsApp, dirección, horarios, marquesina, redes, textos y foto de portada, foto del showroom | |
 
 Estados de un pedido (`orders.status`): `whatsapp_sent` → `contacted` → `confirmed` → `delivered` (o `cancelled`).
 
@@ -39,7 +39,7 @@ Estados de un pedido (`orders.status`): `whatsapp_sent` → `contacted` → `con
 | `is_admin()` | Función (`SECURITY DEFINER`) | Indica si la cuenta actual es administradora. Evita la recursión al usarla dentro de las políticas de `profiles` |
 | `get_coupon(código)` | Función (`SECURITY DEFINER`) | Valida **un** cupón: activo, no vencido y con cupo. Devuelve sus datos sin permitir listar los demás |
 | `count_coupon_use()` | Disparador en `orders` (después de insertar) | Suma 1 a `used_count` del cupón usado, solo si el pedido realmente descuenta |
-| `validate_order()` | Disparador en `orders` (antes de insertar) | Valida el pedido con los datos reales de la base: prendas existentes y en stock, precio vigente, cantidades 1–50, subtotal, total y descuento máximo legítimo (cupón, volumen, monto o global); bloquea la fila del cupón para respetar el cupo; máximo 10 pedidos por hora por cuenta |
+| `validate_order()` | Disparador en `orders` (antes de insertar) | Valida el pedido con los datos reales de la base: prendas existentes y en stock, precio vigente, cantidades 1–50, subtotal, total y descuento máximo legítimo (solo cupón: real, activo, vigente, con cupo y no usado antes por la clienta); bloquea la fila del cupón para respetar el cupo; máximo 10 pedidos por hora por cuenta |
 | `protect_profile_columns()` | Disparador en `profiles` | El email sale siempre de la cuenta de acceso, `id` y `created_at` no cambian y `is_admin` solo lo cambia una administradora o el panel de Supabase |
 
 ## Almacenamiento de fotos

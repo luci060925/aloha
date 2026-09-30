@@ -5,7 +5,7 @@ import { DEFAULT_SETTINGS } from '../data/defaultSettings';
 import { supabase, isSupabaseConfigured, openedFromRecoveryLink, openedFromExpiredLink } from '../lib/supabase';
 import { deleteCatalogImages } from '../lib/images';
 import { slugify } from '../lib/slug';
-import { calculateCartTotals, syncCartWithCatalog, MAX_ITEM_QUANTITY } from '../lib/pricing';
+import { calculateCartTotals, syncCartWithCatalog, normalizeCouponCode, MAX_ITEM_QUANTITY } from '../lib/pricing';
 import { MIN_PASSWORD_LENGTH } from '../lib/constants';
 import type { SupabaseClient, User } from '@supabase/supabase-js';
 import type {
@@ -63,7 +63,6 @@ interface StoreContextType {
   cartCount: number;
   cartSubtotal: number;
   cartDiscount: number;
-  isVolumeDiscountApplied: boolean;
   cartTotal: number;
   appliedCoupon: Coupon | null;
   applyCoupon: (code: string) => Promise<{ success: boolean; message: string }>;
@@ -163,14 +162,6 @@ const SETTINGS_DB_KEYS: Record<keyof StoreSettings, string> = {
   city: 'city',
   province: 'province',
   openingHours: 'opening_hours',
-  globalDiscountPercentage: 'global_discount_percentage',
-  globalDiscountActive: 'global_discount_active',
-  volumeDiscountActive: 'volume_discount_active',
-  volumeDiscountMinItems: 'volume_discount_min_items',
-  volumeDiscountPercentage: 'volume_discount_percentage',
-  priceDiscountActive: 'price_discount_active',
-  priceDiscountMinAmount: 'price_discount_min_amount',
-  priceDiscountPercentage: 'price_discount_percentage',
   announcementText: 'announcement_text',
   instagramUrl: 'instagram_url',
   instagramHandle: 'instagram_handle',
@@ -729,14 +720,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  // Totales: un solo descuento por compra (ver src/lib/pricing.ts; la base valida con las mismas reglas)
+  // Totales: el único descuento es el de un cupón (ver src/lib/pricing.ts; la base valida con las mismas reglas)
   const {
     count: cartCount,
     subtotal: cartSubtotal,
     discount: cartDiscount,
     total: cartTotal,
-    isVolumeDiscountApplied,
-  } = calculateCartTotals(cart, settings, appliedCoupon);
+  } = calculateCartTotals(cart, appliedCoupon);
 
   // Cart actions
   const addToCart = (product: Product, size: string, color: { name: string; hex: string }, quantity = 1) => {
@@ -792,12 +782,17 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setAppliedCoupon(null);
   };
 
-  // Coupon handling with maxUses and targetCategory validation (no minPurchaseAmount required)
+  // Cupones: un solo cupón por compra y una sola vez por clienta. La base vuelve a validar todo al registrar el pedido.
   const applyCoupon = async (code: string): Promise<{ success: boolean; message: string }> => {
-    const cleanCode = code.trim().toUpperCase();
+    const cleanCode = normalizeCouponCode(code);
     let found: Coupon | undefined;
 
     if (isSupabaseConfigured && supabase) {
+      // La base solo responde a clientas con sesión iniciada: sin sesión se pide ingresar en lugar de fallar en silencio
+      if (!currentUser) {
+        setIsAuthModalOpen(true);
+        return { success: false, message: 'Iniciá sesión para usar tu cupón.' };
+      }
       // La base valida un solo código por vez (activo, vigente y con cupo): no se puede listar el resto
       const { data, error } = await supabase.rpc('get_coupon', { p_code: cleanCode });
       if (error) {
@@ -825,6 +820,28 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         success: false, 
         message: `El cupón ${found.code} alcanzó el cupo máximo de ${found.maxUses} personas/canjes.` 
       };
+    }
+
+    // Una sola vez por clienta (los pedidos cancelados liberan el cupón)
+    const alreadyUsed = async (): Promise<boolean> => {
+      if (!currentUser) return false;
+      const sameCode = (o: OrderRecord) =>
+        o.userId === currentUser.id && o.couponCode?.toUpperCase() === found.code.toUpperCase() && o.discountAmount > 0 && o.status !== 'cancelled';
+      if (isSupabaseConfigured && supabase) {
+        const { data } = await supabase
+          .from('orders')
+          .select('id')
+          .eq('user_id', currentUser.id)
+          .eq('coupon_code', found.code)
+          .gt('discount_amount', 0)
+          .neq('status', 'cancelled')
+          .limit(1);
+        return (data?.length ?? 0) > 0;
+      }
+      return orders.some(sameCode);
+    };
+    if (await alreadyUsed()) {
+      return { success: false, message: `Ya usaste el cupón ${found.code}: es de un solo uso por clienta.` };
     }
 
     // Check category targeting
@@ -912,7 +929,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       })),
       subtotal: cartSubtotal,
       discountAmount: cartDiscount,
-      couponCode: appliedCoupon?.code || (isVolumeDiscountApplied ? `VOLUMEN-${settings.volumeDiscountPercentage}%` : undefined),
+      couponCode: appliedCoupon && cartDiscount > 0 ? appliedCoupon.code : undefined,
       total: cartTotal,
       status: 'whatsapp_sent',
       whatsappMessage,
@@ -1514,7 +1531,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         cartCount,
         cartSubtotal,
         cartDiscount,
-        isVolumeDiscountApplied,
         cartTotal,
         appliedCoupon,
         applyCoupon,

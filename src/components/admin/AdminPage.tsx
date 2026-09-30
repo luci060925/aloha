@@ -5,6 +5,7 @@ import type { StoreSettings, OrderRecord } from '../../types';
 import { BrandLogo } from '../common/BrandLogo';
 import { fileToDataUrl, uploadCatalogImage } from '../../lib/images';
 import { slugify } from '../../lib/slug';
+import { normalizeCouponCode } from '../../lib/pricing';
 import { isHttpUrl, isTrustedAvatarUrl } from '../../lib/external';
 import {
   Users, 
@@ -22,7 +23,6 @@ import {
   PhoneCall,
   Menu,
   Percent,
-  Package,
   ExternalLink,
   MapPin,
   Clock,
@@ -65,11 +65,8 @@ export const AdminPage: React.FC = () => {
   const [newSubName, setNewSubName] = useState('');
 
   // Unified 4-Type Discount Form State
-  const [discountType, setDiscountType] = useState<'volume' | 'price' | 'global' | 'category'>('volume');
   const [discountMode, setDiscountMode] = useState<'percentage' | 'fixed'>('percentage');
   const [discountValue, setDiscountValue] = useState<number>(15);
-  const [discountConditionItems, setDiscountConditionItems] = useState<number>(3);
-  const [discountConditionPrice, setDiscountConditionPrice] = useState<number>(80000);
   const [discountConditionCategory, setDiscountConditionCategory] = useState<string>('all');
   const [discountMaxUsers, setDiscountMaxUsers] = useState<string>('');
   const [discountCode, setDiscountCode] = useState<string>('');
@@ -193,76 +190,39 @@ export const AdminPage: React.FC = () => {
     alert(`Subcategoría agregada con éxito.`);
   };
 
-  const handleQuickTogglePromo = (type: 'volume' | 'price' | 'global') => {
-    const updated = { ...settingsForm };
-    if (type === 'volume') updated.volumeDiscountActive = !updated.volumeDiscountActive;
-    if (type === 'price') updated.priceDiscountActive = !updated.priceDiscountActive;
-    if (type === 'global') updated.globalDiscountActive = !updated.globalDiscountActive;
-    
-    setSettingsForm(updated);
-    updateSettings(updated);
-  };
-
-  const handleCreateOrApplyDiscount = async (e: React.FormEvent) => {
+  // Crea un cupón. Todo descuento es un cupón que la clienta escribe: un solo cupón por compra y un solo uso por clienta.
+  const handleCreateDiscount = async (e: React.FormEvent) => {
     e.preventDefault();
     setDiscountFormError('');
-    const maxUses = discountMaxUsers && Number(discountMaxUsers) > 0 ? Number(discountMaxUsers) : undefined;
     const isFixed = discountMode === 'fixed';
-    const isPerc = discountMode === 'percentage';
-    const val = Number(discountValue) || 10;
+    const val = Number(discountValue);
+    const maxUses = discountMaxUsers && Number(discountMaxUsers) > 0 ? Math.floor(Number(discountMaxUsers)) : undefined;
 
-    // Los descuentos automáticos (cantidad, monto, global) no admiten límite de personas ni valor fijo:
-    // en ese caso la condición se perdería y el cupón valdría para cualquier compra.
-    if (discountType !== 'category' && (maxUses || isFixed)) {
-      setDiscountFormError('Los descuentos por cantidad, por monto o globales solo admiten porcentaje y sin límite de personas. Para un cupón con límite o de valor fijo elegí "Por Categoría Específica" y "Todas las categorías".');
+    if (!Number.isFinite(val) || val < 1 || (!isFixed && val > 90)) {
+      setDiscountFormError(isFixed ? 'Ingresá un monto mayor a cero.' : 'El porcentaje tiene que estar entre 1 y 90.');
+      return;
+    }
+    const code = normalizeCouponCode(discountCode);
+    if (!/^[A-Z0-9_-]{3,30}$/.test(code)) {
+      setDiscountFormError('El código tiene que tener entre 3 y 30 caracteres: letras sin tilde, números o guiones (los espacios pasan a guión).');
+      return;
+    }
+    if (coupons.some(c => c.code.toUpperCase() === code)) {
+      setDiscountFormError(`Ya existe un cupón con el código ${code}.`);
       return;
     }
 
-    if (discountType === 'volume' && !maxUses && isPerc) {
-      const updated = {
-        ...settingsForm,
-        volumeDiscountActive: true,
-        volumeDiscountMinItems: Number(discountConditionItems) || 3,
-        volumeDiscountPercentage: val,
-      };
-      setSettingsForm(updated);
-      updateSettings(updated);
-    } else if (discountType === 'price' && !maxUses && isPerc) {
-      const updated = {
-        ...settingsForm,
-        priceDiscountActive: true,
-        priceDiscountMinAmount: Number(discountConditionPrice) || 80000,
-        priceDiscountPercentage: val,
-      };
-      setSettingsForm(updated);
-      updateSettings(updated);
-    } else if (discountType === 'global' && !maxUses && isPerc) {
-      const updated = {
-        ...settingsForm,
-        globalDiscountActive: true,
-        globalDiscountPercentage: val,
-      };
-      setSettingsForm(updated);
-      updateSettings(updated);
-    } else {
-      // Create as trackable custom promo with category/volume/price target or capped uses
-      const defaultCode = discountType === 'category' 
-        ? `ALOHA-${(discountConditionCategory || 'CAT').toUpperCase()}-${val}${isPerc ? 'PCT' : 'OFF'}`
-        : `PROMO-${discountType.toUpperCase()}-${val}${isPerc ? 'PCT' : 'OFF'}`;
-      
-      const code = (discountCode.trim() || defaultCode).toUpperCase().replace(/\s+/g, '-');
-      const couponError = await addCoupon({
-        code,
-        discountPercentage: isPerc ? val : 0,
-        fixedDiscount: isFixed ? val : undefined,
-        maxUses,
-        targetCategory: discountType === 'category' ? discountConditionCategory : 'all',
-        isActive: true,
-      });
-      if (couponError) {
-        setDiscountFormError(couponError);
-        return;
-      }
+    const couponError = await addCoupon({
+      code,
+      discountPercentage: isFixed ? 0 : val,
+      fixedDiscount: isFixed ? val : undefined,
+      maxUses,
+      targetCategory: discountConditionCategory,
+      isActive: true,
+    });
+    if (couponError) {
+      setDiscountFormError(couponError);
+      return;
     }
 
     setDiscountFormSuccess(true);
@@ -302,11 +262,7 @@ export const AdminPage: React.FC = () => {
            o.customerPhone?.toLowerCase().includes(q);
   });
 
-  const activePromosCount = 
-    (settings.volumeDiscountActive ? 1 : 0) +
-    (settings.priceDiscountActive ? 1 : 0) +
-    (settings.globalDiscountActive ? 1 : 0) +
-    coupons.filter(c => c.isActive).length;
+  const activePromosCount = coupons.filter(c => c.isActive).length;
 
   const navItems: { id: typeof activeTab; label: string; icon: React.ElementType; badge: string | number | null }[] = [
     {
@@ -957,41 +913,37 @@ export const AdminPage: React.FC = () => {
           {activeTab === 'promotions' && (
             <div className="space-y-8 animate-fade-in">
               
-              {/* 1. CREADOR DINÁMICO DE DESCUENTOS CON DESPLEGABLE DE 4 TIPOS */}
+              {/* 1. CREADOR DE CUPONES */}
               <div className="bg-[#121212] border border-neutral-800 rounded-2xl shadow-xl p-6 sm:p-8 space-y-5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-neutral-800">
                   <div>
                     <h3 className="text-sm font-bold uppercase tracking-wider text-white font-mono flex items-center gap-2">
                       <Percent className="w-4.5 h-4.5 text-emerald-400" />
-                      <span>Configurar Nuevo Descuento</span>
+                      <span>Crear Cupón de Descuento</span>
                     </h3>
                     <p className="text-xs text-neutral-400 mt-0.5">
-                      Elegí el tipo de descuento, la modalidad (% o $) y la regla de activación para la tienda.
+                      Todos los descuentos son cupones que la clienta escribe en su bolsa. Una compra admite un solo cupón y cada clienta usa cada cupón una sola vez.
                     </p>
                   </div>
-
-                  <span className="text-[11px] font-mono px-3 py-1 bg-neutral-900 border border-neutral-750 text-neutral-300 rounded-full">
-                    Impacto en tiempo real
-                  </span>
                 </div>
 
-                <form onSubmit={handleCreateOrApplyDiscount} className="space-y-5">
+                <form onSubmit={handleCreateDiscount} className="space-y-5">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    
-                    {/* DESPLEGABLE INICIAL: 4 TIPOS DE DESCUENTO */}
+
+                    {/* ALCANCE: TODA LA TIENDA O UNA CATEGORÍA */}
                     <div className="space-y-1.5">
                       <label className="block text-xs uppercase tracking-wider font-bold text-neutral-300 font-mono">
-                        1. Tipo de Descuento
+                        1. Dónde vale
                       </label>
                       <select
-                        value={discountType}
-                        onChange={(e) => setDiscountType(e.target.value as typeof discountType)}
+                        value={discountConditionCategory}
+                        onChange={(e) => setDiscountConditionCategory(e.target.value)}
                         className="w-full px-3.5 py-2.5 text-xs bg-neutral-950 border border-neutral-700 rounded-xl text-white font-bold focus:outline-none focus:border-white transition-colors cursor-pointer"
                       >
-                        <option value="volume">📦 Por Cantidad de Prendas (Volumen)</option>
-                        <option value="price">💵 Por Monto / Precio de Compra</option>
-                        <option value="global">🌐 En Toda la Web (Descuento Global)</option>
-                        <option value="category">👗 Por Categoría Específica</option>
+                        <option value="all">🌐 Toda la tienda</option>
+                        {categories.filter(c => c.slug !== 'all').map(c => (
+                          <option key={c.id} value={c.slug}>👗 Solo {c.name}</option>
+                        ))}
                       </select>
                     </div>
 
@@ -1054,96 +1006,23 @@ export const AdminPage: React.FC = () => {
 
                   </div>
 
-                  {/* CAMPOS DINÁMICOS SEGÚN EL TIPO DE DESCUENTO */}
                   <div className="p-4 bg-neutral-900/60 border border-neutral-800 rounded-xl space-y-4">
-                    <span className="text-[11px] uppercase tracking-wider font-mono font-bold text-neutral-400 block">
-                      Condición de Aplicación:
-                    </span>
-
-                    {/* Caso 1: Por Cantidad de Prendas */}
-                    {discountType === 'volume' && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                          <label className="block text-xs font-bold text-neutral-300">
-                            Cantidad mínima de prendas en el carrito:
-                          </label>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="number"
-                              min="2"
-                              max="50"
-                              value={discountConditionItems}
-                              onChange={(e) => setDiscountConditionItems(Number(e.target.value))}
-                              className="w-24 px-3 py-2 text-xs bg-neutral-950 border border-neutral-700 rounded-xl font-mono text-white font-bold focus:outline-none focus:border-white"
-                            />
-                            <span className="text-xs text-neutral-400">prendas o más</span>
-                          </div>
-                        </div>
-                        <div className="text-xs text-neutral-400 flex items-center">
-                          💡 Se activará automáticamente cuando la clienta sume {discountConditionItems} prendas a su bolsa.
-                        </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-bold text-neutral-300 font-mono">
+                          4. Código que escribe la clienta:
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          maxLength={30}
+                          placeholder="Ej: ALOHA15, VERANO-10..."
+                          value={discountCode}
+                          onChange={(e) => setDiscountCode(e.target.value)}
+                          className="w-full px-3.5 py-2 text-xs bg-neutral-950 border border-neutral-700 rounded-xl font-mono uppercase text-white font-bold focus:outline-none focus:border-white"
+                        />
                       </div>
-                    )}
 
-                    {/* Caso 2: Por Monto / Precio de Compra */}
-                    {discountType === 'price' && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                          <label className="block text-xs font-bold text-neutral-300">
-                            Monto mínimo de compra requerido ($):
-                          </label>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="number"
-                              step="5000"
-                              min="10000"
-                              value={discountConditionPrice}
-                              onChange={(e) => setDiscountConditionPrice(Number(e.target.value))}
-                              className="w-36 px-3 py-2 text-xs bg-neutral-950 border border-neutral-700 rounded-xl font-mono text-white font-bold focus:outline-none focus:border-white"
-                            />
-                            <span className="text-xs text-neutral-400">$ ARS o más</span>
-                          </div>
-                        </div>
-                        <div className="text-xs text-neutral-400 flex items-center">
-                          💡 Se aplicará en carritos que superen {formatPrice(discountConditionPrice)}.
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Caso 3: En Toda la Web */}
-                    {discountType === 'global' && (
-                      <div className="text-xs text-neutral-300 flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-purple-400 shrink-0" />
-                        <span>Este descuento aplicará de manera global e inmediata en <strong>todos los pedidos de la tienda online</strong>.</span>
-                      </div>
-                    )}
-
-                    {/* Caso 4: Por Categoría Específica */}
-                    {discountType === 'category' && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                          <label className="block text-xs font-bold text-neutral-300">
-                            Seleccionar Categoría Aplicable:
-                          </label>
-                          <select
-                            value={discountConditionCategory}
-                            onChange={(e) => setDiscountConditionCategory(e.target.value)}
-                            className="w-full px-3.5 py-2 text-xs bg-neutral-950 border border-neutral-700 rounded-xl font-bold text-white focus:outline-none focus:border-white cursor-pointer"
-                          >
-                            <option value="all">🌐 Todas las categorías</option>
-                            {categories.filter(c => c.slug !== 'all').map(c => (
-                              <option key={c.id} value={c.slug}>👗 Solo {c.name}</option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="text-xs text-neutral-400 flex items-center">
-                          💡 El descuento se aplicará únicamente a los ítems que pertenezcan a la categoría elegida.
-                        </div>
-                      </div>
-                    )}
-
-                    {/* OPCIONALES: LÍMITE DE PERSONAS Y CÓDIGO */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-neutral-800">
                       <div className="space-y-1.5">
                         <label className="block text-xs font-bold text-neutral-300 font-mono">
                           Límite de Personas (Opcional):
@@ -1157,20 +1036,13 @@ export const AdminPage: React.FC = () => {
                           className="w-full px-3.5 py-2 text-xs bg-neutral-950 border border-neutral-700 rounded-xl font-mono text-white focus:outline-none focus:border-white"
                         />
                       </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block text-xs font-bold text-neutral-300 font-mono">
-                          Código / Nombre de Referencia (Opcional):
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="Ej: PROMO-CANTIDAD, ALOHA15..."
-                          value={discountCode}
-                          onChange={(e) => setDiscountCode(e.target.value)}
-                          className="w-full px-3.5 py-2 text-xs bg-neutral-950 border border-neutral-700 rounded-xl font-mono uppercase text-white font-bold focus:outline-none focus:border-white"
-                        />
-                      </div>
                     </div>
+                    <p className="text-xs text-neutral-400">
+                      💡 {discountConditionCategory === 'all'
+                        ? 'El descuento se calcula sobre toda la bolsa.'
+                        : 'El descuento se calcula únicamente sobre las prendas de la sección elegida.'}
+                      {' '}Cada persona puede usar el cupón una sola vez, por eso el límite cuenta personas.
+                    </p>
                   </div>
 
                   {/* Submit Button & Feedback */}
@@ -1178,7 +1050,7 @@ export const AdminPage: React.FC = () => {
                     {discountFormSuccess ? (
                       <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs font-mono">
                         <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                        <span>¡Descuento guardado y activado en la tienda!</span>
+                        <span>¡Cupón guardado y activado en la tienda!</span>
                       </div>
                     ) : discountFormError ? (
                       <div className="text-red-400 font-bold text-xs max-w-xl">{discountFormError}</div>
@@ -1189,7 +1061,7 @@ export const AdminPage: React.FC = () => {
                       className="w-full sm:w-auto px-8 py-3 bg-white hover:bg-neutral-200 text-black text-xs uppercase tracking-[0.2em] font-bold rounded-xl transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
                     >
                       <Plus className="w-4 h-4 text-black" />
-                      <span>Guardar / Activar Descuento</span>
+                      <span>Crear Cupón</span>
                     </button>
                   </div>
                 </form>
@@ -1201,10 +1073,10 @@ export const AdminPage: React.FC = () => {
                   <div>
                     <h3 className="text-sm font-bold uppercase tracking-wider text-white font-mono flex items-center gap-2">
                       <Tag className="w-4.5 h-4.5 text-emerald-400" />
-                      <span>Tabla de Descuentos y Promociones Activas</span>
+                      <span>Cupones Creados</span>
                     </h3>
                     <p className="text-xs text-neutral-400 mt-0.5">
-                      Controlá el estado en vivo de cada beneficio disponible para las clientas.
+                      Pausá, reactivá o eliminá cada cupón. Los cambios se ven al instante en la tienda.
                     </p>
                   </div>
 
@@ -1218,132 +1090,23 @@ export const AdminPage: React.FC = () => {
                   <table className="w-full text-xs text-left">
                     <thead className="bg-[#181818] text-neutral-300 font-mono uppercase tracking-wider text-[11px] border-b border-neutral-800">
                       <tr>
-                        <th className="py-3.5 px-4">Tipo de Descuento</th>
+                        <th className="py-3.5 px-4">Código</th>
                         <th className="py-3.5 px-4">Beneficio</th>
-                        <th className="py-3.5 px-4">Condición / Alcance</th>
-                        <th className="py-3.5 px-4">Límite de Personas</th>
+                        <th className="py-3.5 px-4">Alcance</th>
+                        <th className="py-3.5 px-4">Personas que lo usaron</th>
                         <th className="py-3.5 px-4 text-center">Estado</th>
-                        <th className="py-3.5 px-4 text-right">Interruptor (On / Off)</th>
+                        <th className="py-3.5 px-4 text-right">Acciones</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-neutral-800/80">
                       
-                      {/* 1. Por Cantidad de Prendas (Volumen) */}
-                      <tr className="hover:bg-neutral-900/50 transition-colors">
-                        <td className="py-3.5 px-4 font-bold text-white flex items-center gap-2">
-                          <Package className="w-4 h-4 text-sky-400" />
-                          <span>Por Cantidad de Prendas</span>
-                        </td>
-                        <td className="py-3.5 px-4 font-mono font-bold text-emerald-400 text-sm">
-                          {settingsForm.volumeDiscountPercentage || 15}% OFF
-                        </td>
-                        <td className="py-3.5 px-4 text-neutral-300 font-mono">
-                          Llevando <strong>{settingsForm.volumeDiscountMinItems || 3} o más prendas</strong>
-                        </td>
-                        <td className="py-3.5 px-4 font-mono text-neutral-400">
-                          Sin límite (Ilimitado)
-                        </td>
-                        <td className="py-3.5 px-4 text-center">
-                          <span className={`text-[10px] px-2.5 py-1 rounded-full font-mono uppercase font-bold border ${
-                            settingsForm.volumeDiscountActive
-                              ? 'bg-emerald-950 text-emerald-300 border-emerald-700'
-                              : 'bg-neutral-900 text-neutral-500 border-neutral-800'
-                          }`}>
-                            {settingsForm.volumeDiscountActive ? '🟢 Activo en Web' : '⚪ Pausado'}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4 text-right">
-                          <button
-                            type="button"
-                            onClick={() => handleQuickTogglePromo('volume')}
-                            className={`px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer border ${
-                              settingsForm.volumeDiscountActive
-                                ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-500'
-                                : 'bg-neutral-800 hover:bg-neutral-700 text-neutral-400 border-neutral-700'
-                            }`}
-                          >
-                            {settingsForm.volumeDiscountActive ? 'Pausar' : 'Activar'}
-                          </button>
-                        </td>
-                      </tr>
-
-                      {/* 2. Por Monto / Precio de Compra */}
-                      <tr className="hover:bg-neutral-900/50 transition-colors">
-                        <td className="py-3.5 px-4 font-bold text-white flex items-center gap-2">
-                          <DollarSign className="w-4 h-4 text-amber-400" />
-                          <span>Por Monto de Compra</span>
-                        </td>
-                        <td className="py-3.5 px-4 font-mono font-bold text-emerald-400 text-sm">
-                          {settingsForm.priceDiscountPercentage || 10}% OFF
-                        </td>
-                        <td className="py-3.5 px-4 text-neutral-300 font-mono">
-                          Compras superiores a <strong>{formatPrice(settingsForm.priceDiscountMinAmount || 80000)}</strong>
-                        </td>
-                        <td className="py-3.5 px-4 font-mono text-neutral-400">
-                          Sin límite (Ilimitado)
-                        </td>
-                        <td className="py-3.5 px-4 text-center">
-                          <span className={`text-[10px] px-2.5 py-1 rounded-full font-mono uppercase font-bold border ${
-                            settingsForm.priceDiscountActive
-                              ? 'bg-emerald-950 text-emerald-300 border-emerald-700'
-                              : 'bg-neutral-900 text-neutral-500 border-neutral-800'
-                          }`}>
-                            {settingsForm.priceDiscountActive ? '🟢 Activo en Web' : '⚪ Pausado'}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4 text-right">
-                          <button
-                            type="button"
-                            onClick={() => handleQuickTogglePromo('price')}
-                            className={`px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer border ${
-                              settingsForm.priceDiscountActive
-                                ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-500'
-                                : 'bg-neutral-800 hover:bg-neutral-700 text-neutral-400 border-neutral-700'
-                            }`}
-                          >
-                            {settingsForm.priceDiscountActive ? 'Pausar' : 'Activar'}
-                          </button>
-                        </td>
-                      </tr>
-
-                      {/* 3. Descuento General de la Tienda */}
-                      <tr className="hover:bg-neutral-900/50 transition-colors">
-                        <td className="py-3.5 px-4 font-bold text-white flex items-center gap-2">
-                          <Percent className="w-4 h-4 text-purple-400" />
-                          <span>En Toda la Web (Global)</span>
-                        </td>
-                        <td className="py-3.5 px-4 font-mono font-bold text-emerald-400 text-sm">
-                          {settingsForm.globalDiscountPercentage || 10}% OFF
-                        </td>
-                        <td className="py-3.5 px-4 text-neutral-300 font-mono">
-                          Todos los carritos automáticamente
-                        </td>
-                        <td className="py-3.5 px-4 font-mono text-neutral-400">
-                          Sin límite (Ilimitado)
-                        </td>
-                        <td className="py-3.5 px-4 text-center">
-                          <span className={`text-[10px] px-2.5 py-1 rounded-full font-mono uppercase font-bold border ${
-                            settingsForm.globalDiscountActive
-                              ? 'bg-emerald-950 text-emerald-300 border-emerald-700'
-                              : 'bg-neutral-900 text-neutral-500 border-neutral-800'
-                          }`}>
-                            {settingsForm.globalDiscountActive ? '🟢 Activo en Web' : '⚪ Pausado'}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4 text-right">
-                          <button
-                            type="button"
-                            onClick={() => handleQuickTogglePromo('global')}
-                            className={`px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer border ${
-                              settingsForm.globalDiscountActive
-                                ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-500'
-                                : 'bg-neutral-800 hover:bg-neutral-700 text-neutral-400 border-neutral-700'
-                            }`}
-                          >
-                            {settingsForm.globalDiscountActive ? 'Pausar' : 'Activar'}
-                          </button>
-                        </td>
-                      </tr>
+                      {coupons.length === 0 && (
+                        <tr>
+                          <td colSpan={6} className="py-8 px-4 text-center text-neutral-500 font-mono">
+                            Todavía no creaste ningún cupón.
+                          </td>
+                        </tr>
+                      )}
 
                       {/* 4. Descuentos por Categoría & Promos Creadas */}
                       {coupons.map((c) => {
@@ -1368,7 +1131,7 @@ export const AdminPage: React.FC = () => {
                               </span>
                             </td>
                             <td className="py-3.5 px-4 font-mono text-neutral-300">
-                              {c.maxUses ? `${c.usedCount || 0} / ${c.maxUses} personas` : 'Sin límite (Ilimitado)'}
+                              {c.maxUses ? `${c.usedCount || 0} de ${c.maxUses}` : `${c.usedCount || 0} (sin límite)`}
                             </td>
                             <td className="py-3.5 px-4 text-center">
                               <span className={`text-[10px] px-2.5 py-1 rounded-full font-mono uppercase font-bold border ${

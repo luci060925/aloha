@@ -103,16 +103,6 @@ export interface StoreSettings {
   city: string;
   province: string;
   openingHours: string;
-  globalDiscountPercentage: number;
-  globalDiscountActive: boolean;
-  // Volume Discount (by items count): e.g. 15% OFF if buying 3 or more items
-  volumeDiscountActive: boolean;
-  volumeDiscountMinItems: number;
-  volumeDiscountPercentage: number;
-  // Price Discount (by total amount): e.g. 10% OFF if order > $50.000
-  priceDiscountActive?: boolean;
-  priceDiscountMinAmount?: number;
-  priceDiscountPercentage?: number;
   announcementText: string;
   instagramUrl: string;
   instagramHandle: string;

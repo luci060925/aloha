@@ -58,20 +58,21 @@ Panel → **Pedidos WhatsApp**. Muestra los pedidos de **todas** las clientas, c
 
 ## Descuentos y cupones
 
-Panel → **Descuentos & Promociones**. En cada compra se aplica **un solo descuento**, en este orden de prioridad: cupón → cantidad de prendas → monto de compra → descuento global.
+Panel → **Descuentos & Promociones**. Todos los descuentos son **cupones**: la clienta escribe el código en su bolsa (tiene que haber iniciado sesión). No existen descuentos automáticos.
 
-**Descuentos automáticos** (se activan y pausan con el botón de la tabla):
-- **Por cantidad de prendas:** ej. 15 % llevando 3 o más.
-- **Por monto de compra:** ej. 10 % si supera $80.000.
-- **Global:** un porcentaje para toda la tienda.
+**Reglas**
+- Una compra admite **un solo cupón** (no se acumulan).
+- Cada clienta puede usar cada cupón **una sola vez**. Si cancelás un pedido, el cupón le queda libre otra vez.
 
-**Cupones** (los usa la clienta ingresando el código en la bolsa):
-1. En el formulario elegí el tipo **Por Categoría Específica** (con "Todas las categorías" para toda la tienda).
-2. Elegí **Porcentaje** o **Valor fijo**, el valor, un **límite de personas** (opcional) y un **código** (ej. `VERANO10`).
-3. **Guardar / Activar Descuento.**
-4. En la tabla ves cuántos usos lleva (`3 / 50 personas`). Al llegar al límite pasa a **Agotado**. Con **Pausar** lo desactivás sin borrarlo.
+**Crear un cupón**
+1. **Dónde vale:** *Toda la tienda* o *Solo* una categoría (el descuento se calcula solo sobre las prendas de esa categoría).
+2. **Modalidad:** *Porcentaje* (entre 1 y 90) o *Valor fijo* en pesos (nunca descuenta más que el total elegible).
+3. **Valor** a descontar.
+4. **Código** que escribe la clienta (ej. `VERANO10`): letras sin tilde, números o guiones; los espacios pasan a guión. No se pueden repetir códigos.
+5. **Límite de personas** (opcional): cuántas clientas distintas pueden usarlo.
+6. **Crear Cupón.**
 
-> Los descuentos por cantidad, monto o globales no admiten límite de personas ni valor fijo; el panel avisa si lo intentás.
+En la tabla ves cuántas personas lo usaron (`3 de 50`). Al llegar al límite pasa a **Agotado**. Con **Pausar** lo desactivás sin borrarlo y con el tacho lo eliminás.
 
 ## Ajustes de tienda y portada
 

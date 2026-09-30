@@ -106,7 +106,6 @@ as $$
 declare
   it jsonb;
   v_product record;
-  v_settings record;
   v_coupon record;
   v_has_coupon boolean := false;
   v_c_target text;
@@ -114,7 +113,6 @@ declare
   v_c_fixed numeric;
   v_qty numeric;
   v_price numeric;
-  v_units integer := 0;
   v_subtotal numeric := 0;
   v_eligible numeric := 0;
   v_discount numeric;
@@ -140,14 +138,25 @@ begin
   end if;
 
   -- SEC-002: cupón real, activo, vigente y con cupo; la fila queda bloqueada hasta el final de la transacción
-  -- para que dos pedidos simultáneos no gasten el último cupo a la vez. "VOLUMEN-x%" es solo una etiqueta.
-  if v_code is not null and v_code !~* '^VOLUMEN-' then
+  -- para que dos pedidos simultáneos no gasten el último cupo a la vez ni una clienta use el mismo cupón dos veces.
+  -- Los cupones son el único descuento posible (no hay descuentos automáticos).
+  if v_code is not null then
     select * into v_coupon from public.coupons c where upper(c.code) = upper(v_code) for update;
     if not found
        or not coalesce(v_coupon.is_active, false)
        or (v_coupon.expires_at is not null and v_coupon.expires_at <= now())
        or (v_coupon.max_uses is not null and coalesce(v_coupon.used_count, 0) >= v_coupon.max_uses) then
       raise exception 'El cupón no es válido, venció o se agotó.';
+    end if;
+    -- Una sola vez por clienta: los pedidos cancelados liberan el cupón
+    if exists (
+      select 1 from public.orders o
+      where o.user_id = new.user_id
+        and upper(o.coupon_code) = upper(v_code)
+        and coalesce(o.discount_amount, 0) > 0
+        and coalesce(o.status, '') <> 'cancelled'
+    ) then
+      raise exception 'Ya usaste este cupón: es de un solo uso por clienta.';
     end if;
     v_has_coupon := true;
     v_c_target := coalesce(v_coupon.target_category, 'all');
@@ -180,7 +189,6 @@ begin
     end if;
 
     v_subtotal := v_subtotal + v_product.price * v_qty;
-    v_units := v_units + v_qty::integer;
     if v_has_coupon and (v_c_target = 'all' or v_product.category = v_c_target) then
       v_eligible := v_eligible + v_product.price * v_qty;
     end if;
@@ -205,24 +213,10 @@ begin
     else
       v_max := least(v_c_fixed, v_eligible);
     end if;
-  else
-    select * into v_settings from public.store_settings where id = 1;
-    if v_settings.volume_discount_active and v_units >= v_settings.volume_discount_min_items
-       and coalesce(v_settings.volume_discount_percentage, 0) > 0 then
-      v_max := greatest(v_max, round(v_subtotal * v_settings.volume_discount_percentage / 100));
-    end if;
-    if v_settings.price_discount_active and coalesce(v_settings.price_discount_min_amount, 0) > 0
-       and v_subtotal >= v_settings.price_discount_min_amount
-       and coalesce(v_settings.price_discount_percentage, 0) > 0 then
-      v_max := greatest(v_max, round(v_subtotal * v_settings.price_discount_percentage / 100));
-    end if;
-    if v_settings.global_discount_active and coalesce(v_settings.global_discount_percentage, 0) > 0 then
-      v_max := greatest(v_max, round(v_subtotal * v_settings.global_discount_percentage / 100));
-    end if;
   end if;
 
   if v_discount > v_max + 1 then
-    raise exception 'El descuento del pedido no corresponde a ninguna promoción vigente.';
+    raise exception 'El descuento del pedido no corresponde a ningún cupón vigente.';
   end if;
 
   new.created_at := now();
