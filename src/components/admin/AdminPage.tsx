@@ -53,7 +53,26 @@ export const AdminPage: React.FC = () => {
     updateSettings,
   } = useStore();
 
-  const [activeTab, setActiveTab] = useState<'metrics' | 'orders' | 'categories' | 'promotions' | 'settings'>('settings');
+  // La sección abierta se recuerda en esta pestaña del navegador: al recargar la página se vuelve a la misma sección
+  type AdminTab = 'metrics' | 'orders' | 'categories' | 'promotions' | 'settings';
+  const ADMIN_TABS: AdminTab[] = ['metrics', 'orders', 'categories', 'promotions', 'settings'];
+  const ACTIVE_TAB_KEY = 'aloha_admin_tab';
+  const [activeTab, setActiveTabState] = useState<AdminTab>(() => {
+    try {
+      const saved = sessionStorage.getItem(ACTIVE_TAB_KEY);
+      return ADMIN_TABS.find(tab => tab === saved) ?? 'settings';
+    } catch {
+      return 'settings';
+    }
+  });
+  const setActiveTab = (tab: AdminTab) => {
+    setActiveTabState(tab);
+    try {
+      sessionStorage.setItem(ACTIVE_TAB_KEY, tab);
+    } catch {
+      // sin almacenamiento disponible (modo privado): simplemente no se recuerda
+    }
+  };
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // Category & Subcategory Form States
