@@ -320,7 +320,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return [];
   });
 
-  const [wishlist, setWishlist] = useState<string[]>(() => {
+  const [savedWishlist, setWishlist] = useState<string[]>(() => {
     const saved = localStorage.getItem(LOCAL_STORAGE_KEYS.WISHLIST);
     return saved ? JSON.parse(saved) : [];
   });
@@ -333,6 +333,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const cart = useMemo(
     () => (isSupabaseConfigured && catalogLoaded ? syncCartWithCatalog(storedCart, products) : storedCart),
     [storedCart, products, catalogLoaded]
+  );
+
+  // Favoritos: si una prenda se elimina del catálogo, desaparece también de los favoritos (y del contador del corazón).
+  // Cada clienta guarda los suyos en su navegador, por eso se limpian al cargar el catálogo y no al borrar la prenda.
+  const wishlist = useMemo(
+    () => (catalogLoaded ? savedWishlist.filter(id => products.some(p => p.id === id)) : savedWishlist),
+    [savedWishlist, products, catalogLoaded]
   );
 
   // Filter & Navigation states
