@@ -172,8 +172,6 @@ const SETTINGS_DB_KEYS: Record<keyof StoreSettings, string> = {
   heroSubtitle: 'hero_subtitle',
   heroImageUrl: 'hero_image_url',
   showroomImageUrl: 'showroom_image_url',
-  heroPrimaryBtnText: 'hero_primary_btn_text',
-  heroSecondaryBtnText: 'hero_secondary_btn_text',
 };
 
 const mapOrderFromDb = (r: OrderRow): OrderRecord => ({

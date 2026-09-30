@@ -13,7 +13,7 @@
 
 ## Contexto
 
-Aloha vende ropa femenina desde un showroom en **25 de Mayo 903, Piso 3, Comodoro Rivadavia (Chubut)** y necesitaba un catálogo online que la dueña pueda administrar sola.
+Aloha vende ropa femenina desde un showroom en **25 de Mayo 903, Oficina 3, Comodoro Rivadavia (Chubut)** y necesitaba un catálogo online que la dueña pueda administrar sola.
 
 El pago **no se procesa en el sitio**: la clienta arma su bolsa, el sitio genera el mensaje de pedido y abre **WhatsApp**, donde se coordinan el pago y la entrega. Cada pedido queda registrado en la base para que la dueña lo siga y la clienta vea su estado.
 

@@ -20,7 +20,6 @@ import {
   CheckCircle2, 
   X,
   Layers,
-  PhoneCall,
   Menu,
   Percent,
   ExternalLink,
@@ -274,16 +273,6 @@ export const AdminPage: React.FC = () => {
   const handleSaveStoreSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaveSettingsError('');
-    // Los enlaces a redes se publican en el sitio: solo se aceptan direcciones http(s) completas
-    const badLink = ([
-      ['Instagram', settingsForm.instagramUrl],
-      ['Facebook', settingsForm.facebookUrl],
-      ['TikTok', settingsForm.tiktokUrl],
-    ] as const).find(([, url]) => url.trim() !== '' && !isHttpUrl(url));
-    if (badLink) {
-      setSaveSettingsError(`El enlace de ${badLink[0]} no es válido: tiene que empezar con https://`);
-      return;
-    }
     const saved = await updateSettings(settingsForm);
     if (!saved) {
       setSaveSettingsError('No se pudieron guardar los ajustes en la base. Revisá tu conexión y que tu cuenta sea de administradora.');
@@ -505,7 +494,7 @@ export const AdminPage: React.FC = () => {
             <div className="space-y-6 animate-fade-in">
               <div>
                 <p className="text-xs text-neutral-400 font-medium">
-                  Configurá el número oficial receptor de WhatsApp, la marquesina superior y la portada de la tienda con vista previa en tiempo real.
+                  Configurá la marquesina superior, la dirección, los horarios, las fotos y la portada de la tienda con vista previa en tiempo real.
                 </p>
               </div>
 
@@ -516,29 +505,6 @@ export const AdminPage: React.FC = () => {
                   
                   <form onSubmit={handleSaveStoreSettings} className="space-y-6">
                     
-                    {/* Sección WhatsApp */}
-                    <div className="space-y-2">
-                      <label className="block text-xs uppercase tracking-wider font-bold text-neutral-300">
-                        Número de WhatsApp Receptor (Pedidos y Consultas)
-                      </label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-500">
-                          <PhoneCall className="w-4 h-4" />
-                        </div>
-                        <input
-                          type="text"
-                          required
-                          value={settingsForm.whatsappNumber}
-                          onChange={(e) => setSettingsForm({ ...settingsForm, whatsappNumber: e.target.value })}
-                          placeholder="5492974201122"
-                          className="w-full pl-10 pr-4 py-2.5 text-sm bg-neutral-900 border border-neutral-750 rounded-xl font-mono font-bold text-white focus:outline-none focus:border-white transition-colors"
-                        />
-                      </div>
-                      <p className="text-[11px] text-neutral-500 font-mono">
-                        Formato: código de país + código de área + número (ej: <strong>5492974201122</strong>).
-                      </p>
-                    </div>
-
                     {/* Sección Marquesina */}
                     <div className="space-y-2 pt-2 border-t border-neutral-800">
                       <label className="block text-xs uppercase tracking-wider font-bold text-neutral-300">
@@ -548,7 +514,7 @@ export const AdminPage: React.FC = () => {
                         type="text"
                         value={settingsForm.announcementText}
                         onChange={(e) => setSettingsForm({ ...settingsForm, announcementText: e.target.value })}
-                        placeholder="✨ NUEVA TEMPORADA • 25 DE MAYO 903, PISO 3, COMODORO RIVADAVIA..."
+                        placeholder="✨ NUEVA TEMPORADA • 25 DE MAYO 903, OFICINA 3, COMODORO RIVADAVIA..."
                         className="w-full px-4 py-2.5 text-sm bg-neutral-900 border border-neutral-750 rounded-xl font-medium text-white focus:outline-none focus:border-white transition-colors"
                       />
                     </div>
@@ -563,7 +529,7 @@ export const AdminPage: React.FC = () => {
                           type="text"
                           value={settingsForm.address}
                           onChange={(e) => setSettingsForm({ ...settingsForm, address: e.target.value })}
-                          placeholder="25 de Mayo 903, Piso 3"
+                          placeholder="25 de Mayo 903, Oficina 3"
                           className="w-full px-4 py-2 text-sm bg-neutral-900 border border-neutral-750 rounded-xl font-medium text-white focus:outline-none focus:border-white transition-colors"
                         />
                       </div>
@@ -630,64 +596,6 @@ export const AdminPage: React.FC = () => {
                             Se muestra en blanco y negro con el cartel de la dirección encima. Sin foto se ve una tarjeta oscura. Recordá tocar "Guardar Ajustes".
                           </p>
                         </div>
-                      </div>
-                    </div>
-
-                    {/* REDES SOCIALES */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-neutral-800">
-                      <div className="space-y-2">
-                        <label className="block text-xs uppercase tracking-wider font-bold text-neutral-300">
-                          Instagram Handle
-                        </label>
-                        <input
-                          type="text"
-                          value={settingsForm.instagramHandle}
-                          onChange={(e) => setSettingsForm({ ...settingsForm, instagramHandle: e.target.value })}
-                          placeholder="aloha.indumentaria_cr"
-                          className="w-full px-4 py-2 text-sm bg-neutral-900 border border-neutral-750 rounded-xl font-mono text-white focus:outline-none focus:border-white transition-colors"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="block text-xs uppercase tracking-wider font-bold text-neutral-300">
-                          Enlace de Instagram
-                        </label>
-                        <input
-                          type="url"
-                          value={settingsForm.instagramUrl}
-                          onChange={(e) => setSettingsForm({ ...settingsForm, instagramUrl: e.target.value })}
-                          placeholder="https://instagram.com/aloha.indumentaria_cr"
-                          className="w-full px-4 py-2 text-sm bg-neutral-900 border border-neutral-750 rounded-xl font-mono text-white focus:outline-none focus:border-white transition-colors"
-                        />
-                      </div>
-                    </div>
-
-                    {/* FACEBOOK Y TIKTOK */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-neutral-800">
-                      <div className="space-y-2">
-                        <label className="block text-xs uppercase tracking-wider font-bold text-neutral-300">
-                          Enlace de Facebook
-                        </label>
-                        <input
-                          type="url"
-                          value={settingsForm.facebookUrl}
-                          onChange={(e) => setSettingsForm({ ...settingsForm, facebookUrl: e.target.value })}
-                          placeholder="https://www.facebook.com/..."
-                          className="w-full px-4 py-2 text-sm bg-neutral-900 border border-neutral-750 rounded-xl font-mono text-white focus:outline-none focus:border-white transition-colors"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="block text-xs uppercase tracking-wider font-bold text-neutral-300">
-                          Enlace de TikTok
-                        </label>
-                        <input
-                          type="url"
-                          value={settingsForm.tiktokUrl}
-                          onChange={(e) => setSettingsForm({ ...settingsForm, tiktokUrl: e.target.value })}
-                          placeholder="https://www.tiktok.com/@..."
-                          className="w-full px-4 py-2 text-sm bg-neutral-900 border border-neutral-750 rounded-xl font-mono text-white focus:outline-none focus:border-white transition-colors"
-                        />
                       </div>
                     </div>
 
@@ -793,34 +701,6 @@ export const AdminPage: React.FC = () => {
                         />
                       </div>
 
-                      {/* Botones */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-[11px] uppercase tracking-wider font-bold text-neutral-400 mb-1">
-                            Texto Botón Catálogo
-                          </label>
-                          <input
-                            type="text"
-                            value={settingsForm.heroPrimaryBtnText || ''}
-                            onChange={(e) => setSettingsForm({ ...settingsForm, heroPrimaryBtnText: e.target.value })}
-                            placeholder="Ver Catálogo"
-                            className="w-full px-3 py-2 text-xs bg-neutral-900 border border-neutral-750 rounded-lg font-bold text-white focus:outline-none focus:border-white"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] uppercase tracking-wider font-bold text-neutral-400 mb-1">
-                            Texto Botón Showroom
-                          </label>
-                          <input
-                            type="text"
-                            value={settingsForm.heroSecondaryBtnText || ''}
-                            onChange={(e) => setSettingsForm({ ...settingsForm, heroSecondaryBtnText: e.target.value })}
-                            placeholder="Ver Showroom"
-                            className="w-full px-3 py-2 text-xs bg-neutral-900 border border-neutral-750 rounded-lg font-bold text-white focus:outline-none focus:border-white"
-                          />
-                        </div>
-                      </div>
                     </div>
 
                     {/* Botón Guardar */}
@@ -890,10 +770,10 @@ export const AdminPage: React.FC = () => {
                           )}
                           <div className="flex items-center justify-center gap-2 pt-2">
                             <span className="px-2.5 py-1 bg-white text-black text-[9px] uppercase font-bold rounded">
-                              {settingsForm.heroPrimaryBtnText || 'Ver Catálogo'}
+                              Ver Catálogo
                             </span>
                             <span className="px-2.5 py-1 bg-black/60 border border-white/60 text-white text-[9px] uppercase font-bold rounded">
-                              {settingsForm.heroSecondaryBtnText || 'Ver Showroom'}
+                              Instagram
                             </span>
                           </div>
                         </div>
@@ -906,7 +786,7 @@ export const AdminPage: React.FC = () => {
                         Barra Superior de Anuncios:
                       </span>
                       <div className="bg-black text-white p-3 rounded-xl text-center text-xs font-medium tracking-wide border border-neutral-800">
-                        {settingsForm.announcementText || '✨ NUEVA TEMPORADA • 25 DE MAYO 903, PISO 3, COMODORO RIVADAVIA'}
+                        {settingsForm.announcementText || '✨ NUEVA TEMPORADA • 25 DE MAYO 903, OFICINA 3, COMODORO RIVADAVIA'}
                       </div>
                     </div>
 
@@ -922,7 +802,7 @@ export const AdminPage: React.FC = () => {
                           </div>
                           <div>
                             <span className="font-bold text-xs text-white block">
-                              {settingsForm.address || '25 de Mayo 903, Piso 3'}
+                              {settingsForm.address || '25 de Mayo 903, Oficina 3'}
                             </span>
                             <span className="text-xs text-neutral-400">
                               {settingsForm.city || 'Comodoro Rivadavia'}, Chubut
@@ -935,10 +815,6 @@ export const AdminPage: React.FC = () => {
                           <span>{settingsForm.openingHours || '15:00 a 20:00 hs'}</span>
                         </div>
 
-                        <div className="pt-2 border-t border-neutral-800 flex items-center justify-between text-xs">
-                          <span className="font-mono text-[11px] text-neutral-400">Receptor WhatsApp:</span>
-                          <span className="font-mono font-bold text-emerald-400">+{settingsForm.whatsappNumber}</span>
-                        </div>
                       </div>
                     </div>
 

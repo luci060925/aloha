@@ -137,7 +137,7 @@ CREATE TABLE IF NOT EXISTS public.store_settings (
     id INTEGER PRIMARY KEY DEFAULT 1,
     store_name TEXT DEFAULT 'Aloha Indumentaria',
     whatsapp_number TEXT DEFAULT '5492974201122',
-    address TEXT DEFAULT '25 de Mayo 903, Piso 3',
+    address TEXT DEFAULT '25 de Mayo 903, Oficina 3',
     city TEXT DEFAULT 'Comodoro Rivadavia',
     province TEXT DEFAULT 'Chubut, Argentina',
     opening_hours TEXT DEFAULT 'Lunes a Sábados de 15:00 a 20:00 hs',
@@ -220,5 +220,5 @@ CREATE POLICY "Admin Manage Orders" ON public.orders FOR ALL USING (
 -- 9. DATOS SEMILLA INICIALES (SEED DATA)
 -- ==============================================================================
 INSERT INTO public.store_settings (id, store_name, address, city, province) 
-VALUES (1, 'Aloha Indumentaria', '25 de Mayo 903, Piso 3', 'Comodoro Rivadavia', 'Chubut, Argentina')
+VALUES (1, 'Aloha Indumentaria', '25 de Mayo 903, Oficina 3', 'Comodoro Rivadavia', 'Chubut, Argentina')
 ON CONFLICT (id) DO NOTHING;
