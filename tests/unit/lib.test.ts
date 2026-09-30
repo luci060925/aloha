@@ -3,6 +3,7 @@ import { describe, expect, test } from 'vitest';
 import { calculateCartTotals, couponKind, couponShortfall, syncCartWithCatalog, normalizeCouponCode, MAX_ITEM_QUANTITY } from '../../src/lib/pricing';
 import { isHttpUrl, isTrustedAvatarUrl, safeUrl } from '../../src/lib/external';
 import { slugify } from '../../src/lib/slug';
+import { displayPhone } from '../../src/lib/phone';
 import { MIN_PASSWORD_LENGTH } from '../../src/lib/constants';
 import type { CartItem, Coupon, Product } from '../../src/types';
 
@@ -124,6 +125,15 @@ describe('external · URLs seguras (SEC-009, SEC-010)', () => {
     expect(isTrustedAvatarUrl('https://googleusercontent.com.atacante.example/x.png')).toBe(false); // subdominio engañoso
     expect(isTrustedAvatarUrl('http://lh3.googleusercontent.com/a')).toBe(false); // sin https
     expect(isTrustedAvatarUrl('javascript:alert(1)')).toBe(false);
+  });
+});
+
+describe('displayPhone · un solo + adelante', () => {
+  test('no duplica el + aunque el número ya lo traiga', () => {
+    expect(displayPhone('+54 9 2975 92-5842')).toBe('+54 9 2975 92-5842');
+    expect(displayPhone('5492975925842')).toBe('+5492975925842');
+    expect(displayPhone('++54 9 2975')).toBe('+54 9 2975');
+    expect(displayPhone('')).toBe('');
   });
 });
 

@@ -14,6 +14,7 @@ import {
   Tag
 } from 'lucide-react';
 import { openExternal, safeUrl } from '../../lib/external';
+import { displayPhone } from '../../lib/phone';
 
 export const InfoModal: React.FC = () => {
   const { activeInfoModal, setActiveInfoModal, settings } = useStore();
@@ -115,7 +116,7 @@ export const InfoModal: React.FC = () => {
                 <span>Consejo de Seguridad y Verificación</span>
               </div>
               <p className="text-xs text-neutral-200 leading-relaxed font-medium">
-                Corroborá siempre estar comunicándote con la <strong>fuente oficial y confiable</strong> de Aloha a través de esta página web (número oficial de WhatsApp: <strong>{settings.whatsappNumber}</strong>).
+                Corroborá siempre estar comunicándote con la <strong>fuente oficial y confiable</strong> de Aloha a través de esta página web (número oficial de WhatsApp: <strong>{displayPhone(settings.whatsappNumber)}</strong>).
               </p>
               <p className="text-[11px] text-neutral-400 leading-relaxed">
                 Como consejo de compra segura, <strong>verificá bien todos los datos del destinatario, titularidad de la cuenta y detalle del pedido</strong> antes de realizar transferencias para no cometer equivocaciones.
@@ -336,7 +337,7 @@ export const InfoModal: React.FC = () => {
                 Seguridad en Pagos y Verificación de Cuentas Oficiales
               </div>
               <p className="text-xs text-neutral-300 leading-relaxed">
-                <strong className="text-white">Canales Verificados:</strong> Antes de concretar pagos o enviar información, corroborá comunicarte exclusivamente a través de nuestro WhatsApp oficial <strong className="text-emerald-400 font-mono">+{settings.whatsappNumber}</strong> e Instagram oficial <strong className="text-white font-mono">@{settings.instagramHandle}</strong>.
+                <strong className="text-white">Canales Verificados:</strong> Antes de concretar pagos o enviar información, corroborá comunicarte exclusivamente a través de nuestro WhatsApp oficial <strong className="text-emerald-400 font-mono">{displayPhone(settings.whatsappNumber)}</strong> e Instagram oficial <strong className="text-white font-mono">@{settings.instagramHandle}</strong>.
               </p>
               <p className="text-xs text-neutral-300 leading-relaxed">
                 <strong className="text-white">Responsabilidad en Transferencias:</strong> El comprador debe verificar con atención el CBU, Alias, CUIT y nombre del titular antes de transferir. <span className="text-amber-300 font-semibold">Aloha Indumentaria no se responsabiliza ni realiza reintegros por equivocaciones en transferencias emitidas a cuentas bancarias de terceros o datos mal ingresados por el cliente.</span>
@@ -527,7 +528,7 @@ export const InfoModal: React.FC = () => {
                 </div>
                 <div>
                   <span className="text-[10px] uppercase font-mono tracking-wider text-emerald-400 font-bold block">WhatsApp Oficial</span>
-                  <span className="font-mono text-xs font-bold text-white">+{settings.whatsappNumber}</span>
+                  <span className="font-mono text-xs font-bold text-white">{displayPhone(settings.whatsappNumber)}</span>
                 </div>
               </a>
 

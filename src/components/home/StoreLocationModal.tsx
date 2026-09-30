@@ -2,6 +2,7 @@ import React from 'react';
 import { X, MapPin, Clock, Phone, Navigation, ExternalLink } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import { openExternal } from '../../lib/external';
+import { displayPhone } from '../../lib/phone';
 
 export const StoreLocationModal: React.FC = () => {
   const { isLocationModalOpen, setIsLocationModalOpen, settings } = useStore();
@@ -71,7 +72,7 @@ export const StoreLocationModal: React.FC = () => {
             <Phone className="w-4.5 h-4.5 text-white shrink-0 mt-0.5" />
             <div>
               <p className="font-bold text-white">WhatsApp Showroom:</p>
-              <p className="text-neutral-300 font-mono font-bold">+{settings.whatsappNumber}</p>
+              <p className="text-neutral-300 font-mono font-bold">{displayPhone(settings.whatsappNumber)}</p>
             </div>
           </div>
         </div>
