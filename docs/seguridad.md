@@ -39,18 +39,27 @@ un visitante no lee perfiles ni pedidos; una clienta no puede ascenderse a admin
 
 ## Cabeceras del sitio
 
-`public/_headers` (Cloudflare Pages) agrega: `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`, y caché larga para `/assets`.
+`public/_headers` (Cloudflare Pages) agrega: `Content-Security-Policy`, `Strict-Transport-Security`, `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`, y caché larga para `/assets`.
+
+La **CSP** solo permite scripts propios y conexiones a Supabase; imágenes de Supabase, Google y Unsplash; y fuentes de Google. Si se suma un servicio externo (analítica, mapa embebido, chat), hay que agregar su dominio a `_headers` y probar el sitio: una política de más rompe la página y una de menos la debilita. Se verificó cargando `dist/` con esas mismas cabeceras y comprobando que un script inyectado y una conexión a un dominio no autorizado quedan bloqueados.
+
+## Validación en el servidor
+
+El navegador nunca decide precios ni descuentos: la base recalcula y rechaza los pedidos que no coinciden (`validate_order`). Esto cubre precios adulterados, cantidades inválidas, descuentos inexistentes, cupones vencidos o agotados y el abuso por frecuencia. La lógica de descuentos está duplicada a propósito en `src/lib/pricing.ts` (lo que ve la clienta) y en el SQL (lo que se acepta); si se cambia una, hay que cambiar la otra y correr `npm test`.
 
 ## Riesgos abiertos
 
 | Riesgo | Detalle | Mitigación / decisión |
 |---|---|---|
-| Precios del pedido confiados al navegador | Un usuario técnico podría enviar un pedido con un total alterado | El cobro es manual por WhatsApp: la dueña confirma cada pedido contra el catálogo. A futuro: calcular el total en una función de la base |
-| Contador de cupones | Cuenta usos al crear el pedido; no bloquea un pedido con un cupón ya agotado | Aceptable con confirmación manual. A futuro: validar dentro de la base al insertar |
 | Contraseñas filtradas | La protección contra contraseñas comprometidas (Supabase → Password) está desactivada | Activarla si el plan lo permite |
-| Sin CSP | No hay política de contenido (`Content-Security-Policy`) | Definirla al publicar, contemplando fuentes de Google, Supabase y WhatsApp |
 | Pausa del proyecto (plan gratuito) | Tras 7 días sin actividad la base se pausa y el catálogo deja de cargar | Plan Pro para producción |
 | Datos personales | Nombre, teléfono y dirección de clientas en `profiles` y `orders` | Solo visibles para la titular y la administradora; respetar la Ley 25.326 de Protección de Datos Personales |
+
+| Correos de Supabase | El envío por defecto tiene una cuota baja por hora y el registro/recuperación no tienen CAPTCHA: cualquiera podría agotarla | SMTP propio + Cloudflare Turnstile (informe SEC-005) |
+| Flujo de sesión *implicit* | Los tokens llegan en el fragmento de la URL al volver de Google o del correo | Se mantiene para que los enlaces de recuperación funcionen entre dispositivos (informe SEC-011) |
+| Cuenta de administradora sin MFA | Una sola contraseña protege el panel | Activar MFA en Supabase (informe SEC-012) |
+
+La auditoría completa está en [`informe.md`](../informe.md).
 
 ## Qué hacer si se filtra una clave o contraseña
 

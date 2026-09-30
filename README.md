@@ -82,6 +82,7 @@ Sin estas variables el sitio arranca en **modo demostración** (datos de ejemplo
 | `npm run build` | Comprueba los tipos y genera la versión de producción en `dist/` |
 | `npm run preview` | Sirve `dist/` localmente |
 | `npm run lint` | Análisis estático con oxlint |
+| `npm test` | Pruebas: funciones del sitio y reglas de seguridad de la base (PostgreSQL local, sin tocar Supabase) |
 
 ## Base de datos
 
@@ -93,7 +94,8 @@ Los scripts están en [`supabase/`](./supabase). Ejecutarlos en el **SQL Editor*
 | 2 | `rls_policies.sql` | **Seguridad:** quién puede leer y escribir cada tabla |
 | 3 | `storage_y_ajustes.sql` | Columnas de redes y portada + bucket público de fotos |
 | 4 | `cupones.sql` | Conteo automático de usos de cupones |
-| 5 | `categorias_iniciales.sql` | Categorías de arranque (opcional) |
+| 5 | `hardening_seguridad.sql` | **Endurecimiento:** valida cada pedido en el servidor y protege perfiles y cupones |
+| 6 | `categorias_iniciales.sql` | Categorías de arranque (opcional) |
 
 `schema.sql` es una versión anterior e **insegura**: no ejecutarla.
 
@@ -157,6 +159,7 @@ Más en [`docs/arquitectura.md`](./docs/arquitectura.md) y [`docs/seguridad.md`]
 | [`docs/login-google.md`](./docs/login-google.md) | Cómo habilitar el ingreso con Google |
 | [`docs/auditoria.md`](./docs/auditoria.md) | Revisión de punta a punta y estado de cada hallazgo |
 | [`docs/pendientes.md`](./docs/pendientes.md) | Qué falta antes de lanzar y mejoras futuras |
+| [`informe.md`](./informe.md) | Auditoría de seguridad: hallazgos, correcciones y estado |
 
 ## Despliegue
 

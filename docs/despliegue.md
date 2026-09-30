@@ -50,6 +50,10 @@ Cloudflare Pages → el proyecto → **Custom domains → Set up a domain**. Lue
 - [ ] Cuenta de administradora creada con contraseña única y larga; `is_admin` solo en las cuentas correctas.
 - [ ] `supabase/rls_policies.sql` aplicado (comprobar en Supabase → Authentication → Policies).
 - [ ] Categorías cargadas y al menos una prenda de prueba con fotos.
+- [ ] `supabase/hardening_seguridad.sql` ejecutado en Supabase (ver [base-de-datos.md](./base-de-datos.md)).
+- [ ] SMTP propio y CAPTCHA configurados (informe de seguridad, SEC-005).
+- [ ] En Supabase → Authentication: contraseña mínima de 8 caracteres, protección de contraseñas filtradas (si el plan lo permite) y MFA para la administradora.
+- [ ] *Redirect URLs* de Supabase sin `localhost` en el proyecto de producción.
 - [ ] Ingreso con Google habilitado y probado (o ocultar el botón si no se usará).
 - [ ] Protección contra contraseñas filtradas activada (si el plan lo permite).
 - [ ] Decidido el plan de Supabase (el gratuito se pausa tras 7 días sin actividad).
@@ -63,6 +67,7 @@ Cloudflare Pages → el proyecto → **Custom domains → Set up a domain**. Lue
 3b. **Recuperar contraseña:** desde el ingreso, *¿Olvidaste tu contraseña?* con el correo de esa clienta; abrir el enlace del correo, elegir una contraseña nueva e ingresar con ella.
 4. **Cupón:** crear uno, usarlo y ver que el contador sube.
 5. **Fotos:** subir una prenda con fotos desde el celular.
+5b. **Cabeceras:** en las herramientas del navegador (Red → el documento) comprobar `Content-Security-Policy` y `Strict-Transport-Security`, y que la consola no muestre violaciones de la política al recorrer la tienda, el ingreso y el panel.
 6. **Seguridad:** sin sesión, comprobar que no se pueden leer pedidos ni perfiles (ver el método en [seguridad.md](./seguridad.md)).
 
 ## Volver a una versión anterior

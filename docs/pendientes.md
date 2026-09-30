@@ -14,6 +14,8 @@ Buscá `TODO(` en el código para ubicar cada marca.
 | 6 | Correo propio (SMTP, ej. Resend o Brevo) y plantillas de correo en español en Supabase. El envío por defecto tiene un límite muy bajo por hora, suele caer en spam y está en inglés (afecta la confirmación de cuenta y la recuperación de contraseña) | Desarrollo |
 | 7 | Decidir el plan de Supabase (el gratuito se pausa tras 7 días sin actividad) | Dueña |
 | 8 | Activar la protección contra contraseñas filtradas en Supabase, si el plan lo permite | Desarrollo |
+| 10 | **Ejecutar `supabase/hardening_seguridad.sql` en Supabase** (cierra 5 hallazgos de la auditoría de seguridad; ver [informe.md](../informe.md)) | Desarrollo |
+| 11 | CAPTCHA (Cloudflare Turnstile) y contraseña mínima de 8 + MFA para la administradora en Supabase | Desarrollo |
 | 9 | Ingreso con Google: ya está habilitado y funciona en desarrollo. Al publicar, agregar la dirección del sitio en Google Cloud (orígenes autorizados) y en Supabase (Redirect URLs), ver [login-google.md](./login-google.md) | Desarrollo |
 
 ## Mejoras recomendadas

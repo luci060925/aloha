@@ -1,5 +1,7 @@
 # Auditoría de punta a punta
 
+> La auditoría de seguridad de aplicación (AppSec) posterior está en [`informe.md`](../informe.md), con hallazgos `SEC-xxx`, pruebas y estado de corrección.
+
 Revisión archivo por archivo del sitio completo (septiembre de 2026), en tres bloques por prioridad. Este documento resume los hallazgos y su estado actual.
 
 **Bloques revisados**

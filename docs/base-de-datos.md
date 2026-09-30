@@ -12,7 +12,8 @@ Ejecutar en **SQL Editor**, en este orden. Todos son re-ejecutables (no duplican
 | 2 | `rls_policies.sql` | **Seguridad.** Define quién puede leer y escribir cada tabla. Reemplaza las políticas del paso 1 |
 | 3 | `storage_y_ajustes.sql` | Agrega columnas de redes y portada a `store_settings` y crea el bucket `catalog-images` |
 | 4 | `cupones.sql` | Disparador que cuenta los usos de cada cupón |
-| 5 | `categorias_iniciales.sql` | Carga 5 categorías y 18 subcategorías de arranque (opcional) |
+| 5 | `hardening_seguridad.sql` | **Endurecimiento** (informe de seguridad): valida cada pedido en el servidor, protege el email y el rol de los perfiles, limita frecuencia y tamaño, y exige sesión para validar cupones. Reemplaza `count_coupon_use` de `cupones.sql`, por eso va **después** |
+| 6 | `categorias_iniciales.sql` | Carga 5 categorías y 18 subcategorías de arranque (opcional) |
 
 `schema.sql` es una versión anterior e insegura: **no ejecutar**.
 
@@ -36,7 +37,9 @@ Estados de un pedido (`orders.status`): `whatsapp_sent` → `contacted` → `con
 |---|---|---|
 | `is_admin()` | Función (`SECURITY DEFINER`) | Indica si la cuenta actual es administradora. Evita la recursión al usarla dentro de las políticas de `profiles` |
 | `get_coupon(código)` | Función (`SECURITY DEFINER`) | Valida **un** cupón: activo, no vencido y con cupo. Devuelve sus datos sin permitir listar los demás |
-| `count_coupon_use()` | Disparador en `orders` (después de insertar) | Suma 1 a `used_count` del cupón usado en el pedido |
+| `count_coupon_use()` | Disparador en `orders` (después de insertar) | Suma 1 a `used_count` del cupón usado, solo si el pedido realmente descuenta |
+| `validate_order()` | Disparador en `orders` (antes de insertar) | Valida el pedido con los datos reales de la base: prendas existentes y en stock, precio vigente, cantidades 1–50, subtotal, total y descuento máximo legítimo (cupón, volumen, monto o global); bloquea la fila del cupón para respetar el cupo; máximo 10 pedidos por hora por cuenta |
+| `protect_profile_columns()` | Disparador en `profiles` | El email sale siempre de la cuenta de acceso, `id` y `created_at` no cambian y `is_admin` solo lo cambia una administradora o el panel de Supabase |
 
 ## Almacenamiento de fotos
 
@@ -55,6 +58,12 @@ Bucket público **`catalog-images`**:
 `is_admin` **solo se cambia desde el panel de Supabase**; ni el sitio ni las clientas pueden escribirlo.
 
 > Si una cuenta se creó a mano y su `profiles.id` no coincide con el `id` de Authentication, el sitio no la reconoce como administradora. Deben ser idénticos.
+
+## Pruebas de la base
+
+`npm test` carga los scripts reales de `supabase/` en una copia local de PostgreSQL (PGlite, sin tocar Supabase) y comprueba las reglas de seguridad con roles simulados (visitante, clienta, administradora). Cada cambio en `supabase/` debe pasar esas pruebas antes de aplicarse; con `AUDIT_BASELINE=1` se ejecutan contra la base **sin** el endurecimiento y deben fallar (así se comprueba que las pruebas detectan las vulnerabilidades).
+
+Después de ejecutar `hardening_seguridad.sql` en Supabase, la última consulta del script debe mostrar los disparadores `orders_validate`, `profiles_protect` y `orders_count_coupon`.
 
 ## Mantenimiento
 

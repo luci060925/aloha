@@ -42,7 +42,10 @@ El pago **no se procesa en el sitio**: la clienta arma su bolsa, el sitio genera
 aloha/
 ├── docs/                          Esta documentación (y assets/ con el logo original de referencia)
 ├── public/                        Archivos estáticos (favicon, robots.txt, _redirects, _headers)
-├── supabase/                      Scripts SQL (esquema, seguridad, cupones, categorías)
+├── supabase/                      Scripts SQL (esquema, seguridad, cupones, categorías, endurecimiento)
+├── tests/                         Pruebas: unit/ (funciones puras) y db/ (reglas de seguridad de la base en PostgreSQL local)
+├── .github/                       CI (lint, pruebas, compilación, auditoría de dependencias) y Dependabot
+├── informe.md                     Auditoría de seguridad (hallazgos SEC-xxx y su estado)
 ├── src/
 │   ├── main.tsx                   Punto de entrada
 │   ├── App.tsx                    Tienda o panel según la ruta; barrera de acceso a /admin
@@ -60,7 +63,10 @@ aloha/
 │   ├── lib/
 │   │   ├── supabase.ts            Cliente de Supabase (según variables de entorno)
 │   │   ├── images.ts              Compresión a WebP y subida/borrado en Storage
-│   │   └── slug.ts                Identificadores de texto sin tildes
+│   │   ├── slug.ts                Identificadores de texto sin tildes
+│   │   ├── pricing.ts             Totales, descuentos y sincronización de la bolsa con el catálogo
+│   │   ├── external.ts            URLs seguras y apertura de sitios externos
+│   │   └── constants.ts           Constantes compartidas (largo mínimo de contraseña)
 │   ├── data/
 │   │   ├── defaultSettings.ts     Valores por defecto de los ajustes de la tienda
 │   │   └── demoData.ts            Prendas, categorías y cupones de demostración (solo modo sin Supabase)
