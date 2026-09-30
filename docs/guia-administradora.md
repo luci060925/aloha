@@ -83,6 +83,8 @@ En los tipos por monto, por cantidad y global el descuento se calcula sobre **to
 
 En la tabla ves el tipo y la condición de cada cupón y cuántas personas lo usaron (`3 de 50`). Al llegar al límite pasa a **Agotado**. Con **Pausar** lo desactivás sin borrarlo y con el tacho lo eliminás.
 
+> Conviene **pausar** en vez de borrar: pausado conserva el historial y se puede reactivar, y si después creás otro cupón con el mismo código, quienes ya usaron el anterior no podrían usarlo de nuevo. Si una clienta tiene el cupón en la bolsa y lo pausás, borrás, vence o se agota, al confirmar la compra el sitio se lo avisa, le quita el cupón y **no abre WhatsApp** hasta que revise el nuevo total.
+
 ## Ajustes de tienda y portada
 
 Panel → **Ajustes de Tienda & Portada**:

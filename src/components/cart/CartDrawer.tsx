@@ -89,7 +89,12 @@ export const CartDrawer: React.FC = () => {
     }
     setIsSubmittingOrder(true);
     try {
-      const { recorded } = await checkoutViaWhatsApp();
+      const { recorded, couponError } = await checkoutViaWhatsApp();
+      if (couponError) {
+        alert(couponError);
+        setIsSubmittingOrder(false);
+        return;
+      }
       if (!recorded) {
         alert('Tu mensaje de WhatsApp está listo para enviar, pero no pudimos registrar el pedido en el sitio (por ejemplo, porque cambió un precio o venció un cupón). Confirmá el detalle con Aloha por WhatsApp.');
       }

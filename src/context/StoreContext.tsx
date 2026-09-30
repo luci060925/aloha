@@ -69,7 +69,8 @@ interface StoreContextType {
   removeCoupon: () => void;
 
   // Checkout WhatsApp
-  checkoutViaWhatsApp: () => Promise<{ url: string; recorded: boolean }>; // recorded=false: se abrió WhatsApp pero la base no registró el pedido
+  // recorded=false: se abrió WhatsApp pero la base no registró el pedido. couponError: el cupón dejó de valer y NO se abrió WhatsApp.
+  checkoutViaWhatsApp: () => Promise<{ url: string; recorded: boolean; couponError?: string }>;
   
   // Orders / WhatsApp logs (Admin & User)
   orders: OrderRecord[];
@@ -783,8 +784,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setAppliedCoupon(null);
   };
 
-  // Cupones: un solo cupón por compra y una sola vez por clienta. La base vuelve a validar todo al registrar el pedido.
-  const applyCoupon = async (code: string): Promise<{ success: boolean; message: string }> => {
+  // Busca el cupón y comprueba todo lo que puede comprobarse antes de comprar: que exista y siga activo, su vencimiento y cupo,
+  // las reglas de uso (una vez por clienta, un cupón cada 24 horas), la condición y la categoría. La base vuelve a validar todo
+  // al registrar el pedido. Se usa al aplicar el cupón y otra vez al confirmar la compra, por si cambió mientras tanto.
+  const resolveCoupon = async (code: string): Promise<{ coupon: Coupon } | { error: string }> => {
     const cleanCode = normalizeCouponCode(code);
     let found: Coupon | undefined;
 
@@ -792,12 +795,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       // La base solo responde a clientas con sesión iniciada: sin sesión se pide ingresar en lugar de fallar en silencio
       if (!currentUser) {
         setIsAuthModalOpen(true);
-        return { success: false, message: 'Iniciá sesión para usar tu cupón.' };
+        return { error: 'Iniciá sesión para usar tu cupón.' };
       }
       // La base valida un solo código por vez (activo, vigente y con cupo): no se puede listar el resto
       const { data, error } = await supabase.rpc('get_coupon', { p_code: cleanCode });
       if (error) {
-        return { success: false, message: 'No pudimos validar el cupón. Intentá nuevamente.' };
+        return { error: 'No pudimos validar el cupón. Intentá nuevamente.' };
       }
       const row = data?.[0];
       if (row) found = mapCouponFromDb({ ...row, is_active: true });
@@ -806,21 +809,18 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     if (!found) {
-      return { success: false, message: 'Cupón no válido, vencido o agotado.' };
+      return { error: 'Cupón no válido, vencido o agotado.' };
     }
 
     // Check expiration (se ejecuta al tocar "Aplicar", no al renderizar)
     // oxlint-disable-next-line react/purity
     if (found.expiresAt && new Date(found.expiresAt).getTime() < Date.now()) {
-      return { success: false, message: 'Este cupón ha expirado.' };
+      return { error: 'Este cupón ha expirado.' };
     }
 
     // Check max uses limit (X cantidad de personas)
     if (found.maxUses && found.maxUses > 0 && (found.usedCount || 0) >= found.maxUses) {
-      return { 
-        success: false, 
-        message: `El cupón ${found.code} alcanzó el cupo máximo de ${found.maxUses} personas/canjes.` 
-      };
+      return { error: `El cupón ${found.code} alcanzó el cupo máximo de ${found.maxUses} personas/canjes.` };
     }
 
     // Reglas de uso: cada cupón una sola vez por clienta y ningún otro cupón durante las 24 horas siguientes a usar uno.
@@ -846,7 +846,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
     const uses = await loadCouponUses();
     if (uses.some(u => u.code === found.code.toUpperCase())) {
-      return { success: false, message: `Ya usaste el cupón ${found.code}: es de un solo uso por clienta.` };
+      return { error: `Ya usaste el cupón ${found.code}: es de un solo uso por clienta.` };
     }
     const cooldownMs = COUPON_COOLDOWN_HOURS * 60 * 60 * 1000;
     // oxlint-disable-next-line react/purity
@@ -854,13 +854,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const next = new Date(uses[0].at + cooldownMs);
       const day = next.toDateString() === new Date().toDateString() ? 'hoy' : 'mañana';
       const hour = next.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
-      return { success: false, message: `Ya usaste un cupón en las últimas 24 horas. Podés usar otro ${day} a las ${hour}.` };
+      return { error: `Ya usaste un cupón en las últimas 24 horas. Podés usar otro ${day} a las ${hour}.` };
     }
 
     // Condición del cupón: compra mínima o prendas mínimas
     const shortfall = couponShortfall(cart, found);
     if (shortfall) {
-      return { success: false, message: shortfall };
+      return { error: shortfall };
     }
 
     // Check category targeting
@@ -869,12 +869,17 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (!hasCategoryItem) {
         const catObj = categories.find(c => c.slug === found.targetCategory);
         const catName = catObj ? catObj.name : found.targetCategory.toUpperCase();
-        return {
-          success: false,
-          message: `Este cupón es exclusivo para prendas de la sección "${catName}".`
-        };
+        return { error: `Este cupón es exclusivo para prendas de la sección "${catName}".` };
       }
     }
+    return { coupon: found };
+  };
+
+  // Cupones: un solo cupón por compra y una sola vez por clienta.
+  const applyCoupon = async (code: string): Promise<{ success: boolean; message: string }> => {
+    const result = await resolveCoupon(code);
+    if ('error' in result) return { success: false, message: result.error };
+    const found = result.coupon;
 
     setAppliedCoupon(found);
     try {
@@ -904,8 +909,27 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   // Checkout via WhatsApp matching exact requested structure
-  const checkoutViaWhatsApp = async (): Promise<{ url: string; recorded: boolean }> => {
+  const checkoutViaWhatsApp = async (): Promise<{ url: string; recorded: boolean; couponError?: string }> => {
     if (cart.length === 0) return { url: '', recorded: false };
+
+    // Antes de abrir WhatsApp se comprueba que el cupón siga valiendo (lo pueden haber pausado, borrado, vencido o agotado
+    // mientras la clienta armaba la bolsa). Si dejó de valer, no se manda un mensaje con un descuento que ya no existe.
+    if (appliedCoupon) {
+      const check = await resolveCoupon(appliedCoupon.code);
+      if ('error' in check) {
+        setAppliedCoupon(null);
+        return { url: '', recorded: false, couponError: `El cupón ${appliedCoupon.code} ya no se puede usar: ${check.error} Lo quitamos de tu bolsa. Revisá el total y confirmá de nuevo.` };
+      }
+      const now = check.coupon;
+      const was = appliedCoupon;
+      const changed = now.discountPercentage !== was.discountPercentage || (now.fixedDiscount ?? 0) !== (was.fixedDiscount ?? 0)
+        || (now.minAmount ?? 0) !== (was.minAmount ?? 0) || (now.minItems ?? 0) !== (was.minItems ?? 0)
+        || (now.targetCategory ?? 'all') !== (was.targetCategory ?? 'all');
+      if (changed) {
+        setAppliedCoupon(now);
+        return { url: '', recorded: false, couponError: `El cupón ${now.code} se actualizó mientras armabas tu bolsa. Revisá el nuevo total y confirmá de nuevo.` };
+      }
+    }
 
     // Build exact item lines: [- Producto 1, Talle: M, Color: Negro, Precio: $15.000]
     const itemsLines = cart.map(item => {
