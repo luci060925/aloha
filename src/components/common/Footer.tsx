@@ -49,8 +49,7 @@ export const Footer: React.FC = () => {
             <div>
               <h4 className="font-mono text-xs uppercase tracking-wider font-bold text-white">Showroom Exclusivo</h4>
               <p className="text-xs text-neutral-300 mt-1 font-medium max-w-xs mx-auto sm:mx-0">
-                {settings.openingHours}
-                <span className="block text-[11px] text-neutral-400 mt-0.5">Consultar por WhatsApp</span>
+                Retirá tus compras en persona.
               </p>
             </div>
           </div>
@@ -211,7 +210,7 @@ export const Footer: React.FC = () => {
                 <button 
                   onClick={() => {
                     setSelectedCategory('all');
-                    const el = document.getElementById('catalogo');
+                    const el = document.getElementById('ultimos-ingresos') ?? document.getElementById('catalogo');
                     el?.scrollIntoView({ behavior: 'smooth' });
                   }} 
                   className="hover:text-white transition-colors cursor-pointer text-left font-medium"

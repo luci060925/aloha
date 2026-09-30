@@ -5,6 +5,7 @@ import { Footer } from './components/common/Footer';
 import { HeroBanner } from './components/home/HeroBanner';
 import { StoreLocationSection } from './components/home/StoreLocationSection';
 import { CatalogGrid } from './components/catalog/CatalogGrid';
+import { NewArrivalsCarousel } from './components/catalog/NewArrivalsCarousel';
 import { ProductDetailModal } from './components/catalog/ProductDetailModal';
 import { CartDrawer } from './components/cart/CartDrawer';
 import { AuthModal } from './components/auth/AuthModal';
@@ -38,7 +39,10 @@ const MainLayout: React.FC = () => {
         {/* Lookbook Hero */}
         <HeroBanner />
 
-        {/* Dynamic Interactive Catalog (Default 8 latest products with pagination) */}
+        {/* Últimas prendas cargadas */}
+        <NewArrivalsCarousel />
+
+        {/* Catálogo: "Prendas Destacadas" y filtros, con paginación */}
         <CatalogGrid />
 
         {/* Physical Store Location Section in Comodoro Rivadavia */}

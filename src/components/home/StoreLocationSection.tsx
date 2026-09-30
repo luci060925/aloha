@@ -114,8 +114,6 @@ export const StoreLocationSection: React.FC = () => {
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
                     Showroom Oficial
                   </div>
-                  <p className="text-white font-serif text-lg mt-1">{settings.address}</p>
-                  <p className="text-neutral-400 text-xs mt-0.5">{settings.city}, {settings.province}</p>
                 </div>
               </div>
             </div>
