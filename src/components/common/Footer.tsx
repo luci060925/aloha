@@ -204,7 +204,7 @@ export const Footer: React.FC = () => {
                   onClick={() => setActiveInfoModal('contacto')} 
                   className="hover:text-white transition-colors cursor-pointer text-left font-medium"
                 >
-                  Contacto y Redes Oficiales
+                  Sobre Nosotras
                 </button>
               </li>
               <li>

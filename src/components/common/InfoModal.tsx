@@ -496,21 +496,21 @@ export const InfoModal: React.FC = () => {
                 <Phone className="w-7 h-7 text-white" />
               </div>
               <span className="text-[11px] uppercase tracking-[0.25em] text-neutral-400 font-mono font-bold">
-                Conocé Aloha & Contacto
+                Conocé Aloha
               </span>
               <h3 className="font-serif text-2xl sm:text-3xl font-bold uppercase tracking-wide text-white mt-1">
-                Nuestra Historia & Canales
+                Sobre Nosotras
               </h3>
               <p className="text-xs text-neutral-400 mt-1.5">
                 Diseño, elegancia y atención personalizada en Comodoro Rivadavia.
               </p>
             </div>
 
-            {/* TODO(pedir a la dueña): historia de la marca y foto/nombre si quiere mostrarlos. Hasta entonces, texto neutro. */}
+            {/* TODO(pedir a Camila): su historia de la marca y foto, si quiere mostrarlas. Hasta entonces, texto neutro. */}
             <div className="p-5 bg-gradient-to-br from-neutral-900 to-[#181818] border border-neutral-800 rounded-2xl">
               <h4 className="font-serif text-base font-bold text-white mb-2">Sobre Aloha</h4>
               <p className="text-xs text-neutral-300 leading-relaxed">
-                Aloha Indumentaria es un showroom de moda femenina en {settings.city}. Elegí tus prendas en la web y coordiná tu pedido, el pago y el retiro o envío directamente con nosotras por WhatsApp.
+                Aloha Indumentaria es el showroom de moda femenina de Camila en {settings.city}. Elegí tus prendas en la web y coordiná tu pedido, el pago y el retiro o envío directamente con nosotras por WhatsApp.
               </p>
             </div>
 
@@ -549,16 +549,6 @@ export const InfoModal: React.FC = () => {
                   <span className="font-mono text-xs font-bold text-white">@{settings.instagramHandle}</span>
                 </div>
               </a>
-            </div>
-
-            {/* Local info card */}
-            <div className="p-4 bg-neutral-900 border border-neutral-800 text-white rounded-xl space-y-1 text-xs">
-              <div className="flex items-center gap-2 text-neutral-400 font-mono text-[10px] uppercase tracking-wider font-bold">
-                <MapPin className="w-3.5 h-3.5 text-white" />
-                <span>Showroom Oficial Presencial</span>
-              </div>
-              <p className="font-serif text-base font-bold text-white">{settings.address}, {settings.city}</p>
-              <p className="text-neutral-400 font-medium">Horarios de Atención: {settings.openingHours}</p>
             </div>
 
             <button

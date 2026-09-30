@@ -328,7 +328,7 @@ export const Header: React.FC = () => {
                   }}
                   className="w-full text-left text-xs uppercase tracking-wider text-neutral-300 hover:text-white font-semibold py-2 px-3 rounded hover:bg-neutral-900 transition-colors cursor-pointer"
                 >
-                  Contacto
+                  Sobre Nosotras
                 </button>
 
                 {/* 3. Política de Devolución */}
