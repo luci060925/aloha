@@ -473,6 +473,14 @@ Sospechas **sin evidencia suficiente** (dependen de configuración que no pude l
 - Los flujos de recuperación de contraseña y de enlace vencido siguen funcionando.
 - Lecturas anónimas de Supabase sin cambios (solo tablas públicas).
 
+**Verificación en el sitio desplegado (2026-09-30, Cloudflare, solo lecturas):**
+- Las cabeceras `Content-Security-Policy`, `Strict-Transport-Security`, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy` y `Permissions-Policy` llegan en la respuesta real; caché larga e inmutable en `/assets`. **SEC-007 confirmado en el entorno real.**
+- Sin violaciones de la CSP ni errores en consola al recorrer la portada, el menú (5 categorías desde Supabase), la ventana de ingreso y la recuperación de contraseña.
+- `/admin` y cualquier ruta inexistente devuelven la aplicación (fallback de SPA); `/admin` muestra "Acceso restringido".
+- El ingreso con Google llega a la pantalla de Google con `redirect_uri` correcta (callback de Supabase) y retorno al sitio publicado.
+- "Olvidé mi contraseña" responde con el mensaje neutro; en celular no hay desbordes ni scroll horizontal.
+- La dirección anterior del sitio (subdominio viejo de la cuenta) dejó de responder tras el cambio, como corresponde.
+
 **Verificación en producción (2026-09-29, solo lecturas con la clave pública):**
 - `rpc('get_coupon')` como visitante → `permission denied for function get_coupon` (42501). ✅ SEC-006.
 - Lecturas de visitante sin cambios: `profiles`, `orders`, `coupons` y `products` = 0 filas; `categories` = 5, `subcategories` = 18, `store_settings` = 1.
@@ -481,6 +489,10 @@ Sospechas **sin evidencia suficiente** (dependen de configuración que no pude l
 **CI en GitHub:** el primer push (commit `59e1132`) pasó completo: instalación con `npm ci`, lint, 45 pruebas, compilación con TypeScript estricto y `npm audit --omit=dev`.
 
 **No se puede verificar desde afuera:** los disparadores `validate_order` y `protect_profile_columns` (requieren una sesión de clienta para ejercerse). Se infiere que están aplicados; la confirmación definitiva es un pedido de prueba real (ver pendientes).
+
+### Observación sobre el ingreso con Google
+
+La pantalla de Google muestra el dominio del proyecto de Supabase ("Ir a …supabase.co") en lugar de una marca propia. No es una vulnerabilidad, pero puede generar desconfianza en las clientas. Se mitiga completando el nombre y el logo de la aplicación en la pantalla de consentimiento de Google Cloud; la solución completa es un dominio propio para Supabase (complemento pago). Queda como decisión de negocio.
 
 ## Checklist final de seguridad
 
@@ -498,7 +510,7 @@ Sospechas **sin evidencia suficiente** (dependen de configuración que no pude l
 - [ ] Contraseña de 8+ caracteres, protección de contraseñas filtradas y MFA para la administradora en Supabase (SEC-012)
 - [ ] Decidir flujo PKCE o *implicit* (SEC-011)
 - [ ] Revisar que las *Redirect URLs* de producción no incluyan `localhost`
-- [ ] Volver a comprobar las cabeceras tras el primer despliegue en Cloudflare Pages
+- [x] Cabeceras comprobadas tras el primer despliegue en Cloudflare
 
 ## Pendientes y decisiones manuales
 
