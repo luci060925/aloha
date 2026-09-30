@@ -94,7 +94,7 @@ export const Footer: React.FC = () => {
               <BrandLogo className="h-10 w-auto mx-auto sm:mx-0" variant="light" />
             </div>
             <p className="text-xs text-neutral-300 font-medium leading-relaxed max-w-sm mx-auto sm:mx-0">
-              Bienvenida a nuestra tienda. Estamos acá para ayudarte a encontrar el look perfecto.
+              Bienvenida a Aloha: moda femenina de diseño actual, pensada para que te sientas bien con lo que llevás puesto.
             </p>
 
             {/* Complete Social Channels */}
