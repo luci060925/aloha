@@ -253,8 +253,7 @@ export const CatalogGrid: React.FC = () => {
                 onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
                 className="bg-[#141414] border border-neutral-700 rounded py-1.5 px-2.5 text-xs text-white font-semibold cursor-pointer focus:outline-none focus:border-white"
               >
-                <option value="featured" className="bg-neutral-900 text-white">Destacados</option>
-                <option value="newest" className="bg-neutral-900 text-white">Más Nuevos</option>
+                <option value="newest" className="bg-neutral-900 text-white">Ordenar por…</option>
                 <option value="price-asc" className="bg-neutral-900 text-white">Precio: Menor a Mayor</option>
                 <option value="price-desc" className="bg-neutral-900 text-white">Precio: Mayor a Menor</option>
               </select>

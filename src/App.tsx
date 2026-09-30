@@ -47,8 +47,8 @@ const MainLayout: React.FC = () => {
         <HeroBanner />
 
         {/* Carruseles chicos: prendas marcadas como destacadas y últimas agregadas */}
-        <ProductCarousel id="prendas-destacadas" title="Prendas Destacadas" products={featuredProducts} />
-        <ProductCarousel id="ultimas-agregadas" title="Últimas Agregadas" products={latestProducts} />
+        <ProductCarousel id="prendas-destacadas" eyebrow="Nuestras elegidas" title="Prendas Destacadas" products={featuredProducts} />
+        <ProductCarousel id="ultimas-agregadas" eyebrow="Recién llegadas" title="Últimas Agregadas" products={latestProducts} />
 
         {/* Todas las prendas, con filtros y paginación */}
         <CatalogGrid />
