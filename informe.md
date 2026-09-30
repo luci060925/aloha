@@ -16,7 +16,7 @@ Una auditoría anterior (documentada en [`docs/auditoria.md`](./docs/auditoria.m
 - Un usuario con cuenta normal puede registrar pedidos con **precio $1, cantidades negativas o 100 % de descuento** (SEC-001), **agotar cupones** ajenos (SEC-002) y **suplantar el correo** de otra persona en su perfil, impidiéndole registrarse (SEC-003).
 - El sitio no tiene **CSP** (política de contenido) ni HSTS (SEC-007), lo que quita una capa de defensa ante un eventual XSS, ya que la sesión vive en `localStorage`.
 
-**Resultado de la remediación:** 8 hallazgos quedaron 🟢 corregidos y verificados (SEC-007, 008, 009, 010 y 013, más SEC-012 en el sitio); 5 (SEC-001, 002, 003, 004 y 006) tienen la corrección **lista y probada pero pendiente de aplicar en Supabase** (`supabase/hardening_seguridad.sql`), y 3 requieren una **decisión manual** (SEC-005, SEC-011 y la parte de configuración de SEC-012). Las correcciones de la base se probaron en una copia local de PostgreSQL: contra el estado anterior **20 de 31 pruebas fallan** (detectan las vulnerabilidades) y con el endurecimiento **las 31 pasan**.
+**Resultado de la remediación:** 9 hallazgos quedaron 🟢 corregidos y verificados (SEC-006, 007, 008, 009, 010 y 013, más SEC-012 en el sitio); SEC-006 quedó además 🟢 **verificado en producción**; 4 (SEC-001, 002, 003 y 004) tienen la corrección **aplicada en Supabase (`supabase/hardening_seguridad.sql`) y probada localmente, a la espera de una prueba real con un pedido de clienta**, y 3 requieren una **decisión manual** (SEC-005, SEC-011 y la parte de configuración de SEC-012). Las correcciones de la base se probaron en una copia local de PostgreSQL: contra el estado anterior **20 de 31 pruebas fallan** (detectan las vulnerabilidades) y con el endurecimiento **las 31 pasan**.
 
 **Lo que está bien:** no hay sinks de XSS (`dangerouslySetInnerHTML`, `innerHTML`, `eval`); React 19 bloquea URLs `javascript:`; no hay secretos en el código, en el bundle ni en los 7 commits del historial; las dependencias no tienen vulnerabilidades conocidas (`npm audit`: 0); no hay source maps; los visitantes solo pueden leer datos públicos; OpenAPI y GraphQL de Supabase están cerrados; la verificación de correo está activa.
 
@@ -77,7 +77,7 @@ Los valores de CVSS son **estimaciones** calculadas con el vector indicado; los 
 | SEC-003 | Perfiles: la clienta controla su columna `email` (suplantación y bloqueo del alta de otra persona) | Medium | 5.4 | A01:2021 · API3:2023 | CWE-915 | `profiles` (RLS/BD) | 🟡 En corrección |
 | SEC-004 | Sin límite de frecuencia ni de tamaño en pedidos y perfiles | Low | 4.3 | A04:2021 · API4:2023 | CWE-770 | `orders`, `profiles` | 🟡 En corrección |
 | SEC-005 | Cuota de correos de Supabase agotable por cualquiera (registro y recuperación sin CAPTCHA, SMTP por defecto) | Medium | 5.3 | A04:2021 · API4:2023 | CWE-799 | Auth / configuración | ⚪ Requiere decisión |
-| SEC-006 | `get_coupon` ejecutable sin sesión: fuerza bruta de códigos | Low | 3.7 | A07:2021 · API4:2023 | CWE-307 | función `get_coupon` | 🟡 En corrección |
+| SEC-006 | `get_coupon` ejecutable sin sesión: fuerza bruta de códigos | Low | 3.7 | A07:2021 · API4:2023 | CWE-307 | función `get_coupon` | 🟢 Corregido |
 | SEC-007 | Sin Content-Security-Policy ni HSTS | Low | N/A (hardening) | A05:2021 | CWE-693 | `public/_headers`, `index.html` | 🟢 Corregido |
 | SEC-008 | Datos personales del perfil persistidos en `localStorage` | Low | N/A (hardening) | A02:2021 | CWE-922 | `StoreContext.tsx` | 🟢 Corregido |
 | SEC-009 | URLs controladas por usuarios/administradora sin validar el esquema (avatar en el panel, enlaces a redes) | Low | 3.5 | A03:2021 | CWE-20 | `AdminPage`, `Header`, `Footer`, `InfoModal` | 🟢 Corregido |
@@ -118,7 +118,7 @@ Prioridad de corrección: SEC-001 → 002 → 003 → 005 → 004 → 006 → 00
 
 **Estado:** 🟡 En corrección · **Fecha de detección:** 2026-09-29 · **Fecha de corrección:** —
 
-**Situación:** Corregido y probado en el repositorio; **falta aplicar `supabase/hardening_seguridad.sql` en Supabase** (hasta entonces sigue presente en producción).
+**Situación:** Corregido y probado en el repositorio (45 pruebas) y `supabase/hardening_seguridad.sql` **aplicado en Supabase** el 2026-09-29. La aplicación se comprobó de forma indirecta (el primer cambio del script, la revocación de `get_coupon`, está en efecto y el script no tiene transacciones propias, por lo que se aplica entero o nada). **Pendiente:** confirmar el comportamiento real con un pedido de prueba de una cuenta de clienta (uno sin cupón y otro con cupón) y con el intento de un precio adulterado; hasta entonces no se marca 🟢.
 
 **Corrección aplicada:** Disparador `validate_order` (BEFORE INSERT en `orders`): valida prendas existentes y en stock, precio vigente, cantidades enteras 1–50, subtotal, total y que el descuento no supere el máximo legítimo (cupón, volumen, monto o global). En el sitio, la bolsa usa siempre el precio y stock vigentes (`src/lib/pricing.ts`, `syncCartWithCatalog`) y el checkout avisa si el pedido no quedó registrado.
 
@@ -147,7 +147,7 @@ Prioridad de corrección: SEC-001 → 002 → 003 → 005 → 004 → 006 → 00
 
 **Estado:** 🟡 En corrección · **Fecha de detección:** 2026-09-29 · **Fecha de corrección:** —
 
-**Situación:** Corregido y probado en el repositorio; **falta aplicar `supabase/hardening_seguridad.sql` en Supabase** (hasta entonces sigue presente en producción).
+**Situación:** Corregido y probado en el repositorio (45 pruebas) y `supabase/hardening_seguridad.sql` **aplicado en Supabase** el 2026-09-29. La aplicación se comprobó de forma indirecta (el primer cambio del script, la revocación de `get_coupon`, está en efecto y el script no tiene transacciones propias, por lo que se aplica entero o nada). **Pendiente:** confirmar el comportamiento real con un pedido de prueba de una cuenta de clienta (uno sin cupón y otro con cupón) y con el intento de un precio adulterado; hasta entonces no se marca 🟢.
 
 **Corrección aplicada:** El mismo disparador exige un cupón real, activo, vigente y con cupo, con `SELECT … FOR UPDATE` sobre la fila (serializa pedidos simultáneos). `count_coupon_use` solo cuenta cuando el pedido realmente descuenta.
 
@@ -179,7 +179,7 @@ Prioridad de corrección: SEC-001 → 002 → 003 → 005 → 004 → 006 → 00
 
 **Estado:** 🟡 En corrección · **Fecha de detección:** 2026-09-29 · **Fecha de corrección:** —
 
-**Situación:** Corregido y probado en el repositorio; **falta aplicar `supabase/hardening_seguridad.sql` en Supabase** (hasta entonces sigue presente en producción).
+**Situación:** Corregido y probado en el repositorio (45 pruebas) y `supabase/hardening_seguridad.sql` **aplicado en Supabase** el 2026-09-29. La aplicación se comprobó de forma indirecta (el primer cambio del script, la revocación de `get_coupon`, está en efecto y el script no tiene transacciones propias, por lo que se aplica entero o nada). **Pendiente:** confirmar el comportamiento real con un pedido de prueba de una cuenta de clienta (uno sin cupón y otro con cupón) y con el intento de un precio adulterado; hasta entonces no se marca 🟢.
 
 **Corrección aplicada:** Disparador `protect_profile_columns`: el email sale siempre de `auth.users`, `id` y `created_at` no cambian y `is_admin` solo lo modifica una administradora o el panel de Supabase (sin sesión de usuaria).
 
@@ -206,7 +206,7 @@ Prioridad de corrección: SEC-001 → 002 → 003 → 005 → 004 → 006 → 00
 
 **Estado:** 🟡 En corrección · **Fecha de detección:** 2026-09-29 · **Fecha de corrección:** —
 
-**Situación:** Corregido y probado en el repositorio; **falta aplicar `supabase/hardening_seguridad.sql` en Supabase** (hasta entonces sigue presente en producción).
+**Situación:** Corregido y probado en el repositorio (45 pruebas) y `supabase/hardening_seguridad.sql` **aplicado en Supabase** el 2026-09-29. La aplicación se comprobó de forma indirecta (el primer cambio del script, la revocación de `get_coupon`, está en efecto y el script no tiene transacciones propias, por lo que se aplica entero o nada). **Pendiente:** confirmar el comportamiento real con un pedido de prueba de una cuenta de clienta (uno sin cupón y otro con cupón) y con el intento de un precio adulterado; hasta entonces no se marca 🟢.
 
 **Corrección aplicada:** Tope de 10 pedidos por usuaria y hora dentro de `validate_order`, y restricciones `CHECK` (`orders_limits_chk`, `profiles_limits_chk`) de longitud, formato de identificador y estructura JSON.
 
@@ -254,9 +254,9 @@ Prioridad de corrección: SEC-001 → 002 → 003 → 005 → 004 → 006 → 00
 
 **Remediación recomendada:** exigir sesión (`revoke … from anon`), ya que comprar requiere cuenta. Con SEC-002/005 se limita el abuso restante.
 
-**Estado:** 🟡 En corrección · **Fecha de detección:** 2026-09-29 · **Fecha de corrección:** —
+**Estado:** 🟢 Corregido · **Fecha de detección:** 2026-09-29 · **Fecha de corrección:** 2026-09-29
 
-**Situación:** Corregido y probado en el repositorio; **falta aplicar `supabase/hardening_seguridad.sql` en Supabase** (hasta entonces sigue presente en producción).
+**Situación:** Aplicado y **verificado en producción** el 2026-09-29: un visitante sin sesión, con la clave pública, recibe `permission denied for function get_coupon` (código 42501); antes respondía 200 con el cupón.
 
 **Corrección aplicada:** `revoke execute on function get_coupon … from anon`: solo cuentas con sesión pueden validar cupones (comprar ya exige cuenta).
 
@@ -443,11 +443,11 @@ Sospechas **sin evidencia suficiente** (dependen de configuración que no pude l
 
 | ID | Evidencia | Corrección | Test | Verificación |
 | -- | --------- | ---------- | ---- | ------------ |
-| SEC-001 | Reproducción local A1, A2, A2b, A2c: pedidos falsos aceptados | `supabase/hardening_seguridad.sql` (`validate_order`), `src/lib/pricing.ts`, `StoreContext.tsx` | `tests/db/seguridad.test.ts`, `tests/unit/lib.test.ts` | Sin el arreglo: falla. Con el arreglo: pasa. **Falta aplicarlo en Supabase** |
-| SEC-002 | Reproducción A3: `used_count=5 / max_uses=2` | `validate_order` (cupón con bloqueo de fila), `count_coupon_use` | `tests/db/seguridad.test.ts` | Sin el arreglo: falla. Con el arreglo: pasa. Falta aplicarlo |
-| SEC-003 | Reproducción A5a/A5b: email suplantado y alta bloqueada | `protect_profile_columns` | `tests/db/seguridad.test.ts` | Sin el arreglo: falla. Con el arreglo: pasa. Falta aplicarlo |
-| SEC-004 | Reproducción A4: 300 de 300 pedidos aceptados | `validate_order` (10/hora), `orders_limits_chk`, `profiles_limits_chk` | `tests/db/seguridad.test.ts` | Sin el arreglo: falla. Con el arreglo: pasa. Falta aplicarlo |
-| SEC-006 | Reproducción A6 y `rpc('get_coupon')` = 200 con la clave pública | `revoke … from anon` | `tests/db/seguridad.test.ts` | Sin el arreglo: falla. Con el arreglo: pasa. Falta aplicarlo |
+| SEC-001 | Reproducción local A1, A2, A2b, A2c: pedidos falsos aceptados | `supabase/hardening_seguridad.sql` (`validate_order`), `src/lib/pricing.ts`, `StoreContext.tsx` | `tests/db/seguridad.test.ts`, `tests/unit/lib.test.ts` | Sin el arreglo: falla. Con el arreglo: pasa. **Aplicado en Supabase; falta la prueba real con un pedido |
+| SEC-002 | Reproducción A3: `used_count=5 / max_uses=2` | `validate_order` (cupón con bloqueo de fila), `count_coupon_use` | `tests/db/seguridad.test.ts` | Sin el arreglo: falla. Con el arreglo: pasa. Aplicado en Supabase; falta la prueba real con un pedido |
+| SEC-003 | Reproducción A5a/A5b: email suplantado y alta bloqueada | `protect_profile_columns` | `tests/db/seguridad.test.ts` | Sin el arreglo: falla. Con el arreglo: pasa. Aplicado en Supabase; falta la prueba real con un pedido |
+| SEC-004 | Reproducción A4: 300 de 300 pedidos aceptados | `validate_order` (10/hora), `orders_limits_chk`, `profiles_limits_chk` | `tests/db/seguridad.test.ts` | Sin el arreglo: falla. Con el arreglo: pasa. Aplicado en Supabase; falta la prueba real con un pedido |
+| SEC-006 | Reproducción A6 y `rpc('get_coupon')` = 200 con la clave pública | `revoke … from anon` | `tests/db/seguridad.test.ts` | **Producción:** ahora `permission denied for function get_coupon` (42501) |
 | SEC-007 | `public/_headers` sin CSP/HSTS | `public/_headers` | Prueba manual con servidor local | Sitio íntegro bajo la CSP; script inyectado y conexión externa bloqueados |
 | SEC-008 | `StoreContext.tsx:438` | Persistir solo en modo demostración | Re-auditoría dinámica | `localStorage` sin perfil, pedidos, clientas ni cupones |
 | SEC-009 | `AdminPage.tsx:1801`, enlaces en `Header/Footer/InfoModal` | `src/lib/external.ts` | `tests/unit/lib.test.ts`, `tests/db/seguridad.test.ts` | Pruebas verdes |
@@ -473,7 +473,14 @@ Sospechas **sin evidencia suficiente** (dependen de configuración que no pude l
 - Los flujos de recuperación de contraseña y de enlace vencido siguen funcionando.
 - Lecturas anónimas de Supabase sin cambios (solo tablas públicas).
 
-**No se pudo verificar todavía en producción:** que los disparadores estén aplicados. Después de ejecutar el SQL, la consulta que trae al final del script debe listar `orders_validate`, `profiles_protect` y `orders_count_coupon`, y `rpc('get_coupon')` con la clave pública debe responder error de permiso.
+**Verificación en producción (2026-09-29, solo lecturas con la clave pública):**
+- `rpc('get_coupon')` como visitante → `permission denied for function get_coupon` (42501). ✅ SEC-006.
+- Lecturas de visitante sin cambios: `profiles`, `orders`, `coupons` y `products` = 0 filas; `categories` = 5, `subcategories` = 18, `store_settings` = 1.
+- `is_admin()` como visitante → `false`.
+
+**CI en GitHub:** el primer push (commit `59e1132`) pasó completo: instalación con `npm ci`, lint, 45 pruebas, compilación con TypeScript estricto y `npm audit --omit=dev`.
+
+**No se puede verificar desde afuera:** los disparadores `validate_order` y `protect_profile_columns` (requieren una sesión de clienta para ejercerse). Se infiere que están aplicados; la confirmación definitiva es un pedido de prueba real (ver pendientes).
 
 ## Checklist final de seguridad
 
@@ -485,7 +492,8 @@ Sospechas **sin evidencia suficiente** (dependen de configuración que no pude l
 - [x] CSP, HSTS y demás cabeceras definidas y probadas
 - [x] Dependencias sin vulnerabilidades conocidas; CI y Dependabot configurados
 - [x] Pruebas automáticas de las reglas de seguridad de la base
-- [ ] **Aplicar `supabase/hardening_seguridad.sql` en Supabase** (SEC-001, 002, 003, 004, 006)
+- [x] `supabase/hardening_seguridad.sql` aplicado en Supabase (SEC-006 verificado en producción)
+- [ ] **Prueba real de pedidos** con una cuenta de clienta: uno sin cupón, uno con cupón y confirmar que un precio adulterado se rechaza (cierra SEC-001, 002, 003, 004)
 - [ ] SMTP propio + CAPTCHA (SEC-005)
 - [ ] Contraseña de 8+ caracteres, protección de contraseñas filtradas y MFA para la administradora en Supabase (SEC-012)
 - [ ] Decidir flujo PKCE o *implicit* (SEC-011)
@@ -496,7 +504,7 @@ Sospechas **sin evidencia suficiente** (dependen de configuración que no pude l
 
 | Qué | Quién | Detalle |
 |---|---|---|
-| Ejecutar `hardening_seguridad.sql` | Desarrollo (con el OK de la dueña) | Es lo único que falta para cerrar los 5 hallazgos de la base. Ver `docs/base-de-datos.md` |
+| Prueba real de pedidos con una cuenta de clienta | Desarrollo / dueña | Cierra SEC-001, 002, 003 y 004: el script ya está aplicado, falta comprobar en vivo que los pedidos legítimos se registran y los adulterados se rechazan |
 | SMTP propio + CAPTCHA | Dueña / desarrollo | Requiere cuentas de Resend o Brevo y de Cloudflare Turnstile (SEC-005) |
 | Política de contraseñas y MFA en Supabase | Desarrollo | SEC-012 |
 | PKCE vs. *implicit* | Desarrollo | SEC-011 |
