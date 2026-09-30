@@ -50,7 +50,7 @@ export async function toWebpBlob(src: string, maxWidth?: number): Promise<Blob> 
  */
 export async function uploadCatalogImage(
   src: string,
-  folder: 'products' | 'hero',
+  folder: 'products' | 'hero' | 'showroom',
   maxWidth?: number,
 ): Promise<string> {
   if (!isSupabaseConfigured || !supabase) return src;

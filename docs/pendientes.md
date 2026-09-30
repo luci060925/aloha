@@ -9,7 +9,7 @@ Buscá `TODO(` en el código para ubicar cada marca.
 | 1 | Revisar los textos legales (`InfoModal.tsx`: devoluciones, arrepentimiento, términos) y cargar razón social, CUIT y domicilio legal | Contador / abogado |
 | 2 | Confirmar el plazo de retiro de 30 días, las gift cards, las cámaras de seguridad y demás condiciones de los términos | Dueña |
 | 3 | Confirmar enlaces reales de Instagram, Facebook y TikTok (se editan en el panel) | Dueña |
-| 4 | Foto real del showroom, historia de la marca y logo original en vector (`StoreLocationSection.tsx`, `InfoModal.tsx`, `BrandLogo.tsx`) | Dueña / diseño |
+| 4 | Que la dueña suba la **foto real del showroom** desde el panel (ya es editable); historia de la marca y logo original en vector (`InfoModal.tsx`, `BrandLogo.tsx`) | Dueña / diseño |
 | 5 | `index.html`: URL canónica e imagen para compartir; sitemap en `robots.txt` | Desarrollo (con el dominio final) |
 | 6 | Correo propio (SMTP, ej. Resend o Brevo) y plantillas de correo en español en Supabase. El envío por defecto tiene un límite muy bajo por hora, suele caer en spam y está en inglés (afecta la confirmación de cuenta y la recuperación de contraseña) | Desarrollo |
 | 7 | Decidir el plan de Supabase (el gratuito se pausa tras 7 días sin actividad) | Dueña |

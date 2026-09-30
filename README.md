@@ -95,7 +95,8 @@ Los scripts están en [`supabase/`](./supabase). Ejecutarlos en el **SQL Editor*
 | 3 | `storage_y_ajustes.sql` | Columnas de redes y portada + bucket público de fotos |
 | 4 | `cupones.sql` | Conteo automático de usos de cupones |
 | 5 | `hardening_seguridad.sql` | **Endurecimiento:** valida cada pedido en el servidor y protege perfiles y cupones |
-| 6 | `categorias_iniciales.sql` | Categorías de arranque (opcional) |
+| 6 | `showroom_foto.sql` | Columna de la foto editable del showroom |
+| 7 | `categorias_iniciales.sql` | Categorías de arranque (opcional) |
 
 `schema.sql` es una versión anterior e **insegura**: no ejecutarla.
 

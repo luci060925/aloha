@@ -1,10 +1,12 @@
 import React from 'react';
 import { MapPin, Clock, Phone, Navigation, ShieldCheck, ShoppingBag } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
-import { openExternal } from '../../lib/external';
+import { openExternal, isHttpUrl } from '../../lib/external';
 
 export const StoreLocationSection: React.FC = () => {
   const { settings } = useStore();
+  const configuredPhoto = settings.showroomImageUrl?.trim() ?? '';
+  const photo = isHttpUrl(configuredPhoto) ? configuredPhoto : '';
 
   const handleOpenGoogleMaps = () => {
     const query = encodeURIComponent(`${settings.address}, ${settings.city}, ${settings.province}, Argentina`);
@@ -93,10 +95,19 @@ export const StoreLocationSection: React.FC = () => {
 
           {/* Right Column: Visual Showcase & Map Preview */}
           <div className="lg:col-span-6 relative">
-            {/* TODO(pedir a la dueña): foto real del showroom (había una foto de stock que se hacía pasar por el local) */}
-            <div className="relative aspect-[4/3] sm:aspect-[16/10] overflow-hidden rounded-sm border border-neutral-800 shadow-2xl bg-gradient-to-br from-neutral-900 via-[#141414] to-black">
-              <MapPin className="absolute top-8 right-8 w-24 h-24 text-white/5" aria-hidden="true" />
-              <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-8">
+            {/* La foto la sube la dueña desde el panel (Ajustes de Tienda → Foto del Showroom). Sin foto: tarjeta oscura. */}
+            <div className={`group relative aspect-[4/3] sm:aspect-[16/10] overflow-hidden rounded-sm border border-neutral-800 shadow-2xl ${photo ? 'bg-black' : 'bg-gradient-to-br from-neutral-900 via-[#141414] to-black'}`}>
+              {photo ? (
+                <img
+                  src={photo}
+                  alt="Showroom de Aloha Indumentaria"
+                  loading="lazy"
+                  className="w-full h-full object-cover grayscale contrast-110 brightness-90 group-hover:scale-105 transition-transform duration-700"
+                />
+              ) : (
+                <MapPin className="absolute top-8 right-8 w-24 h-24 text-white/5" aria-hidden="true" />
+              )}
+              <div className={`absolute inset-0 flex flex-col justify-end p-6 sm:p-8 ${photo ? 'bg-gradient-to-t from-black via-black/30 to-transparent' : ''}`}>
                 <div className="bg-black/80 backdrop-blur-md p-4 border border-white/20 inline-block max-w-sm">
                   <div className="flex items-center gap-2 text-white text-xs uppercase tracking-widest font-mono">
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>

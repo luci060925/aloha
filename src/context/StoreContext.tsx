@@ -180,6 +180,7 @@ const SETTINGS_DB_KEYS: Record<keyof StoreSettings, string> = {
   heroTitle: 'hero_title',
   heroSubtitle: 'hero_subtitle',
   heroImageUrl: 'hero_image_url',
+  showroomImageUrl: 'showroom_image_url',
   heroPrimaryBtnText: 'hero_primary_btn_text',
   heroSecondaryBtnText: 'hero_secondary_btn_text',
 };
@@ -1198,18 +1199,33 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Devuelve false si la base no pudo guardar los cambios (sin permisos, sin conexión, etc.)
   const updateSettings = async (newSettings: Partial<StoreSettings>): Promise<boolean> => {
+    const previous = settings;
     setSettings(prev => ({ ...prev, ...newSettings }));
 
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase
-        .from('store_settings')
-        .update(settingsToDb(newSettings))
-        .eq('id', 1)
-        .select('id');
+      const client = supabase;
+      const save = (payload: DbWrite) => client.from('store_settings').update(payload).eq('id', 1).select('id');
+
+      let { data, error } = await save(settingsToDb(newSettings));
+      // Si la columna de la foto del showroom todavía no existe en la base (falta ejecutar supabase/showroom_foto.sql),
+      // se guarda el resto de los ajustes en lugar de fallar todo
+      if (error?.code === 'PGRST204' && error.message.includes('showroom_image_url')) {
+        console.warn('Falta la columna showroom_image_url en store_settings: ejecutar supabase/showroom_foto.sql');
+        const payload = settingsToDb(newSettings);
+        delete payload.showroom_image_url;
+        ({ data, error } = await save(payload));
+      }
       if (error || !data || data.length === 0) {
         console.error('No se pudieron guardar los ajustes:', error?.message || 'sin permisos');
         return false;
       }
+
+      // Las fotos que se reemplazaron o quitaron ya no se usan: se borran del bucket
+      const reemplazadas = (['heroImageUrl', 'showroomImageUrl'] as const).flatMap(key => {
+        const anterior = previous[key];
+        return newSettings[key] !== undefined && anterior && anterior !== newSettings[key] ? [anterior] : [];
+      });
+      if (reemplazadas.length > 0) await deleteCatalogImages(reemplazadas);
     }
     return true;
   };

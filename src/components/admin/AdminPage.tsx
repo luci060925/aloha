@@ -82,26 +82,29 @@ export const AdminPage: React.FC = () => {
 
   // Hero Image Upload Ref & Handler
   const heroFileInputRef = React.useRef<HTMLInputElement>(null);
-  const [uploadingHero, setUploadingHero] = useState(false);
+  const showroomFileInputRef = React.useRef<HTMLInputElement>(null);
+  const [uploadingImage, setUploadingImage] = useState<'hero' | 'showroom' | null>(null);
+  const uploadingHero = uploadingImage === 'hero';
+  const uploadingShowroom = uploadingImage === 'showroom';
   const [saveSettingsError, setSaveSettingsError] = useState('');
 
-  const handleHeroImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Sube la foto de la portada ('hero') o del showroom a Storage y deja su URL en el formulario (se publica con "Guardar Ajustes")
+  const handleSettingsImageUpload = (kind: 'hero' | 'showroom') => async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (heroFileInputRef.current) {
-      heroFileInputRef.current.value = '';
-    }
+    const input = kind === 'hero' ? heroFileInputRef.current : showroomFileInputRef.current;
+    if (input) input.value = '';
     if (!file) return;
 
-    setUploadingHero(true);
+    setUploadingImage(kind);
     setSaveSettingsError('');
     try {
       const dataUrl = await fileToDataUrl(file);
-      const url = await uploadCatalogImage(dataUrl, 'hero', 2000);
-      setSettingsForm(prev => ({ ...prev, heroImageUrl: url }));
+      const url = await uploadCatalogImage(dataUrl, kind, kind === 'hero' ? 2000 : 1600);
+      setSettingsForm(prev => (kind === 'hero' ? { ...prev, heroImageUrl: url } : { ...prev, showroomImageUrl: url }));
     } catch (err) {
       setSaveSettingsError(err instanceof Error ? `No se pudo subir la foto: ${err.message}` : 'No se pudo subir la foto.');
     } finally {
-      setUploadingHero(false);
+      setUploadingImage(null);
     }
   };
 
@@ -583,6 +586,57 @@ export const AdminPage: React.FC = () => {
                       </div>
                     </div>
 
+                    {/* FOTO DEL SHOWROOM */}
+                    <div className="pt-2 border-t border-neutral-800 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs uppercase tracking-wider font-bold text-neutral-300">
+                          Foto del Showroom (sección "Vení a conocer nuestro local")
+                        </label>
+                        {settingsForm.showroomImageUrl && (
+                          <button
+                            type="button"
+                            onClick={() => setSettingsForm(prev => ({ ...prev, showroomImageUrl: '' }))}
+                            className="text-[10px] text-neutral-400 hover:text-red-400 font-mono underline flex items-center gap-1 cursor-pointer"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            Quitar foto
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row items-center gap-3">
+                        <div className="w-full sm:w-28 h-16 bg-neutral-950 rounded-lg overflow-hidden border border-neutral-750 shrink-0 flex items-center justify-center">
+                          {isHttpUrl(settingsForm.showroomImageUrl) ? (
+                            <img src={settingsForm.showroomImageUrl} alt="Foto del showroom" className="w-full h-full object-cover" />
+                          ) : (
+                            <MapPin className="w-6 h-6 text-neutral-700" aria-hidden="true" />
+                          )}
+                        </div>
+
+                        <div className="flex-1 w-full space-y-1">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            ref={showroomFileInputRef}
+                            onChange={handleSettingsImageUpload('showroom')}
+                            className="hidden"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => showroomFileInputRef.current?.click()}
+                            disabled={uploadingShowroom}
+                            className="w-full py-2.5 px-3 bg-neutral-900 border border-neutral-700 hover:border-white rounded-lg text-xs font-bold text-white flex items-center justify-center gap-2 cursor-pointer transition-colors disabled:opacity-50"
+                          >
+                            <Upload className="w-3.5 h-3.5" />
+                            <span>{uploadingShowroom ? 'Subiendo foto...' : 'Subir Foto del Local'}</span>
+                          </button>
+                          <p className="text-[10px] text-neutral-500 font-mono">
+                            Se muestra en blanco y negro con el cartel de la dirección encima. Sin foto se ve una tarjeta oscura. Recordá tocar "Guardar Ajustes".
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
                     {/* REDES SOCIALES */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-neutral-800">
                       <div className="space-y-2">
@@ -682,7 +736,7 @@ export const AdminPage: React.FC = () => {
                               type="file"
                               accept="image/*"
                               ref={heroFileInputRef}
-                              onChange={handleHeroImageUpload}
+                              onChange={handleSettingsImageUpload('hero')}
                               className="hidden"
                             />
                             <button

@@ -124,6 +124,8 @@ export interface StoreSettings {
   heroTitle?: string;
   heroSubtitle?: string;
   heroImageUrl?: string;
+  // Foto de la sección "Vení a conocer nuestro local" (vacía = tarjeta oscura sin foto)
+  showroomImageUrl?: string;
   heroPrimaryBtnText?: string;
   heroSecondaryBtnText?: string;
 }

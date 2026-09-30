@@ -79,6 +79,7 @@ Panel → **Ajustes de Tienda & Portada**:
 - **Número de WhatsApp** que recibe los pedidos (formato: país + área + número, sin signos; ej. `5492974201122`).
 - **Marquesina** (la barra negra de arriba), **dirección** y **horarios** del showroom.
 - **Redes sociales:** Instagram, Facebook y TikTok.
+- **Foto del Showroom:** la foto de fondo de la sección "Vení a conocer nuestro local" (se ve en blanco y negro, con el cartel de la dirección encima). Se sube con **Subir Foto del Local**; con **Quitar foto** vuelve la tarjeta oscura sin foto.
 - **Portada:** foto de fondo (se optimiza sola), insignia, título, bajada y textos de los botones. A la derecha ves una vista previa.
 
 Tocá **Guardar Ajustes**: si dice "guardados correctamente", ya lo ven todas las clientas. Si aparece un mensaje en rojo, no se guardó.

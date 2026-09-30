@@ -13,7 +13,8 @@ Ejecutar en **SQL Editor**, en este orden. Todos son re-ejecutables (no duplican
 | 3 | `storage_y_ajustes.sql` | Agrega columnas de redes y portada a `store_settings` y crea el bucket `catalog-images` |
 | 4 | `cupones.sql` | Disparador que cuenta los usos de cada cupón |
 | 5 | `hardening_seguridad.sql` | **Endurecimiento** (informe de seguridad): valida cada pedido en el servidor, protege el email y el rol de los perfiles, limita frecuencia y tamaño, y exige sesión para validar cupones. Reemplaza `count_coupon_use` de `cupones.sql`, por eso va **después** |
-| 6 | `categorias_iniciales.sql` | Carga 5 categorías y 18 subcategorías de arranque (opcional) |
+| 6 | `showroom_foto.sql` | Agrega la columna `showroom_image_url` (foto editable de la sección del local) |
+| 7 | `categorias_iniciales.sql` | Carga 5 categorías y 18 subcategorías de arranque (opcional) |
 
 `schema.sql` es una versión anterior e insegura: **no ejecutar**.
 
@@ -27,7 +28,7 @@ Ejecutar en **SQL Editor**, en este orden. Todos son re-ejecutables (no duplican
 | `subcategories` | Nombre, `slug`, `category_id` | Se borran en cascada con su categoría |
 | `orders` | Pedido: cliente, teléfono, ubicación, `items` (JSON), subtotal, descuento, cupón, total, `status`, mensaje enviado | `id` es texto tipo `ORD-…`; `user_id` → `profiles` |
 | `coupons` | Código único, % o monto fijo, `max_uses`, `used_count`, categoría destino, `is_active`, `expires_at` | |
-| `store_settings` | **Una sola fila** (`id = 1`): WhatsApp, dirección, horarios, descuentos automáticos, marquesina, redes, textos de portada | |
+| `store_settings` | **Una sola fila** (`id = 1`): WhatsApp, dirección, horarios, descuentos automáticos, marquesina, redes, textos y foto de portada, foto del showroom | |
 
 Estados de un pedido (`orders.status`): `whatsapp_sent` → `contacted` → `confirmed` → `delivered` (o `cancelled`).
 
@@ -47,7 +48,7 @@ Bucket público **`catalog-images`**:
 - Lectura pública (las fotos se ven en el sitio).
 - Solo la administradora puede subir, reemplazar o borrar.
 - Máximo 1 MB por archivo; solo WebP, JPEG o PNG.
-- Carpetas: `products/` (fotos de prendas) y `hero/` (portada).
+- Carpetas: `products/` (fotos de prendas), `hero/` (portada) y `showroom/` (foto del local).
 
 ## Crear la cuenta de administradora
 
