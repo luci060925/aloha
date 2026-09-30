@@ -4,23 +4,42 @@ import { uploadCatalogImage } from '../../lib/images';
 import { slugify } from '../../lib/slug';
 import {
   X,
-  Sparkles, 
-  Check, 
-  Upload, 
-  Trash2, 
-  ArrowUp, 
-  AlignCenter, 
-  ArrowDown, 
+  Sparkles,
+  Check,
+  Upload,
+  Trash2,
+  Move,
   Layers,
   Tag,
   AlertCircle
 } from 'lucide-react';
 
 interface ImageItem {
-  rawUrl: string;
+  rawUrl: string; // foto original (o la ya publicada)
   previewUrl: string;
-  offsetYPercent: number; // 0 = Top, 50 = Center, 100 = Bottom
+  // Punto de la foto que queda en el centro del recuadro 3:4, en % (50 = centrada). Se cambia arrastrando la foto.
+  offsetXPercent: number;
+  offsetYPercent: number;
+  ratio: number; // ancho / alto de la foto; 0.75 = ya es 3:4 y no hay nada que mover
 }
+
+const FRAME_RATIO = 0.75; // 3:4
+
+const clampPercent = (value: number) => Math.min(100, Math.max(0, value));
+
+/** Cuántos píxeles de la foto sobran (en vertical y en horizontal) al llenar un recuadro de ancho x alto. */
+const overflowInBox = (ratio: number, boxW: number, boxH: number) => ({
+  x: Math.max(0, boxH * ratio - boxW),
+  y: Math.max(0, boxW / ratio - boxH),
+});
+
+const loadRatio = (src: string): Promise<number> =>
+  new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => resolve(img.width && img.height ? img.width / img.height : FRAME_RATIO);
+    img.onerror = () => resolve(FRAME_RATIO);
+    img.src = src;
+  });
 
 export const ProductFormModal: React.FC = () => {
   const {
@@ -33,6 +52,8 @@ export const ProductFormModal: React.FC = () => {
   } = useStore();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Arrastre de una foto dentro de su recuadro (posición inicial del gesto y tamaño del recuadro)
+  const dragRef = useRef<{ idx: number; x: number; y: number; fx: number; fy: number; w: number; h: number } | null>(null);
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -70,7 +91,9 @@ export const ProductFormModal: React.FC = () => {
         setImagesList(editingProduct.images.map(img => ({
           rawUrl: img,
           previewUrl: img,
-          offsetYPercent: 50
+          offsetXPercent: 50,
+          offsetYPercent: 50,
+          ratio: FRAME_RATIO,
         })));
       } else {
         setImagesList([]);
@@ -107,7 +130,7 @@ export const ProductFormModal: React.FC = () => {
   const availableSubcategories = selectedCatObj?.subcategories || [];
 
   // Helper to render image into 3:4 canvas using specific vertical offset percentage (0 to 100%)
-  const processImageTo3x4 = (srcUrl: string, offsetYPercent: number = 50): Promise<string> => {
+  const processImageTo3x4 = (srcUrl: string, offsetYPercent: number = 50, offsetXPercent: number = 50): Promise<string> => {
     return new Promise((resolve) => {
       const img = new Image();
       img.crossOrigin = 'anonymous'; // permite reencuadrar fotos ya subidas (el bucket envía CORS)
@@ -136,10 +159,10 @@ export const ProductFormModal: React.FC = () => {
         let offsetY = 0;
 
         if (srcRatio > targetRatio) {
-          // Source is wider -> fit to height, center X
+          // Source is wider -> fit to height, apply custom X offset (0% = left, 50% = center, 100% = right)
           renderHeight = targetHeight;
           renderWidth = img.width * (targetHeight / img.height);
-          offsetX = (targetWidth - renderWidth) / 2;
+          offsetX = -((renderWidth - targetWidth) * (clampPercent(offsetXPercent) / 100));
           offsetY = 0;
         } else {
           // Source is taller -> fit to width, apply custom Y offset (0% = top, 50% = center, 100% = bottom)
@@ -162,7 +185,7 @@ export const ProductFormModal: React.FC = () => {
     });
   };
 
-  // Handle file uploads
+  // Las fotos se guardan enteras y el recorte 3:4 se hace al publicar, con el punto que se eligió arrastrando la foto
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -172,14 +195,10 @@ export const ProductFormModal: React.FC = () => {
       reader.onload = async (event) => {
         const rawResult = event.target?.result as string;
         if (rawResult) {
-          const processed = await processImageTo3x4(rawResult, 50);
+          const ratio = await loadRatio(rawResult);
           setImagesList(prev => [
             ...prev,
-            {
-              rawUrl: rawResult,
-              previewUrl: processed,
-              offsetYPercent: 50
-            }
+            { rawUrl: rawResult, previewUrl: rawResult, offsetXPercent: 50, offsetYPercent: 50, ratio },
           ]);
         }
       };
@@ -191,16 +210,27 @@ export const ProductFormModal: React.FC = () => {
     }
   };
 
-  const handleUpdateImageOffset = async (idx: number, newOffset: number) => {
+  // Arrastrar la foto dentro de su recuadro: la foto sigue al dedo o al mouse
+  const handleFramePointerDown = (idx: number) => (e: React.PointerEvent<HTMLDivElement>) => {
     const item = imagesList[idx];
     if (!item) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    dragRef.current = { idx, x: e.clientX, y: e.clientY, fx: item.offsetXPercent, fy: item.offsetYPercent, w: rect.width, h: rect.height };
+  };
 
-    const reprocessed = await processImageTo3x4(item.rawUrl, newOffset);
-    setImagesList(prev => prev.map((img, i) => 
-      i === idx 
-        ? { ...img, previewUrl: reprocessed, offsetYPercent: newOffset }
-        : img
-    ));
+  const handleFramePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current;
+    const item = drag ? imagesList[drag.idx] : undefined;
+    if (!drag || !item) return;
+    const extra = overflowInBox(item.ratio, drag.w, drag.h);
+    const nextX = extra.x > 1 ? clampPercent(drag.fx - ((e.clientX - drag.x) / extra.x) * 100) : drag.fx;
+    const nextY = extra.y > 1 ? clampPercent(drag.fy - ((e.clientY - drag.y) / extra.y) * 100) : drag.fy;
+    setImagesList(prev => prev.map((img, i) => (i === drag.idx ? { ...img, offsetXPercent: nextX, offsetYPercent: nextY } : img)));
+  };
+
+  const handleFramePointerUp = () => {
+    dragRef.current = null;
   };
 
   const handleRemoveImage = (indexToRemove: number) => {
@@ -290,9 +320,11 @@ export const ProductFormModal: React.FC = () => {
     try {
       // Las fotos nuevas (data URL) se suben a Storage; las ya subidas conservan su URL
       const finalImages = await Promise.all(
-        imagesList.map(item =>
-          item.previewUrl.startsWith('data:') ? uploadCatalogImage(item.previewUrl, 'products') : item.previewUrl
-        )
+        imagesList.map(async item => {
+          if (!item.rawUrl.startsWith('data:')) return item.previewUrl;
+          const framed = await processImageTo3x4(item.rawUrl, item.offsetYPercent, item.offsetXPercent);
+          return uploadCatalogImage(framed, 'products');
+        })
       );
       const finalColors = colors.length > 0 ? colors : [{ name: 'Único', hex: '#111111' }];
       const slug = slugify(name);
@@ -526,107 +558,54 @@ export const ProductFormModal: React.FC = () => {
               />
             </div>
 
-            {/* Images List with Centering / Framing Tools */}
+            {/* Fotos: se acomodan arrastrándolas dentro de su recuadro */}
             {imagesList.length > 0 && (
               <div className="space-y-3 pt-2">
                 <p className="text-[11px] text-neutral-400 font-mono uppercase tracking-wider font-semibold">
-                  Ajustar encuadre de las fotos:
+                  Así se verá cada foto. Arrastrala para acomodarla:
                 </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {imagesList.map((item, idx) => (
-                    <div 
-                      key={idx} 
-                      className="flex gap-3 p-3 bg-neutral-950/80 border border-neutral-800 rounded-xl relative group items-center"
-                    >
-                      {/* 3:4 Thumbnail Preview */}
-                      <div className="w-20 h-28 shrink-0 bg-neutral-900 rounded-lg overflow-hidden border border-neutral-700 relative">
-                        <img
-                          src={item.previewUrl}
-                          alt={`Prenda ${idx + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-
-                      {/* Framing and Alignment Controls */}
-                      <div className="flex-1 min-w-0 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="font-mono text-xs font-bold text-white">
-                            Foto #{idx + 1}
-                          </span>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {imagesList.map((item, idx) => {
+                    const movable = Math.abs(item.ratio - FRAME_RATIO) > 0.01;
+                    return (
+                      <div key={idx} className="space-y-1.5">
+                        <div
+                          onPointerDown={handleFramePointerDown(idx)}
+                          onPointerMove={handleFramePointerMove}
+                          onPointerUp={handleFramePointerUp}
+                          onPointerCancel={handleFramePointerUp}
+                          style={{ touchAction: movable ? 'none' : 'auto' }}
+                          className={`relative aspect-[3/4] w-full overflow-hidden rounded-lg border border-neutral-700 bg-neutral-900 select-none ${movable ? 'cursor-grab active:cursor-grabbing' : ''}`}
+                        >
+                          <img
+                            src={item.previewUrl}
+                            alt={`Prenda ${idx + 1}`}
+                            draggable={false}
+                            className="w-full h-full object-cover pointer-events-none"
+                            style={{ objectPosition: `${item.offsetXPercent}% ${item.offsetYPercent}%` }}
+                          />
+                          {movable && (
+                            <span className="absolute bottom-1.5 left-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-black/70 text-[9px] font-mono uppercase text-white pointer-events-none">
+                              <Move className="w-3 h-3" /> Arrastrá
+                            </span>
+                          )}
                           <button
                             type="button"
+                            onPointerDown={(e) => e.stopPropagation()}
                             onClick={() => handleRemoveImage(idx)}
-                            className="text-neutral-500 hover:text-red-400 transition-colors p-1 cursor-pointer"
+                            className="absolute top-1.5 right-1.5 p-1.5 rounded-full bg-black/70 text-neutral-300 hover:text-red-400 transition-colors cursor-pointer"
                             title="Quitar foto"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
-
-                        {/* Centering / Position Selector */}
-                        <div>
-                          <span className="text-[10px] text-neutral-400 uppercase font-mono block mb-1">
-                            Enfoque vertical:
-                          </span>
-                          <div className="grid grid-cols-3 gap-1">
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateImageOffset(idx, 0)}
-                              className={`py-1 text-[10px] uppercase font-mono rounded cursor-pointer border flex items-center justify-center gap-1 transition-colors ${
-                                item.offsetYPercent <= 15
-                                  ? 'bg-white text-black border-white font-bold'
-                                  : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:border-neutral-600'
-                              }`}
-                              title="Enfocar arriba (hombros / escote)"
-                            >
-                              <ArrowUp className="w-2.5 h-2.5" />
-                              <span>Arriba</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateImageOffset(idx, 50)}
-                              className={`py-1 text-[10px] uppercase font-mono rounded cursor-pointer border flex items-center justify-center gap-1 transition-colors ${
-                                item.offsetYPercent > 15 && item.offsetYPercent < 85
-                                  ? 'bg-white text-black border-white font-bold'
-                                  : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:border-neutral-600'
-                              }`}
-                              title="Centrar foto"
-                            >
-                              <AlignCenter className="w-2.5 h-2.5" />
-                              <span>Centro</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateImageOffset(idx, 100)}
-                              className={`py-1 text-[10px] uppercase font-mono rounded cursor-pointer border flex items-center justify-center gap-1 transition-colors ${
-                                item.offsetYPercent >= 85
-                                  ? 'bg-white text-black border-white font-bold'
-                                  : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:border-neutral-600'
-                              }`}
-                              title="Enfocar abajo (falda / ruedo)"
-                            >
-                              <ArrowDown className="w-2.5 h-2.5" />
-                              <span>Abajo</span>
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Slider for Fine-Tuning Centering */}
-                        <div className="pt-1">
-                          <input
-                            type="range"
-                            min="0"
-                            max="100"
-                            value={item.offsetYPercent}
-                            onChange={(e) => handleUpdateImageOffset(idx, Number(e.target.value))}
-                            className="w-full accent-white cursor-pointer h-1 bg-neutral-800 rounded-lg"
-                            title="Deslizar para encuadrar la prenda a gusto"
-                          />
-                        </div>
+                        <span className="block text-[10px] font-mono text-neutral-400">
+                          Foto #{idx + 1}{movable ? '' : ' · ya entra completa'}
+                        </span>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
