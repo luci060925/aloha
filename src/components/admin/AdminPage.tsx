@@ -679,20 +679,6 @@ export const AdminPage: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Insignia / Badge */}
-                      <div className="space-y-1">
-                        <label className="block text-xs uppercase tracking-wider font-bold text-neutral-300">
-                          Texto de la Insignia Superior
-                        </label>
-                        <input
-                          type="text"
-                          value={settingsForm.heroBadgeText || ''}
-                          onChange={(e) => setSettingsForm({ ...settingsForm, heroBadgeText: e.target.value })}
-                          placeholder="Ej: Nueva Colección 2026"
-                          className="w-full px-4 py-2.5 text-sm bg-neutral-900 border border-neutral-750 rounded-xl font-medium text-white focus:outline-none focus:border-white"
-                        />
-                      </div>
-
                       {/* Título Principal */}
                       <div className="space-y-1">
                         <label className="block text-xs uppercase tracking-wider font-bold text-neutral-300">
@@ -775,11 +761,6 @@ export const AdminPage: React.FC = () => {
                           />
                         </div>
                         <div className="relative z-10 space-y-1.5 max-w-sm">
-                          {settingsForm.heroBadgeText && (
-                            <span className="inline-block px-2.5 py-0.5 bg-black/80 border border-white/20 rounded-full text-[8.5px] uppercase tracking-[0.2em] font-bold text-neutral-300 font-mono">
-                              {settingsForm.heroBadgeText}
-                            </span>
-                          )}
                           <h4 className="font-serif text-lg font-bold uppercase tracking-wider text-white">
                             {settingsForm.heroTitle || 'ELEGANCIA & ESTILO'}
                           </h4>

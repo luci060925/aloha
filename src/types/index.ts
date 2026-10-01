@@ -112,7 +112,6 @@ export interface StoreSettings {
   tiktokUrl: string;
 
   // Hero Banner Customization (Editable from Admin)
-  heroBadgeText?: string;
   heroTitle?: string;
   heroSubtitle?: string;
   heroImageUrl?: string;

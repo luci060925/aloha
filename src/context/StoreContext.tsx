@@ -168,7 +168,6 @@ const SETTINGS_DB_KEYS: Record<keyof StoreSettings, string> = {
   instagramHandle: 'instagram_handle',
   facebookUrl: 'facebook_url',
   tiktokUrl: 'tiktok_url',
-  heroBadgeText: 'hero_badge_text',
   heroTitle: 'hero_title',
   heroSubtitle: 'hero_subtitle',
   heroImageUrl: 'hero_image_url',

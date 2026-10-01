@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import { openExternal, safeUrl } from '../../lib/external';
 
@@ -13,7 +13,6 @@ export const HeroBanner: React.FC = () => {
   };
 
   const bgImage = settings.heroImageUrl || 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&q=80&w=2000';
-  const badgeText = settings.heroBadgeText || 'Nueva Colección 2026';
   const titleText = settings.heroTitle || 'Elegancia & Estilo';
   const subtitleText = settings.heroSubtitle || 'Prendas esenciales y diseño contemporáneo pensados para acompañar tu día a día con distinción.';
 
@@ -30,14 +29,6 @@ export const HeroBanner: React.FC = () => {
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28 lg:py-32 flex flex-col items-center text-center">
         
-        {/* Badge */}
-        {badgeText && (
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 border border-white/20 bg-black/70 backdrop-blur-md rounded-full text-xs uppercase tracking-[0.25em] font-bold text-neutral-200 mb-5 animate-fade-in">
-            <Sparkles className="w-3.5 h-3.5 text-neutral-300" />
-            <span>{badgeText}</span>
-          </div>
-        )}
-
         {/* Main Headline */}
         <h1 className="font-serif text-4xl sm:text-6xl lg:text-7xl font-bold uppercase tracking-widest leading-tight max-w-4xl text-white">
           {titleText}

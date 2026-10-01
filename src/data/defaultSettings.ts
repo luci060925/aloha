@@ -16,7 +16,6 @@ export const DEFAULT_SETTINGS: StoreSettings = {
   tiktokUrl: 'https://www.tiktok.com/@aloha.indumentaria_',
   
   // Hero Defaults
-  heroBadgeText: 'Nueva Colección 2026',
   heroTitle: 'Elegancia & Estilo',
   heroSubtitle: 'Prendas esenciales y diseño contemporáneo pensados para acompañar tu día a día con distinción.',
   heroImageUrl: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&q=80&w=2000',
