@@ -14,6 +14,7 @@ import type {
 } from '../types/database';
 import type { Options as ConfettiOptions } from 'canvas-confetti';
 import { openExternal } from '../lib/external';
+import { MAGNOLIA_CATEGORY, MAGNOLIA_SLUG, LOCKED_CATEGORY_MESSAGE } from '../data/fixedCategories';
 
 // El confeti se descarga recién cuando se usa (no pesa en la carga inicial)
 const confetti = (options: ConfettiOptions) => {
@@ -238,11 +239,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
 
   // Con Supabase las categorías vienen de la base (sin caché ni categorías de fábrica)
-  const [categories, setCategories] = useState<Category[]>(() => {
+  const [storedCategories, setCategories] = useState<Category[]>(() => {
     if (isSupabaseConfigured) return [];
     const saved = localStorage.getItem(LOCAL_STORAGE_KEYS.CATEGORIES);
     return saved ? JSON.parse(saved) : DEMO_CATEGORIES;
   });
+  // Magnolia Intimates es una categoría fija (vive en el código): siempre está, al final, y no se puede editar
+  const categories = useMemo(
+    () => [...storedCategories.filter(c => c.slug !== MAGNOLIA_SLUG), MAGNOLIA_CATEGORY],
+    [storedCategories]
+  );
 
   const [storedCart, setCart] = useState<CartItem[]>(() => {
     const saved = localStorage.getItem(LOCAL_STORAGE_KEYS.CART);
@@ -424,8 +430,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       localStorage.removeItem(LOCAL_STORAGE_KEYS.CATEGORIES);
       return;
     }
-    localStorage.setItem(LOCAL_STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
-  }, [categories]);
+    localStorage.setItem(LOCAL_STORAGE_KEYS.CATEGORIES, JSON.stringify(storedCategories));
+  }, [storedCategories]);
 
   useEffect(() => {
     localStorage.setItem(LOCAL_STORAGE_KEYS.CART, JSON.stringify(storedCart));
@@ -1128,6 +1134,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const updateCategory = async (id: string, categoryData: Partial<Category>): Promise<string | null> => {
+    if (categories.find(c => c.id === id)?.locked) return LOCKED_CATEGORY_MESSAGE;
     if (isSupabaseConfigured && supabase) {
       const dbObj: DbWrite = { updated_at: new Date().toISOString() };
       if (categoryData.name !== undefined) dbObj.name = categoryData.name;
@@ -1144,6 +1151,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const deleteCategory = async (id: string): Promise<string | null> => {
     const category = categories.find(c => c.id === id);
     if (!category) return 'Categoría no encontrada.';
+    if (category.locked) return LOCKED_CATEGORY_MESSAGE;
 
     // Si hay prendas en la categoría se rechaza: quedarían sin sección y no aparecerían en ningún filtro
     const inUse = products.filter(p => p.category === category.slug).length;
@@ -1162,6 +1170,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const addSubcategory = async (categoryId: string, name: string, slug?: string): Promise<string | null> => {
     const category = categories.find(c => c.id === categoryId);
     if (!category) return 'Categoría no encontrada.';
+    if (category.locked) return LOCKED_CATEGORY_MESSAGE;
 
     const subSlug = slugify(slug || name);
     if (!subSlug) return 'El nombre de la subcategoría no es válido.';
@@ -1189,6 +1198,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const category = categories.find(c => c.id === categoryId);
     const subcategory = category?.subcategories?.find(s => s.id === subcategoryId);
     if (!category || !subcategory) return 'Subcategoría no encontrada.';
+    if (category.locked) return LOCKED_CATEGORY_MESSAGE;
 
     const inUse = products.filter(p => p.category === category.slug && p.subcategory === subcategory.slug).length;
     if (inUse > 0) {

@@ -31,6 +31,7 @@ export interface Category {
   image?: string;
   order: number;
   subcategories?: Subcategory[];
+  locked?: boolean; // categoría fija: no se edita ni se borra desde el panel
 }
 
 export interface CartItem {

@@ -6,6 +6,7 @@ import { HeroBanner } from './components/home/HeroBanner';
 import { StoreLocationSection } from './components/home/StoreLocationSection';
 import { CatalogGrid } from './components/catalog/CatalogGrid';
 import { ProductCarousel } from './components/catalog/ProductCarousel';
+import { MagnoliaSection } from './components/home/MagnoliaSection';
 import { ProductDetailModal } from './components/catalog/ProductDetailModal';
 import { CartDrawer } from './components/cart/CartDrawer';
 import { AuthModal } from './components/auth/AuthModal';
@@ -49,6 +50,9 @@ const MainLayout: React.FC = () => {
         {/* Carruseles chicos: prendas marcadas como destacadas y últimas agregadas */}
         <ProductCarousel id="prendas-destacadas" eyebrow="Nuestras elegidas" title="Prendas Destacadas" products={featuredProducts} />
         <ProductCarousel id="ultimas-agregadas" eyebrow="Recién llegadas" title="Últimas Agregadas" products={latestProducts} />
+
+        {/* Línea Magnolia Intimates */}
+        <MagnoliaSection />
 
         {/* Todas las prendas, con filtros y paginación */}
         <CatalogGrid />

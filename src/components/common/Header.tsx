@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import { BrandLogo } from './BrandLogo';
+import { MAGNOLIA_SLUG } from '../../data/fixedCategories';
 import { safeUrl, isTrustedAvatarUrl } from '../../lib/external';
 
 export const Header: React.FC = () => {
@@ -193,7 +194,7 @@ export const Header: React.FC = () => {
 
               {/* Categorías Principales */}
               <div className="py-5">
-                <p className="text-[10px] uppercase tracking-[0.25em] text-neutral-500 font-bold mb-3 font-mono">
+                <p className="text-[10px] uppercase tracking-[0.25em] text-[#C9A66B] font-bold mb-3 font-mono">
                   Colecciones
                 </p>
 
@@ -205,8 +206,8 @@ export const Header: React.FC = () => {
                   }}
                   className={`w-full text-left text-xs uppercase tracking-[0.15em] py-2.5 px-3 rounded-lg transition-all cursor-pointer font-bold mb-1 ${
                     selectedCategory === 'all'
-                      ? 'bg-white text-black shadow-sm'
-                      : 'text-neutral-300 hover:text-white hover:bg-neutral-900'
+                      ? 'bg-[#C9A66B] text-black shadow-sm'
+                      : 'text-neutral-300 hover:text-[#C9A66B] hover:bg-neutral-900'
                   }`}
                 >
                   Todas las Prendas
@@ -215,12 +216,24 @@ export const Header: React.FC = () => {
                 {/* Categories List */}
                 <div className="flex flex-col space-y-1.5">
                   {categories.filter(c => c.slug !== 'all').map((cat) => {
+                    const isMagnolia = cat.slug === MAGNOLIA_SLUG;
                     const isCatSelected = selectedCategory === cat.slug;
                     const hasSubs = cat.subcategories && cat.subcategories.length > 0;
                     const isExpanded = expandedCategory === cat.slug;
+                    const goToSub = (subSlug: string) => {
+                      setSelectedCategory(cat.slug);
+                      setSelectedSubcategory(subSlug);
+                      setMobileMenuOpen(false);
+                      document.getElementById('catalogo')?.scrollIntoView({ behavior: 'smooth' });
+                    };
 
                     return (
-                      <div key={cat.id} className="rounded-lg overflow-hidden border border-neutral-850 bg-neutral-900/30">
+                      <div
+                        key={cat.id}
+                        className={`rounded-lg overflow-hidden border ${
+                          isMagnolia ? 'mt-3 border-[#8E2A42] bg-[#6D1A2C]' : 'border-neutral-800 bg-neutral-900/30'
+                        }`}
+                      >
                         <div className="flex items-center justify-between">
                           <button
                             onClick={() => {
@@ -232,9 +245,9 @@ export const Header: React.FC = () => {
                               }
                             }}
                             className={`flex-1 text-left text-xs uppercase tracking-[0.14em] py-2.5 px-3 transition-colors cursor-pointer font-bold flex items-center justify-between ${
-                              isCatSelected
-                                ? 'text-white bg-neutral-800'
-                                : 'text-neutral-300 hover:text-white hover:bg-neutral-850'
+                              isMagnolia
+                                ? isCatSelected ? 'text-white bg-[#8E2A42]' : 'text-white hover:bg-[#7D2236]'
+                                : isCatSelected ? 'text-[#C9A66B] bg-neutral-800' : 'text-neutral-300 hover:text-[#C9A66B] hover:bg-neutral-800/60'
                             }`}
                           >
                             <span>{cat.name}</span>
@@ -243,7 +256,9 @@ export const Header: React.FC = () => {
                           {hasSubs && (
                             <button
                               onClick={() => setExpandedCategory(isExpanded ? null : cat.slug)}
-                              className="p-2.5 text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors cursor-pointer"
+                              className={`p-2.5 transition-colors cursor-pointer ${
+                                isMagnolia ? 'text-white/80 hover:text-white hover:bg-[#7D2236]' : 'text-neutral-400 hover:text-[#C9A66B] hover:bg-neutral-800'
+                              }`}
                               title="Ver subcategorías"
                             >
                               {isExpanded ? (
@@ -257,19 +272,13 @@ export const Header: React.FC = () => {
 
                         {/* Subcategories Accordion */}
                         {hasSubs && isExpanded && (
-                          <div className="bg-black/60 border-t border-neutral-800/80 px-2 py-2 space-y-1">
+                          <div className={`border-t px-2 py-2 space-y-1 ${isMagnolia ? 'bg-[#4F1120] border-[#8E2A42]' : 'bg-black/60 border-neutral-800/80'}`}>
                             <button
-                              onClick={() => {
-                                setSelectedCategory(cat.slug);
-                                setSelectedSubcategory('all');
-                                setMobileMenuOpen(false);
-                                const catalogEl = document.getElementById('catalogo');
-                                if (catalogEl) catalogEl.scrollIntoView({ behavior: 'smooth' });
-                              }}
+                              onClick={() => goToSub('all')}
                               className={`w-full text-left text-[11px] uppercase tracking-wider py-1.5 px-3 rounded-md cursor-pointer font-bold transition-colors ${
                                 isCatSelected && selectedSubcategory === 'all'
-                                  ? 'bg-white text-black'
-                                  : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
+                                  ? isMagnolia ? 'bg-white text-[#6D1A2C]' : 'bg-[#C9A66B] text-black'
+                                  : isMagnolia ? 'text-white/80 hover:text-white hover:bg-[#6D1A2C]' : 'text-neutral-400 hover:text-[#C9A66B] hover:bg-neutral-900'
                               }`}
                             >
                               Ver Todo en {cat.name}
@@ -278,20 +287,14 @@ export const Header: React.FC = () => {
                             {cat.subcategories?.map((sub) => (
                               <button
                                 key={sub.id}
-                                onClick={() => {
-                                  setSelectedCategory(cat.slug);
-                                  setSelectedSubcategory(sub.slug);
-                                  setMobileMenuOpen(false);
-                                  const catalogEl = document.getElementById('catalogo');
-                                  if (catalogEl) catalogEl.scrollIntoView({ behavior: 'smooth' });
-                                }}
+                                onClick={() => goToSub(sub.slug)}
                                 className={`w-full text-left text-[11px] uppercase tracking-wider py-1.5 px-3 rounded-md cursor-pointer transition-colors flex items-center gap-1.5 ${
                                   isCatSelected && selectedSubcategory === sub.slug
-                                    ? 'bg-white text-black font-bold'
-                                    : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
+                                    ? isMagnolia ? 'bg-white text-[#6D1A2C] font-bold' : 'bg-[#C9A66B] text-black font-bold'
+                                    : isMagnolia ? 'text-white/80 hover:text-white hover:bg-[#6D1A2C]' : 'text-neutral-400 hover:text-[#C9A66B] hover:bg-neutral-900'
                                 }`}
                               >
-                                <span className="text-neutral-500">↳</span>
+                                <span className={isMagnolia ? 'text-white/50' : 'text-neutral-500'}>↳</span>
                                 <span>{sub.name}</span>
                               </button>
                             ))}

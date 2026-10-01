@@ -62,7 +62,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
   return (
     <div 
-      className="group flex flex-col h-full relative"
+      className="group flex flex-col h-full relative bg-[#141414] border border-neutral-800 hover:border-neutral-600 rounded-xl overflow-hidden shadow-lg shadow-black/30 transition-colors"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => {
         setIsHovered(false);
@@ -72,7 +72,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       {/* Image Showcase Container */}
       <div 
         onClick={() => setSelectedProductForDetail(product)}
-        className="relative aspect-[3/4] w-full overflow-hidden bg-neutral-900 cursor-pointer border border-neutral-800 rounded-sm"
+        className="relative aspect-[3/4] w-full overflow-hidden bg-neutral-900 cursor-pointer"
       >
         {/* Primary Image */}
         <img
@@ -243,7 +243,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       </div>
 
       {/* Product Details Section */}
-      <div className="mt-3 flex flex-col flex-1">
+      <div className="p-3.5 flex flex-col flex-1 border-t border-neutral-800">
         {/* Colors & Talles Preview */}
         <div className="flex items-center justify-between gap-1.5 mb-1">
           <div className="flex items-center gap-1.5">

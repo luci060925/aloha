@@ -4,6 +4,7 @@ import { calculateCartTotals, couponKind, couponShortfall, syncCartWithCatalog, 
 import { isHttpUrl, isTrustedAvatarUrl, safeUrl } from '../../src/lib/external';
 import { slugify } from '../../src/lib/slug';
 import { displayPhone } from '../../src/lib/phone';
+import { MAGNOLIA_CATEGORY, MAGNOLIA_SLUG } from '../../src/data/fixedCategories';
 import { MIN_PASSWORD_LENGTH } from '../../src/lib/constants';
 import type { CartItem, Coupon, Product } from '../../src/types';
 
@@ -134,6 +135,14 @@ describe('displayPhone · un solo + adelante', () => {
     expect(displayPhone('5492975925842')).toBe('+5492975925842');
     expect(displayPhone('++54 9 2975')).toBe('+54 9 2975');
     expect(displayPhone('')).toBe('');
+  });
+});
+
+describe('Magnolia Intimates · categoría fija', () => {
+  test('tiene sus 4 subcategorías y está bloqueada', () => {
+    expect(MAGNOLIA_CATEGORY.slug).toBe(MAGNOLIA_SLUG);
+    expect(MAGNOLIA_CATEGORY.locked).toBe(true);
+    expect(MAGNOLIA_CATEGORY.subcategories?.map(s => s.slug)).toEqual(['lenceria', 'pijamas', 'medias', 'conjuntos']);
   });
 });
 

@@ -1458,7 +1458,7 @@ export const AdminPage: React.FC = () => {
                         className="w-full px-3.5 py-2.5 text-xs bg-neutral-900 border border-neutral-750 rounded-xl text-white uppercase font-bold focus:outline-none focus:border-white"
                       >
                         <option value="">-- Seleccionar Categoría --</option>
-                        {categories.filter(c => c.slug !== 'all').map(c => (
+                        {categories.filter(c => c.slug !== 'all' && !c.locked).map(c => (
                           <option key={c.id} value={c.id}>{c.name}</option>
                         ))}
                       </select>
@@ -1504,7 +1504,11 @@ export const AdminPage: React.FC = () => {
                           <span className="text-xs font-bold text-white uppercase tracking-wide">
                             {cat.name}
                           </span>
-                          {cat.slug !== 'all' && (
+                          {cat.locked ? (
+                            <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-[#6D1A2C] text-white" title="Categoría fija: no se puede editar">
+                              Fija
+                            </span>
+                          ) : cat.slug !== 'all' && (
                             <button
                               onClick={async () => {
                                 if (confirm(`¿Eliminar la categoría "${cat.name}"?`)) {
@@ -1536,15 +1540,17 @@ export const AdminPage: React.FC = () => {
                                   className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-neutral-950 border border-neutral-750 text-[11px] text-neutral-200 rounded-lg font-semibold"
                                 >
                                   <span>{sub.name}</span>
-                                  <button
-                                    onClick={async () => {
-                                      const error = await deleteSubcategory(cat.id, sub.id);
-                                      if (error) alert(error);
-                                    }}
-                                    className="text-neutral-500 hover:text-red-400 font-bold cursor-pointer"
-                                  >
-                                    ×
-                                  </button>
+                                  {!cat.locked && (
+                                    <button
+                                      onClick={async () => {
+                                        const error = await deleteSubcategory(cat.id, sub.id);
+                                        if (error) alert(error);
+                                      }}
+                                      className="text-neutral-500 hover:text-red-400 font-bold cursor-pointer"
+                                    >
+                                      ×
+                                    </button>
+                                  )}
                                 </span>
                               ))}
                             </div>
@@ -1558,12 +1564,14 @@ export const AdminPage: React.FC = () => {
 
                       <div className="mt-4 pt-2 border-t border-neutral-800 flex items-center justify-between text-[11px] text-neutral-400 font-mono">
                         <span>Orden: #{cat.order}</span>
-                        <button
-                          onClick={() => setSelectedCatForSub(cat.id)}
-                          className="text-white font-bold hover:underline cursor-pointer"
-                        >
-                          + Agregar
-                        </button>
+                        {!cat.locked && (
+                          <button
+                            onClick={() => setSelectedCatForSub(cat.id)}
+                            className="text-white font-bold hover:underline cursor-pointer"
+                          >
+                            + Agregar
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
