@@ -103,13 +103,13 @@ export const StoreLocationSection: React.FC = () => {
                   src={photo}
                   alt="Showroom de Aloha Indumentaria"
                   loading="lazy"
-                  className="w-full h-full object-cover grayscale contrast-110 brightness-90 group-hover:scale-105 transition-transform duration-700"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                 />
               ) : (
                 <MapPin className="absolute top-8 right-8 w-24 h-24 text-white/5" aria-hidden="true" />
               )}
-              <div className={`absolute inset-0 flex flex-col justify-end p-6 sm:p-8 ${photo ? 'bg-gradient-to-t from-black via-black/30 to-transparent' : ''}`}>
-                <div className="bg-black/80 backdrop-blur-md p-4 border border-white/20 inline-block max-w-sm">
+              <div className={`absolute inset-0 flex flex-col justify-end p-6 sm:p-8 ${photo ? 'bg-gradient-to-t from-black/70 via-black/10 to-transparent' : ''}`}>
+                <div className="bg-black/80 backdrop-blur-md px-4 py-2.5 border border-white/20 self-start">
                   <div className="flex items-center gap-2 text-white text-xs uppercase tracking-widest font-mono">
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
                     Showroom Oficial
