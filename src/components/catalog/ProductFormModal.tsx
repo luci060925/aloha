@@ -502,10 +502,10 @@ export const ProductFormModal: React.FC = () => {
               />
               <span>
                 <span className="block uppercase tracking-wider font-semibold text-neutral-200">
-                  Mostrar en Prendas Destacadas
+                  Marcar como prenda destacada
                 </span>
                 <span className="block text-[11px] text-neutral-500 mt-0.5 normal-case">
-                  Aparece en el carrusel "Prendas Destacadas" del inicio. Las prendas nuevas también entran solas en "Últimas Agregadas".
+                  Sale primero cuando la clienta ordena "Todas las Prendas" por "Destacadas". Las prendas nuevas entran solas en el carrusel "Últimas Agregadas".
                 </span>
               </span>
             </label>

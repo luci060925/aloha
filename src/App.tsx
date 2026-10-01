@@ -24,8 +24,7 @@ const AdminPage = lazy(() => import('./components/admin/AdminPage').then(m => ({
 const MainLayout: React.FC = () => {
   const { settings, products } = useStore();
 
-  // Carruseles del inicio: las destacadas (marcadas en la prenda) y las últimas cargadas, solo con stock
-  const featuredProducts = useMemo(() => products.filter(p => p.featured && p.inStock).slice(0, 12), [products]);
+  // Carrusel del inicio: las últimas prendas cargadas, solo con stock
   const latestProducts = useMemo(
     () => products.filter(p => p.inStock).sort((x, y) => new Date(y.createdAt).getTime() - new Date(x.createdAt).getTime()).slice(0, 10),
     [products],
@@ -47,8 +46,7 @@ const MainLayout: React.FC = () => {
         {/* Lookbook Hero */}
         <HeroBanner />
 
-        {/* Carruseles chicos: prendas marcadas como destacadas y últimas agregadas */}
-        <ProductCarousel id="prendas-destacadas" eyebrow="Nuestras elegidas" title="Prendas Destacadas" products={featuredProducts} />
+        {/* Carrusel chico con las últimas prendas agregadas */}
         <ProductCarousel id="ultimas-agregadas" eyebrow="Recién llegadas" title="Últimas Agregadas" products={latestProducts} />
 
         {/* Línea Magnolia Intimates */}
