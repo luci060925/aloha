@@ -46,11 +46,11 @@ const MainLayout: React.FC = () => {
         {/* Lookbook Hero */}
         <HeroBanner />
 
-        {/* Carrusel chico con las últimas prendas agregadas */}
-        <ProductCarousel id="ultimas-agregadas" eyebrow="Recién llegadas" title="Últimas Agregadas" products={latestProducts} />
-
         {/* Línea Magnolia Intimates */}
         <MagnoliaSection />
+
+        {/* Carrusel chico con las últimas prendas agregadas */}
+        <ProductCarousel id="ultimas-agregadas" eyebrow="Recién llegadas" title="Últimas Agregadas" products={latestProducts} />
 
         {/* Todas las prendas, con filtros y paginación */}
         <CatalogGrid />
