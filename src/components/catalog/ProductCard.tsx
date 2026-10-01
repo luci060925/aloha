@@ -271,11 +271,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
         {/* Price & Discount */}
         <div className="mt-1 flex items-baseline gap-2">
-          <span className="font-mono text-base font-bold text-white">
+          <span className="font-sans text-lg font-bold tracking-tight tabular-nums text-white">
             {formatPrice(product.price)}
           </span>
           {product.originalPrice && (
-            <span className="font-mono text-xs text-neutral-500 line-through font-semibold">
+            <span className="font-sans text-xs text-neutral-500 line-through font-medium tabular-nums">
               {formatPrice(product.originalPrice)}
             </span>
           )}

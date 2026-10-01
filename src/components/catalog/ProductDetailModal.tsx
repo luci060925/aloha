@@ -138,11 +138,11 @@ const ProductDetailContent: React.FC<{ product: Product }> = ({ product }) => {
 
                 {/* Price */}
                 <div className="flex items-baseline gap-3">
-                  <span className="font-mono text-2xl sm:text-3xl font-bold text-white">
+                  <span className="font-sans text-3xl sm:text-4xl font-bold tracking-tight tabular-nums text-white">
                     {formatPrice(product.price)}
                   </span>
                   {product.originalPrice && (
-                    <span className="font-mono text-base text-neutral-500 line-through">
+                    <span className="font-sans text-base text-neutral-500 line-through font-medium tabular-nums">
                       {formatPrice(product.originalPrice)}
                     </span>
                   )}

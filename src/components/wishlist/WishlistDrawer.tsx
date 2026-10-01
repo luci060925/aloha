@@ -170,11 +170,11 @@ export const WishlistDrawer: React.FC = () => {
                         </p>
 
                         <div className="mt-1 flex items-baseline gap-2">
-                          <span className="font-mono font-bold text-sm text-white">
+                          <span className="font-sans font-bold text-base tracking-tight tabular-nums text-white">
                             {formatPrice(prod.price)}
                           </span>
                           {prod.originalPrice && (
-                            <span className="text-[11px] text-neutral-500 line-through font-mono">
+                            <span className="text-[11px] text-neutral-500 line-through font-sans font-medium tabular-nums">
                               {formatPrice(prod.originalPrice)}
                             </span>
                           )}

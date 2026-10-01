@@ -122,10 +122,10 @@ export const ProductCarousel: React.FC<ProductCarouselProps> = ({ id, eyebrow, t
                 )}
                 <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4">
                   <p className="text-xs sm:text-sm font-semibold text-white line-clamp-1">{product.name}</p>
-                  <p className="text-xs sm:text-sm font-mono font-bold text-white/90 mt-0.5">
+                  <p className="text-sm sm:text-base font-sans font-bold tracking-tight tabular-nums text-white mt-0.5">
                     {formatPrice(product.price)}
                     {discount > 0 && product.originalPrice && (
-                      <span className="ml-1.5 text-white/50 line-through font-normal">{formatPrice(product.originalPrice)}</span>
+                      <span className="ml-1.5 text-xs text-white/50 line-through font-medium">{formatPrice(product.originalPrice)}</span>
                     )}
                   </p>
                 </div>
