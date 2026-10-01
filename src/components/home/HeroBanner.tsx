@@ -19,12 +19,14 @@ export const HeroBanner: React.FC = () => {
   return (
     <section className="relative bg-black text-white overflow-hidden">
       {/* Background with soft contrast overlay */}
-      <div className="absolute inset-0 z-0 opacity-40 transition-all duration-500">
+      <div className="absolute inset-0 z-0 transition-all duration-500">
         <img
           src={bgImage}
           alt={settings.storeName || 'Aloha Indumentaria'}
-          className="w-full h-full object-cover object-center grayscale"
+          className="w-full h-full object-cover object-center"
         />
+        {/* Velo oscuro para que el texto blanco se lea sobre fotos claras, sin quitarle el color a la foto */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/45 to-black/70" />
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28 lg:py-32 flex flex-col items-center text-center">
