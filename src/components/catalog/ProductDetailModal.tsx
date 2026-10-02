@@ -231,20 +231,19 @@ const ProductDetailContent: React.FC<{ product: Product }> = ({ product }) => {
                 </div>
               </div>
 
-              {/* Guarantees on Desktop */}
-              <div className="hidden sm:grid grid-cols-3 gap-2 pt-3 border-t border-neutral-800 text-[10px] text-neutral-400 text-center">
-                <div className="flex flex-col items-center gap-1">
-                  <Truck className="w-4 h-4 text-white" />
-                  <span>Envíos Nacionales</span>
-                </div>
-                <div className="flex flex-col items-center gap-1">
-                  <ShieldCheck className="w-4 h-4 text-white" />
-                  <span>Atención por WhatsApp</span>
-                </div>
-                <div className="flex flex-col items-center gap-1">
-                  <RotateCcw className="w-4 h-4 text-white" />
-                  <span>Cambios en 7 días</span>
-                </div>
+              {/* Garantías (escritorio) */}
+              <div className="hidden sm:grid grid-cols-3 gap-2.5 pt-3 border-t border-neutral-800">
+                {[
+                  { Icon: Truck, title: 'Envíos a todo el país', text: 'Despachamos tu pedido donde estés.' },
+                  { Icon: ShieldCheck, title: 'Asesoramiento personalizado', text: 'Te ayudamos a elegir tu talle y a combinar.' },
+                  { Icon: RotateCcw, title: 'Cambios de talle o modelo', text: '7 días desde que la recibís.' },
+                ].map(({ Icon, title, text }) => (
+                  <div key={title} className="flex flex-col items-center text-center gap-1.5 p-3 rounded-xl bg-neutral-900/60 border border-neutral-800">
+                    <Icon className="w-5 h-5 text-white" aria-hidden="true" />
+                    <span className="text-[11px] font-bold text-white leading-tight">{title}</span>
+                    <span className="text-[10px] text-neutral-400 leading-snug">{text}</span>
+                  </div>
+                ))}
               </div>
 
               {/* Desktop CTA Button */}
