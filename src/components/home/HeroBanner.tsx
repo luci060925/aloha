@@ -14,6 +14,7 @@ export const HeroBanner: React.FC = () => {
 
   const bgImage = settings.heroImageUrl || 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&q=80&w=2000';
   const titleText = settings.heroTitle || 'Elegancia & Estilo';
+  const titleWords = titleText.trim().split(/\s+/);
   const subtitleText = settings.heroSubtitle || 'Prendas esenciales y diseño contemporáneo pensados para acompañar tu día a día con distinción.';
 
   return (
@@ -32,8 +33,15 @@ export const HeroBanner: React.FC = () => {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28 lg:py-32 flex flex-col items-center text-center">
         
         {/* Main Headline */}
-        <h1 className="font-['Bebas_Neue'] text-4xl sm:text-5xl lg:text-6xl font-normal uppercase tracking-[0.1em] leading-tight max-w-4xl text-white">
-          {titleText}
+        {/* La última palabra va en cursiva, igual que los títulos de las demás secciones */}
+        <h1 className="font-serif text-4xl sm:text-5xl lg:text-7xl font-normal tracking-tight leading-[1.1] max-w-4xl text-white">
+          {titleWords.length > 1 ? (
+            <>
+              {titleWords.slice(0, -1).join(' ')} <em className="italic">{titleWords[titleWords.length - 1]}</em>
+            </>
+          ) : (
+            titleText
+          )}
         </h1>
 
         {subtitleText && (
