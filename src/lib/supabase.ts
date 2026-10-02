@@ -35,3 +35,13 @@ const orderSafeFetch: typeof fetch = (input, init) => {
 export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseAnonKey, { global: { fetch: orderSafeFetch } })
   : null;
+
+/** ¿La dirección trae un error de ingreso (por ejemplo, "error=access_denied" al cancelar con Google)? */
+export function hasAuthErrorInUrl(urlData: string): boolean {
+  return /(^|[?&#])error=/.test(urlData);
+}
+
+// Si se canceló el ingreso con Google, el navegador vuelve con el error pegado en la dirección: se limpia para que quede la normal
+if (typeof window !== 'undefined' && hasAuthErrorInUrl(openedUrlData)) {
+  window.history.replaceState(null, '', window.location.pathname);
+}

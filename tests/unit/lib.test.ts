@@ -2,7 +2,7 @@
 import { describe, expect, test } from 'vitest';
 import { calculateCartTotals, couponKind, couponShortfall, syncCartWithCatalog, normalizeCouponCode, MAX_ITEM_QUANTITY } from '../../src/lib/pricing';
 import { isHttpUrl, isTrustedAvatarUrl, isWhatsAppUrl, safeUrl } from '../../src/lib/external';
-import { shouldKeepAlive } from '../../src/lib/supabase';
+import { hasAuthErrorInUrl, shouldKeepAlive } from '../../src/lib/supabase';
 import { slugify } from '../../src/lib/slug';
 import { displayPhone } from '../../src/lib/phone';
 import { fitWithin } from '../../src/lib/aiDescription';
@@ -212,6 +212,16 @@ describe('supabase · el envío del pedido sobrevive al cambio de página', () =
     expect(shouldKeepAlive('https://x.supabase.co/rest/v1/orders', 'GET')).toBe(false);
     expect(shouldKeepAlive('https://x.supabase.co/rest/v1/products', 'POST')).toBe(false);
     expect(shouldKeepAlive('https://x.supabase.co/storage/v1/object/catalog-images/a.webp', 'POST')).toBe(false);
+  });
+});
+
+describe('supabase · errores de ingreso en la dirección', () => {
+  test('detecta el error de cancelar con Google y no confunde otras direcciones', () => {
+    expect(hasAuthErrorInUrl('?error=access_denied&error_description=#error=access_denied&sb=')).toBe(true);
+    expect(hasAuthErrorInUrl('#error=access_denied&error_code=otp_expired')).toBe(true);
+    expect(hasAuthErrorInUrl('')).toBe(false);
+    expect(hasAuthErrorInUrl('#access_token=abc&type=recovery')).toBe(false);
+    expect(hasAuthErrorInUrl('?terror=1')).toBe(false);
   });
 });
 
