@@ -1,7 +1,8 @@
 // Pruebas de las funciones puras de src/lib (informe.md: SEC-001, SEC-009, SEC-010, SEC-012).
 import { describe, expect, test } from 'vitest';
 import { calculateCartTotals, couponKind, couponShortfall, syncCartWithCatalog, normalizeCouponCode, MAX_ITEM_QUANTITY } from '../../src/lib/pricing';
-import { isHttpUrl, isTrustedAvatarUrl, safeUrl } from '../../src/lib/external';
+import { isHttpUrl, isTrustedAvatarUrl, isWhatsAppUrl, safeUrl } from '../../src/lib/external';
+import { shouldKeepAlive } from '../../src/lib/supabase';
 import { slugify } from '../../src/lib/slug';
 import { displayPhone } from '../../src/lib/phone';
 import { fitWithin } from '../../src/lib/aiDescription';
@@ -190,6 +191,27 @@ describe('sizes · talle único', () => {
     expect(validateOneSizeRange('L', 'S')).toMatch(/menor/);
     expect(validateOneSizeRange('S', '40')).toMatch(/mismo tipo/);
     expect(validateOneSizeRange('S', '')).toMatch(/los dos/);
+  });
+});
+
+describe('external · enlaces de WhatsApp', () => {
+  test('reconoce solo los enlaces de chat de WhatsApp', () => {
+    expect(isWhatsAppUrl('https://wa.me/5492974201122?text=Hola')).toBe(true);
+    expect(isWhatsAppUrl('https://api.whatsapp.com/send?phone=1')).toBe(true);
+    expect(isWhatsAppUrl('https://instagram.com/aloha')).toBe(false);
+    expect(isWhatsAppUrl('https://wa.me.atacante.example/x')).toBe(false);
+    expect(isWhatsAppUrl('http://wa.me/1')).toBe(false);
+    expect(isWhatsAppUrl('no es una url')).toBe(false);
+  });
+});
+
+describe('supabase · el envío del pedido sobrevive al cambio de página', () => {
+  test('keepalive solo para pedidos nuevos', () => {
+    expect(shouldKeepAlive('https://x.supabase.co/rest/v1/orders', 'POST')).toBe(true);
+    expect(shouldKeepAlive('https://x.supabase.co/rest/v1/orders?columns=%22id%22', 'post')).toBe(true);
+    expect(shouldKeepAlive('https://x.supabase.co/rest/v1/orders', 'GET')).toBe(false);
+    expect(shouldKeepAlive('https://x.supabase.co/rest/v1/products', 'POST')).toBe(false);
+    expect(shouldKeepAlive('https://x.supabase.co/storage/v1/object/catalog-images/a.webp', 'POST')).toBe(false);
   });
 });
 

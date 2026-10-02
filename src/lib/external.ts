@@ -28,7 +28,30 @@ export function isTrustedAvatarUrl(url: string | null | undefined): boolean {
   }
 }
 
-/** Abre un sitio externo en otra pestaña sin darle acceso a `window.opener` ni enviar el referrer. */
+/** ¿Es un enlace para abrir un chat de WhatsApp? */
+export function isWhatsAppUrl(url: string): boolean {
+  try {
+    const { protocol, hostname } = new URL(url);
+    return protocol === 'https:' && (hostname === 'wa.me' || hostname === 'api.whatsapp.com');
+  } catch {
+    return false;
+  }
+}
+
+/** ¿Es un celular o una tablet? (pantalla táctil sin mouse) */
+function isTouchDevice(): boolean {
+  return typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
+}
+
+/**
+ * Abre un sitio externo en otra pestaña sin darle acceso a `window.opener` ni enviar el referrer.
+ * Excepción: en celulares los enlaces de WhatsApp se abren en la misma pestaña, porque en el iPhone una pestaña
+ * nueva que se redirige a la aplicación queda en blanco al volver al navegador.
+ */
 export function openExternal(url: string): void {
+  if (isWhatsAppUrl(url) && isTouchDevice()) {
+    window.location.assign(url);
+    return;
+  }
   window.open(url, '_blank', 'noopener,noreferrer');
 }

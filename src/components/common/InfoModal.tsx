@@ -519,6 +519,10 @@ export const InfoModal: React.FC = () => {
               {/* WhatsApp */}
               <a
                 href={`https://wa.me/${settings.whatsappNumber.replace(/[^0-9]/g, '')}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  openExternal(`https://wa.me/${settings.whatsappNumber.replace(/[^0-9]/g, '')}`);
+                }}
                 target="_blank"
                 rel="noreferrer"
                 className="p-4 bg-emerald-950/40 border border-emerald-800/60 rounded-xl flex items-center gap-3 hover:bg-emerald-900/40 transition-colors group"

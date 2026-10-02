@@ -14,7 +14,7 @@ import {
 import { useStore } from '../../context/StoreContext';
 import { BrandLogo } from './BrandLogo';
 import { MAGNOLIA_SLUG } from '../../data/fixedCategories';
-import { safeUrl, isTrustedAvatarUrl } from '../../lib/external';
+import { safeUrl, isTrustedAvatarUrl, openExternal } from '../../lib/external';
 
 export const Header: React.FC = () => {
   const {
@@ -393,6 +393,10 @@ export const Header: React.FC = () => {
                   {/* WhatsApp */}
                   <a
                     href={`https://wa.me/${settings.whatsappNumber.replace(/[^0-9]/g, '')}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      openExternal(`https://wa.me/${settings.whatsappNumber.replace(/[^0-9]/g, '')}`);
+                    }}
                     target="_blank"
                     rel="noreferrer"
                     className="flex flex-col items-center justify-center p-2.5 bg-neutral-900/80 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 rounded-xl transition-all group"

@@ -17,6 +17,21 @@ export const isSupabaseConfigured = Boolean(
   supabaseUrl !== 'https://your-project.supabase.co'
 );
 
+/**
+ * El envío de un pedido (POST a /rest/v1/orders) debe sobrevivir aunque la página cambie: en el celular, al tocar
+ * "Finalizar compra" el navegador puede pasar a WhatsApp en la misma pestaña. Con `keepalive` el navegador termina
+ * de enviarlo igual. Solo se usa en pedidos: es chico y las subidas de fotos (más de 64 KB) no lo admiten.
+ */
+export function shouldKeepAlive(url: string, method: string | undefined): boolean {
+  return (method ?? 'GET').toUpperCase() === 'POST' && /\/rest\/v1\/orders(\?|$)/.test(url);
+}
+
+const orderSafeFetch: typeof fetch = (input, init) => {
+  const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+  const method = init?.method ?? (input instanceof Request ? input.method : undefined);
+  return fetch(input, shouldKeepAlive(url, method) ? { ...init, keepalive: true } : init);
+};
+
 export const supabase = isSupabaseConfigured
-  ? createClient(supabaseUrl, supabaseAnonKey)
+  ? createClient(supabaseUrl, supabaseAnonKey, { global: { fetch: orderSafeFetch } })
   : null;
