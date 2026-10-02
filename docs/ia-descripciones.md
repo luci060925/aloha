@@ -20,6 +20,8 @@ Formulario de la prenda ──► Función de Supabase ──► Gemini (Google)
 - La **clave de Gemini nunca llega al navegador**: vive como secreto en Supabase.
 - La función **rechaza a cualquiera que no sea administradora** (usa `is_admin()` de la base).
 - Se manda a Gemini el nombre, la categoría, los colores y los talles, y una **foto chica** (hasta 768 px) de la primera imagen. No se envían datos de clientas.
+- Debajo de la descripción hay un campo opcional **"Para la IA"**: ahí Camila puede anotar datos reales de la prenda (tela, bretel regulable, cierre atrás…). La IA los toma como ciertos y las sugerencias salen mucho más variadas y precisas. No se guarda con la prenda.
+- Las 3 opciones tienen **tono y enfoque distintos** (uso, diseño, actitud), evitan frases gastadas y cambian en cada pedido. Si no te gustan, tocá **Sugerir con IA** de nuevo y salen otras.
 - La IA tiene la orden de **no inventar** tela, medidas, forro ni cuidados. Igual puede equivocarse: **hay que revisar antes de guardar**.
 
 ## Costo y límites

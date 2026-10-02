@@ -14,6 +14,8 @@ export interface SuggestionInput {
   subcategory: string;
   colors: string[];
   sizes: string[];
+  /** Datos que aporta la dueña (tela, detalles...). Opcional; la IA los toma como ciertos. */
+  notes?: string;
   /** Primera foto de la prenda (data URL o dirección). Opcional: sin foto se usan solo los datos escritos. */
   imageSrc?: string;
 }
@@ -62,6 +64,7 @@ export async function suggestDescriptions(input: SuggestionInput): Promise<strin
       subcategory: input.subcategory,
       colors: input.colors,
       sizes: input.sizes,
+      notes: input.notes?.trim() || undefined,
       ...(image ? { image } : {}),
     },
   });

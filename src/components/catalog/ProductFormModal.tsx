@@ -82,6 +82,7 @@ export const ProductFormModal: React.FC = () => {
   const [suggesting, setSuggesting] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [suggestError, setSuggestError] = useState<string | null>(null);
+  const [aiNotes, setAiNotes] = useState('');
   const SUGGESTION_LABELS = ['Cercana', 'Elegante', 'Canchera'];
 
   const handleSuggest = async () => {
@@ -99,6 +100,7 @@ export const ProductFormModal: React.FC = () => {
         subcategory: categories.find(c => c.slug === category)?.subcategories?.find(s => s.slug === subcategory)?.name || subcategory,
         colors: colors.map(c => c.name),
         sizes,
+        notes: aiNotes,
         imageSrc: imagesList[0]?.rawUrl,
       });
       setSuggestions(options);
@@ -564,6 +566,14 @@ export const ProductFormModal: React.FC = () => {
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Detalle de tela, calce, caída, detalles de confección..."
                 className="w-full px-3.5 py-2.5 bg-[#171717] border border-neutral-700 text-white rounded-xl focus:outline-none focus:border-white leading-relaxed resize-none placeholder:text-neutral-500 text-xs font-normal"
+              />
+              <input
+                type="text"
+                value={aiNotes}
+                maxLength={300}
+                onChange={(e) => setAiNotes(e.target.value)}
+                placeholder="Para la IA (opcional): tela suave, bretel regulable, cierre atrás..."
+                className="mt-2 w-full px-3.5 py-2 bg-[#171717] border border-neutral-800 text-white rounded-xl focus:outline-none focus:border-white placeholder:text-neutral-600 text-xs font-normal"
               />
               {suggestError && <p className="mt-1.5 text-[11px] text-red-400 font-medium">{suggestError}</p>}
               {suggestions.length > 0 && (

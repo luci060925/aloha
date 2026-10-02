@@ -22,16 +22,33 @@ const reply = (status: number, body: Record<string, unknown>) =>
 
 const SYSTEM_INSTRUCTION = `Sos redactora de moda de Aloha Indumentaria, un showroom de moda femenina de Comodoro Rivadavia (Argentina).
 Escribí en español rioplatense, con voseo ("llevás", "combinás", "elegí").
-Devolvé EXACTAMENTE 3 descripciones, cada una un párrafo corto (2 o 3 oraciones, máximo 350 caracteres):
-1. Cercana: tono amigable y práctico, cómo se usa y con qué combina.
-2. Elegante: tono sobrio y sofisticado, líneas y versatilidad.
-3. Canchera: tono canchero y juvenil, directo.
+Devolvé EXACTAMENTE 3 descripciones, cada una un párrafo corto (2 o 3 oraciones, máximo 350 caracteres).
+Las 3 tienen que ser MUY DISTINTAS entre sí: cada una con su tono y su enfoque, y sin repetir ideas ni palabras clave entre ellas.
+1. Cercana (enfoque: USO). Tono amigable y práctico: en qué momentos se usa y con qué se arma.
+2. Elegante (enfoque: DISEÑO). Tono sobrio y sofisticado: qué se ve en la prenda (corte, caída, línea, detalles).
+3. Canchera (enfoque: ACTITUD). Tono juvenil y directo: cómo hace sentir a quien la usa. Corta y con carácter.
 Reglas obligatorias:
-- Usá solamente los datos recibidos y lo que se ve en la foto (si hay foto).
-- NO inventes tela, composición, medidas, forro, cuidados, origen ni precios. Si no lo sabés, no lo digas.
-- Podés mencionar el tipo de prenda, los colores y los talles cuando aporten.
+- Usá solamente los datos recibidos, los "Datos de la dueña" (son ciertos y podés usarlos) y lo que se ve en la foto.
+- NO inventes tela, composición, medidas, forro, cuidados, origen ni precios que no estén en esos datos.
+- Nombrá la prenda de maneras distintas en cada opción (no repitas siempre el mismo sustantivo).
+- No empieces dos descripciones con la misma palabra ni con la misma estructura. Seguí la sugerencia de apertura de cada una.
+- Evitá estas frases gastadas: "comodín", "esencial", "infaltable", "no puede faltar", "imprescindible", "must have", "para todos los días", "jean y pollera".
+- Mencioná los colores y los talles solo si aportan, y no en las 3.
 - Sin emojis, sin hashtags, sin comillas y sin marcas.
 - Respondé únicamente con un arreglo JSON de 3 textos.`;
+
+// Sugerencias de apertura: se sortean en cada pedido para que apretar de nuevo dé resultados distintos
+const OPENING_HINTS = [
+  'arrancá por la ocasión en que la usarías',
+  'arrancá por un detalle concreto de la prenda',
+  'arrancá por cómo se siente usarla',
+  'arrancá con una pregunta corta',
+  'arrancá con el nombre de la prenda',
+  'arrancá con el color',
+  'arrancá con una frase corta y afirmativa',
+];
+const pickOpenings = (): string[] =>
+  [...OPENING_HINTS].sort(() => Math.random() - 0.5).slice(0, 3);
 
 const clean = (value: unknown, max: number): string => (typeof value === 'string' ? value.trim().slice(0, max) : '');
 const cleanList = (value: unknown, maxItems: number, maxLen: number): string[] =>
@@ -83,6 +100,8 @@ Deno.serve(async (req: Request) => {
   const subcategory = clean(body.subcategory, 80);
   const colors = cleanList(body.colors, 10, 30);
   const sizes = cleanList(body.sizes, 15, 20);
+  const notes = clean(body.notes, 300);
+  const openings = pickOpenings();
 
   const parts: Record<string, unknown>[] = [];
   const image = body.image as { mimeType?: unknown; data?: unknown } | undefined;
@@ -99,7 +118,9 @@ Deno.serve(async (req: Request) => {
       subcategory && `Subcategoría: ${subcategory}`,
       colors.length > 0 && `Colores: ${colors.join(', ')}`,
       sizes.length > 0 && `Talles: ${sizes.join(', ')}`,
+      notes && `Datos de la dueña: ${notes}`,
       parts.length > 0 ? 'Mirá la foto adjunta para describir lo que se ve.' : 'No hay foto: usá solo los datos de arriba.',
+      `Aperturas sugeridas: la 1) ${openings[0]}; la 2) ${openings[1]}; la 3) ${openings[2]}.`,
     ].filter(Boolean).join('\n'),
   });
 
@@ -119,7 +140,7 @@ Deno.serve(async (req: Request) => {
         systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
         contents: [{ role: 'user', parts }],
         generationConfig: {
-          temperature: 0.8,
+          temperature: 1.1,
           responseMimeType: 'application/json',
           responseSchema: { type: 'ARRAY', items: { type: 'STRING' } },
         },
