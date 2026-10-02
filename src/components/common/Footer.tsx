@@ -191,6 +191,14 @@ export const Footer: React.FC = () => {
                 </button>
               </li>
               <li>
+                <a
+                  href="/privacidad.html"
+                  className="hover:text-white transition-colors cursor-pointer text-left font-medium"
+                >
+                  Política de Privacidad
+                </a>
+              </li>
+              <li>
                 <button
                   onClick={() => setActiveInfoModal('arrepentimiento')}
                   className="hover:text-white transition-colors cursor-pointer text-left font-medium"

@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /admin
 
-# TODO(al publicar): agregar la línea "Sitemap: https://TU-DOMINIO/sitemap.xml" cuando exista un sitemap
+Sitemap: https://aloha-indumentaria.cr-tienda.workers.dev/sitemap.xml
