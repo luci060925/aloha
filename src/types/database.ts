@@ -31,6 +31,7 @@ export interface ProductRow {
   original_price: number | string | null;
   category: string;
   subcategory: string | null;
+  product_type: string | null;
   images: string[] | null;
   sizes: string[] | null;
   colors: { name: string; hex: string }[] | null;

@@ -51,9 +51,11 @@ export const ProductFormModal: React.FC = () => {
     addProduct,
     updateProduct,
     categories,
+    products,
   } = useStore();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   // Arrastre de una foto dentro de su recuadro (posición inicial del gesto y tamaño del recuadro)
   const dragRef = useRef<{ idx: number; x: number; y: number; fx: number; fy: number; w: number; h: number } | null>(null);
 
@@ -72,6 +74,19 @@ export const ProductFormModal: React.FC = () => {
   const [sizes, setSizes] = useState<string[]>([]);
   // Talle único: la prenda no se elige por talle, "calza del X al Y"
   const [oneSize, setOneSize] = useState(false);
+  // Pestañas del formulario y tipo de la prenda (Mom, Oxford, Wide Leg...)
+  type FormTab = 'datos' | 'imagenes' | 'variantes';
+  const FORM_TABS: { id: FormTab; label: string }[] = [
+    { id: 'datos', label: 'Datos de la prenda' },
+    { id: 'imagenes', label: 'Imágenes cargadas' },
+    { id: 'variantes', label: 'Talle, color y tipo' },
+  ];
+  const [tab, setTab] = useState<FormTab>('datos');
+  const [productType, setProductType] = useState('');
+  const goToTab = (next: FormTab) => {
+    setTab(next);
+    scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
   const [oneFrom, setOneFrom] = useState('');
   const [oneTo, setOneTo] = useState('');
   // Talles que realmente se guardan con la prenda
@@ -104,7 +119,7 @@ export const ProductFormModal: React.FC = () => {
       const options = await suggestDescriptions({
         name: name.trim(),
         category: categories.find(c => c.slug === category)?.name || category,
-        subcategory: categories.find(c => c.slug === category)?.subcategories?.find(s => s.slug === subcategory)?.name || subcategory,
+        subcategory: [categories.find(c => c.slug === category)?.subcategories?.find(s => s.slug === subcategory)?.name || subcategory, productType.trim()].filter(Boolean).join(' · '),
         colors: colors.map(c => c.name),
         sizes: effectiveSizes.map(sz => (isOneSizeList([sz]) ? oneSizeLabel(sz) : sz)),
         notes: aiNotes,
@@ -125,6 +140,8 @@ export const ProductFormModal: React.FC = () => {
       setPrice(editingProduct.price ? String(editingProduct.price) : '');
       setOriginalPrice(editingProduct.originalPrice ? String(editingProduct.originalPrice) : '');
       setFeatured(Boolean(editingProduct.featured));
+      setProductType(editingProduct.productType || '');
+      setTab('datos');
       setCategory(editingProduct.category || categories[0]?.slug || 'pantalones');
       setSubcategory(editingProduct.subcategory || '');
       
@@ -153,6 +170,8 @@ export const ProductFormModal: React.FC = () => {
       setPrice('');
       setOriginalPrice('');
       setFeatured(false);
+      setProductType('');
+      setTab('datos');
       setImagesList([]);
       setSizes([]);
       setOneSize(false);
@@ -176,6 +195,12 @@ export const ProductFormModal: React.FC = () => {
   const isEditing = Boolean(editingProduct && editingProduct.id);
   const selectedCatObj = categories.find(c => c.slug === category);
   const availableSubcategories = selectedCatObj?.subcategories || [];
+  // Tipos que ya usan otras prendas de la misma categoría (sin repetir mayúsculas/minúsculas)
+  const suggestedTypes = Array.from(
+    new Map(
+      products.flatMap(p => (p.category === category && p.productType ? [[p.productType.toLowerCase(), p.productType] as const] : []))
+    ).values()
+  ).sort((a, b) => a.localeCompare(b, 'es'));
 
   // Helper to render image into 3:4 canvas using specific vertical offset percentage (0 to 100%)
   const processImageTo3x4 = (srcUrl: string, offsetYPercent: number = 50, offsetXPercent: number = 50): Promise<string> => {
@@ -338,6 +363,7 @@ export const ProductFormModal: React.FC = () => {
     // Form Validations
     if (!name.trim()) {
       setErrorMessage('Por favor, ingresá el nombre de la prenda.');
+      goToTab('datos');
       return;
     }
 
@@ -345,16 +371,19 @@ export const ProductFormModal: React.FC = () => {
     const numericPrice = Number(cleanPrice);
     if (!cleanPrice || isNaN(numericPrice) || numericPrice <= 0) {
       setErrorMessage('Por favor, ingresá un precio de venta válido (ej: 15900).');
+      goToTab('datos');
       return;
     }
 
     if (!category) {
       setErrorMessage('Primero creá una categoría desde el panel de administración (Categorías & Subcategorías).');
+      goToTab('datos');
       return;
     }
 
     if (imagesList.length === 0) {
       setErrorMessage('Por favor, adjuntá al menos una foto de la prenda.');
+      goToTab('imagenes');
       return;
     }
 
@@ -362,10 +391,12 @@ export const ProductFormModal: React.FC = () => {
       const rangeError = validateOneSizeRange(oneFrom, oneTo);
       if (rangeError) {
         setErrorMessage(rangeError);
+        goToTab('variantes');
         return;
       }
     } else if (sizes.length === 0) {
       setErrorMessage('Por favor, seleccioná o agregá al menos un talle, o marcá "Talle único".');
+      goToTab('variantes');
       return;
     }
 
@@ -394,6 +425,7 @@ export const ProductFormModal: React.FC = () => {
         originalPrice: numericOriginalPrice && numericOriginalPrice > 0 ? numericOriginalPrice : undefined,
         category,
         subcategory,
+        productType: productType.trim(),
         images: finalImages,
         sizes: effectiveSizes,
         colors: finalColors,
@@ -418,7 +450,7 @@ export const ProductFormModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/90 backdrop-blur-md animate-fade-in overflow-y-auto">
-      <div className="bg-[#121212] text-white max-w-2xl w-full p-6 sm:p-8 relative shadow-2xl border border-neutral-800 rounded-2xl my-auto max-h-[92vh] overflow-y-auto">
+      <div className="bg-[#121212] text-white max-w-2xl w-full p-6 sm:p-8 relative shadow-2xl border border-neutral-800 rounded-2xl my-auto max-h-[92vh] overflow-y-auto" ref={scrollRef}>
         
         {/* Close Button */}
         <button
@@ -446,8 +478,40 @@ export const ProductFormModal: React.FC = () => {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-6 text-xs">
+        {/* Barra de pestañas */}
+        <div className="sticky top-0 z-20 -mx-6 sm:-mx-8 px-6 sm:px-8 pt-3 pb-3 mt-5 bg-[#121212]/95 backdrop-blur border-b border-neutral-800">
+          <div role="tablist" className="grid grid-cols-3 gap-1.5 p-1 bg-black rounded-xl border border-neutral-800">
+            {FORM_TABS.map(({ id, label }) => {
+              const complete =
+                id === 'datos' ? name.trim() !== '' && Number(String(price).replace(/[^0-9]/g, '')) > 0 && category !== ''
+                : id === 'imagenes' ? imagesList.length > 0
+                : oneSize ? validateOneSizeRange(oneFrom, oneTo) === null : sizes.length > 0;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === id}
+                  onClick={() => goToTab(id)}
+                  className={`py-2 px-1.5 rounded-lg text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider leading-tight text-center transition-all cursor-pointer flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 ${
+                    tab === id ? 'bg-white text-black shadow-md' : 'text-neutral-400 hover:text-white'
+                  }`}
+                >
+                  <span>{label}{id === 'imagenes' && imagesList.length > 0 ? ` (${imagesList.length})` : ''}</span>
+                  {complete ? (
+                    <Check className={`w-3.5 h-3.5 shrink-0 ${tab === id ? 'text-emerald-600' : 'text-emerald-400'}`} aria-label="Completo" />
+                  ) : (
+                    <span className={`w-2 h-2 rounded-full shrink-0 ${tab === id ? 'bg-amber-500' : 'bg-amber-400/70'}`} title="Falta completar" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="mt-5 space-y-6 text-xs">
           
+          <div className={tab === 'datos' ? 'space-y-6' : 'hidden'}>
           {/* SECCIÓN 1: DETALLES PRINCIPALES */}
           <div className="space-y-4 p-5 bg-neutral-900/90 border border-neutral-800 rounded-xl shadow-inner">
             <div className="flex items-center gap-2 text-neutral-300 font-bold uppercase tracking-wider font-mono">
@@ -622,6 +686,9 @@ export const ProductFormModal: React.FC = () => {
             </div>
           </div>
 
+          </div>
+
+          <div className={tab === 'imagenes' ? 'space-y-6' : 'hidden'}>
           {/* SECCIÓN 2: FOTOGRAFÍAS Y ENCUADRE DINÁMICO */}
           <div className="space-y-4 p-5 bg-neutral-900/90 border border-neutral-800 rounded-xl shadow-inner">
             <div className="flex items-center justify-between">
@@ -709,6 +776,9 @@ export const ProductFormModal: React.FC = () => {
             )}
           </div>
 
+          </div>
+
+          <div className={tab === 'variantes' ? 'space-y-6' : 'hidden'}>
           {/* SECCIÓN 3: TALLES (CON VISUALIZACIÓN INMEDIATA) */}
           <div className="space-y-4 p-5 bg-neutral-900/90 border border-neutral-800 rounded-xl shadow-inner">
             <div className="flex items-center justify-between">
@@ -970,6 +1040,54 @@ export const ProductFormModal: React.FC = () => {
             </div>
           </div>
 
+          {/* SECCIÓN 5: TIPO DE PRENDA (uno solo) */}
+          <div className="space-y-3 p-5 bg-neutral-900/90 border border-neutral-800 rounded-xl shadow-inner">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-neutral-300 font-bold uppercase tracking-wider font-mono">
+                <Tag className="w-4 h-4 text-white" />
+                <span>5. Tipo de Prenda</span>
+              </div>
+              <span className="text-[11px] text-neutral-400 font-mono">Opcional · uno solo</span>
+            </div>
+
+            <input
+              type="text"
+              list="tipos-de-prenda"
+              value={productType}
+              maxLength={40}
+              onChange={(e) => setProductType(e.target.value)}
+              placeholder="Ej: Mom, Oxford, Wide Leg, Recto..."
+              className="w-full px-3.5 py-2.5 bg-[#171717] border border-neutral-700 text-white rounded-xl focus:outline-none focus:border-white font-semibold text-sm placeholder:text-neutral-500"
+            />
+            <datalist id="tipos-de-prenda">
+              {suggestedTypes.map(type => <option key={type} value={type} />)}
+            </datalist>
+
+            {suggestedTypes.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[10px] text-neutral-400 uppercase font-mono">Ya usados en esta categoría:</span>
+                {suggestedTypes.map(type => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setProductType(type)}
+                    className={`px-3 py-1 rounded-lg border text-[11px] font-bold cursor-pointer transition-colors ${
+                      productType.trim().toLowerCase() === type.toLowerCase()
+                        ? 'bg-white text-black border-white'
+                        : 'bg-neutral-950 text-neutral-300 border-neutral-800 hover:border-neutral-600'
+                    }`}
+                  >
+                    {type}
+                  </button>
+                ))}
+              </div>
+            )}
+            <p className="text-[11px] text-neutral-500 normal-case">
+              Si una clienta busca este nombre en la tienda, la prenda aparece. Escribilo siempre igual (por ejemplo "Wide Leg") para que se agrupen.
+            </p>
+          </div>
+          </div>
+
           {/* Bottom Validation Error Alert (if any) */}
           {errorMessage && (
             <div className="p-3.5 bg-red-950/90 border border-red-700 rounded-xl text-xs text-red-200 font-medium flex items-center gap-2.5 animate-fade-in shadow-md">
@@ -977,6 +1095,28 @@ export const ProductFormModal: React.FC = () => {
               <span>{errorMessage}</span>
             </div>
           )}
+
+          {/* Navegación entre pestañas */}
+          <div className="flex items-center justify-between gap-3">
+            {tab !== 'datos' ? (
+              <button
+                type="button"
+                onClick={() => goToTab(tab === 'variantes' ? 'imagenes' : 'datos')}
+                className="px-4 py-2.5 border border-neutral-700 text-neutral-300 font-bold uppercase tracking-wider hover:bg-neutral-800 hover:text-white transition-colors cursor-pointer rounded-xl"
+              >
+                ← Atrás
+              </button>
+            ) : <span />}
+            {tab !== 'variantes' && (
+              <button
+                type="button"
+                onClick={() => goToTab(tab === 'datos' ? 'imagenes' : 'variantes')}
+                className="px-4 py-2.5 border border-white text-white font-bold uppercase tracking-wider hover:bg-white hover:text-black transition-colors cursor-pointer rounded-xl"
+              >
+                Siguiente →
+              </button>
+            )}
+          </div>
 
           {/* Action Buttons */}
           <div className="pt-2 flex gap-3">

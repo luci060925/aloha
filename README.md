@@ -98,7 +98,8 @@ Los scripts están en [`supabase/`](./supabase). Ejecutarlos en el **SQL Editor*
 | 6 | `showroom_foto.sql` | Columna de la foto editable del showroom |
 | 7 | `descuentos_solo_cupones.sql` | Cupones con tipo y condición, un uso por clienta y un cupón cada 24 horas (reemplaza la validación de pedidos) |
 | 8 | `cupones_cancelados.sql` | Cancelar un pedido devuelve el uso del cupón |
-| 9 | `categorias_iniciales.sql` | Categorías de arranque (opcional) |
+| 9 | `tipo_de_prenda.sql` | Columna del tipo de prenda (Mom, Oxford, Wide Leg…) |
+| 10 | `categorias_iniciales.sql` | Categorías de arranque (opcional) |
 
 `schema.sql` es una versión anterior e **insegura**: no ejecutarla.
 

@@ -121,7 +121,7 @@ const ProductDetailContent: React.FC<{ product: Product }> = ({ product }) => {
                 {/* Category & Wishlist */}
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] uppercase tracking-[0.25em] text-neutral-400 font-mono font-bold">
-                    {product.subcategory ? `${product.category} • ${product.subcategory}` : product.category}
+                    {[product.category, product.subcategory, product.productType].filter(Boolean).join(' • ')}
                   </span>
                   <button
                     onClick={() => toggleWishlist(product.id)}

@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS public.products (
     original_price NUMERIC(12, 2) DEFAULT 0,
     category TEXT NOT NULL,
     subcategory TEXT DEFAULT '',
+    product_type TEXT DEFAULT '',
     images TEXT[] DEFAULT ARRAY[]::TEXT[],
     sizes TEXT[] DEFAULT ARRAY['S', 'M', 'L']::TEXT[],
     colors JSONB DEFAULT '[]'::JSONB,

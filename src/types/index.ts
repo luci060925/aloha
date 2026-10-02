@@ -7,6 +7,7 @@ export interface Product {
   originalPrice?: number;
   category: string; // e.g. "pantalones", "tops-remeras", "vestidos", "abrigos-blazers", "accesorios"
   subcategory?: string; // e.g. "sastreros", "calzas", "joggers", "corsets", "halters"
+  productType?: string; // tipo de la prenda dentro de su subcategoría, ej. "Mom", "Oxford", "Wide Leg" (uno solo)
   images: string[];
   sizes: string[]; // e.g. ["XS", "S", "M", "L", "XL"]
   colors: { name: string; hex: string }[];

@@ -16,13 +16,15 @@ Se hace desde la **tienda** (no desde el panel), estando con tu sesión de admin
 
 1. Entrá a la sección donde va la prenda (por ejemplo, Pantalones → Calzas).
 2. Tocá **Agregar Prenda**. Se abre el formulario con esa sección ya elegida.
-3. Completá: nombre, categoría y subcategoría, precio, precio original (opcional: se muestra tachado y calcula el % de descuento) y descripción. En la descripción podés tocar **Sugerir con IA** (si querés mejores resultados, anotá antes en el campo "Para la IA" datos reales como tela o detalles) para que te proponga 3 opciones (cercana, elegante y canchera): tocá la que te guste, editala si querés y **revisá que sea correcta** antes de guardar. Se instala una vez (ver [ia-descripciones.md](./ia-descripciones.md)).
-4. **Fotos:** tocá el recuadro y elegí las imágenes desde tu celular o computadora.
-   - Se recortan solas en formato vertical 3:4.
-   - Con **Enfoque vertical** (Arriba / Centro / Abajo o el deslizador) elegís qué parte de la foto se ve.
-   - La primera foto es la principal; la segunda aparece al pasar el mouse.
-5. **Talles** y **colores:** tocá los que correspondan, o escribí uno nuevo.
-6. **Publicar Prenda.** Aparece de inmediato para todas las clientas.
+3. El formulario tiene **tres pestañas** arriba (un tilde verde marca las que están completas):
+   - **Datos de la prenda:** nombre, categoría y subcategoría, precio, precio original (opcional: se muestra tachado y calcula el % de descuento), casilla de **destacada** y descripción. En la descripción podés tocar **Sugerir con IA** (si querés mejores resultados, anotá antes en el campo "Para la IA" datos reales como tela o detalles) para que te proponga 3 opciones (cercana, elegante y canchera): tocá la que te guste, editala si querés y **revisá que sea correcta** antes de guardar. Se instala una vez (ver [ia-descripciones.md](./ia-descripciones.md)).
+   - **Imágenes cargadas:** tocá el recuadro y elegí las fotos desde tu celular o computadora. Cada foto se ve en su recuadro vertical 3:4, tal como la verá la clienta: **arrastrala con el dedo o el mouse** para acomodarla. La primera foto es la principal; la segunda aparece al pasar el mouse.
+   - **Talle, color y tipo:**
+     - **Talles:** tocá los que correspondan o escribí uno nuevo. Si la prenda no se elige por talle, marcá **Talle único** y elegí "calza del … al …" (letras o números).
+     - **Colores:** tocá los que correspondan o agregá uno nuevo.
+     - **Tipo de prenda** (opcional, uno solo): por ejemplo *Mom*, *Oxford* o *Wide Leg* dentro de Pantalones → Jeans. Si una clienta busca ese nombre, la prenda aparece. Escribilo siempre igual para que se agrupen; el campo sugiere los tipos que ya usaste en esa categoría.
+4. Con **Siguiente →** y **← Atrás** pasás de una pestaña a otra, y nada se pierde al cambiar. Si falta un dato al guardar, el formulario te lleva a la pestaña donde está.
+5. **Publicar Prenda.** Aparece de inmediato para todas las clientas.
 
 Para **modificar** o **eliminar**, en la tienda cada prenda muestra dos botones (lápiz y tacho) mientras estés con sesión de administradora. Al cambiar o quitar fotos, las que ya no se usan se borran solas.
 

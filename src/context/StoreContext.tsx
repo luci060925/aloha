@@ -208,6 +208,11 @@ const mapCouponFromDb = (r: CouponInput): Coupon => ({
   expiresAt: r.expires_at || undefined,
 });
 
+// Si todavía no se ejecutó supabase/tipo_de_prenda.sql, la columna product_type no existe en la base
+const isMissingTypeColumn = (error: { code?: string; message?: string } | null) =>
+  error?.code === 'PGRST204' && (error.message ?? '').includes('product_type');
+const MISSING_TYPE_MESSAGE = 'Para guardar el tipo de prenda falta ejecutar supabase/tipo_de_prenda.sql en Supabase.';
+
 const settingsKeys = Object.keys(SETTINGS_DB_KEYS) as (keyof StoreSettings)[];
 
 const settingsFromDb = (row: StoreSettingsRow): StoreSettings => {
@@ -497,6 +502,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     originalPrice: row.original_price ? Number(row.original_price) : undefined,
     category: row.category,
     subcategory: row.subcategory || undefined,
+    productType: row.product_type || undefined,
     images: Array.isArray(row.images) ? row.images : [],
     sizes: Array.isArray(row.sizes) ? row.sizes : ['S', 'M', 'L'],
     colors: Array.isArray(row.colors) ? row.colors : [],
@@ -516,6 +522,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if ('originalPrice' in product) dbObj.original_price = product.originalPrice ?? 0;
     if (product.category !== undefined) dbObj.category = product.category;
     if (product.subcategory !== undefined) dbObj.subcategory = product.subcategory;
+    if (product.productType !== undefined) dbObj.product_type = product.productType;
     if (product.images !== undefined) dbObj.images = product.images;
     if (product.sizes !== undefined) dbObj.sizes = product.sizes;
     if (product.colors !== undefined) dbObj.colors = product.colors;
@@ -1060,7 +1067,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
     // Primero la base: si falla, se avisa y no queda una prenda "fantasma" solo en este navegador
     if (isSupabaseConfigured && supabase) {
-      const { error } = await supabase.from('products').insert([mapProductToDb(newProduct)]);
+      const payload = mapProductToDb(newProduct);
+      let { error } = await supabase.from('products').insert([payload]);
+      if (isMissingTypeColumn(error)) {
+        if (newProduct.productType) throw new Error(MISSING_TYPE_MESSAGE);
+        delete payload.product_type; // sin tipo se puede publicar igual
+        ({ error } = await supabase.from('products').insert([payload]));
+      }
       if (error) throw new Error(error.code === '23505' ? 'Ya existe una prenda con ese nombre. Cambiale el nombre.' : error.message);
     }
     setProducts(prev => [newProduct, ...prev]);
@@ -1070,11 +1083,15 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const previous = products.find(p => p.id === id);
 
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase
-        .from('products')
-        .update({ ...mapProductToDb(productData), updated_at: new Date().toISOString() })
-        .eq('id', id)
-        .select('id');
+      const client = supabase;
+      const payload: DbWrite = { ...mapProductToDb(productData), updated_at: new Date().toISOString() };
+      const save = () => client.from('products').update(payload).eq('id', id).select('id');
+      let { data, error } = await save();
+      if (isMissingTypeColumn(error)) {
+        if (productData.productType) throw new Error(MISSING_TYPE_MESSAGE);
+        delete payload.product_type;
+        ({ data, error } = await save());
+      }
       if (error) throw new Error(error.code === '23505' ? 'Ya existe una prenda con ese nombre. Cambiale el nombre.' : error.message);
       if (!data || data.length === 0) throw new Error('No se pudo guardar: la prenda no existe en la base o tu cuenta no tiene permisos.');
 

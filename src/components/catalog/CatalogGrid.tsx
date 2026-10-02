@@ -58,9 +58,10 @@ export const CatalogGrid: React.FC = () => {
         const matchDesc = product.description.toLowerCase().includes(query);
         const matchCat = product.category.toLowerCase().includes(query);
         const matchSub = product.subcategory?.toLowerCase().includes(query);
+        const matchType = product.productType?.toLowerCase().includes(query);
         const matchColor = product.colors.some(c => c.name.toLowerCase().includes(query));
         const matchSize = product.sizes.some(s => s.toLowerCase().includes(query));
-        if (!matchName && !matchDesc && !matchCat && !matchSub && !matchColor && !matchSize) {
+        if (!matchName && !matchDesc && !matchCat && !matchSub && !matchType && !matchColor && !matchSize) {
           return false;
         }
       }

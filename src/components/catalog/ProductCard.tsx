@@ -264,7 +264,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             ))}
           </div>
           <span className="text-[10px] text-neutral-500 font-mono font-bold uppercase">
-            {product.subcategory || product.category}
+            {product.productType || product.subcategory || product.category}
           </span>
         </div>
 
