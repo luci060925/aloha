@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
 import type { Product } from '../../types';
-import { X, Heart, ShoppingBag, Ruler, Check, ShieldCheck, Truck, RotateCcw, Lock } from 'lucide-react';
+import { X, Heart, ShoppingBag, Ruler, Check, ShieldCheck, Truck, Lock } from 'lucide-react';
 import { SizeGuideModal } from './SizeGuideModal';
 
 // Se monta una vez por prenda (ver `key` abajo): talle, color y cantidad arrancan de cero sin efectos de sincronización
@@ -232,11 +232,10 @@ const ProductDetailContent: React.FC<{ product: Product }> = ({ product }) => {
               </div>
 
               {/* Garantías (escritorio) */}
-              <div className="hidden sm:grid grid-cols-3 gap-2.5 pt-3 border-t border-neutral-800">
+              <div className="hidden sm:grid grid-cols-2 gap-2.5 pt-3 border-t border-neutral-800">
                 {[
                   { Icon: Truck, title: 'Envíos a todo el país', text: 'Despachamos tu pedido donde estés.' },
                   { Icon: ShieldCheck, title: 'Asesoramiento personalizado', text: 'Te ayudamos a elegir tu talle y a combinar.' },
-                  { Icon: RotateCcw, title: 'Cambios de talle o modelo', text: '7 días desde que la recibís.' },
                 ].map(({ Icon, title, text }) => (
                   <div key={title} className="flex flex-col items-center text-center gap-1.5 p-3 rounded-xl bg-neutral-900/60 border border-neutral-800">
                     <Icon className="w-5 h-5 text-white" aria-hidden="true" />
