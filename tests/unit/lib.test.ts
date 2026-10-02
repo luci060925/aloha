@@ -5,6 +5,7 @@ import { isHttpUrl, isTrustedAvatarUrl, safeUrl } from '../../src/lib/external';
 import { slugify } from '../../src/lib/slug';
 import { displayPhone } from '../../src/lib/phone';
 import { fitWithin } from '../../src/lib/aiDescription';
+import { buildOneSize, isOneSizeList, oneSizeLabel, parseOneSize, validateOneSizeRange } from '../../src/lib/sizes';
 import { MAGNOLIA_CATEGORY, MAGNOLIA_SLUG } from '../../src/data/fixedCategories';
 import { MIN_PASSWORD_LENGTH } from '../../src/lib/constants';
 import type { CartItem, Coupon, Product } from '../../src/types';
@@ -152,6 +153,43 @@ describe('aiDescription · fitWithin (foto que se manda a la IA)', () => {
     expect(fitWithin(3000, 1500, 768)).toEqual({ width: 768, height: 384 });
     expect(fitWithin(1500, 3000, 768)).toEqual({ width: 384, height: 768 });
     expect(fitWithin(400, 300, 768)).toEqual({ width: 400, height: 300 });
+  });
+});
+
+describe('sizes · talle único', () => {
+  test('se guarda como un talle de texto y se interpreta de vuelta', () => {
+    expect(buildOneSize('S', 'L')).toBe('Único (S al L)');
+    expect(buildOneSize('M', 'M')).toBe('Único (M)');
+    expect(buildOneSize('', '')).toBe('Único');
+    expect(parseOneSize('Único (S al L)')).toEqual({ from: 'S', to: 'L' });
+    expect(parseOneSize('Único (40 al 44)')).toEqual({ from: '40', to: '44' });
+    expect(parseOneSize('Único (M)')).toEqual({ from: 'M', to: 'M' });
+    expect(parseOneSize('Único')).toEqual({ from: '', to: '' });
+    expect(parseOneSize('M')).toBeNull();
+    expect(parseOneSize('VIENEN DEL S AL L')).toBeNull(); // las prendas ya cargadas así quedan como están
+  });
+
+  test('solo una prenda con un único talle de ese formato es de talle único', () => {
+    expect(isOneSizeList(['Único (S al L)'])).toBe(true);
+    expect(isOneSizeList(['Único'])).toBe(true);
+    expect(isOneSizeList(['S', 'M'])).toBe(false);
+    expect(isOneSizeList(['Único (S al L)', 'M'])).toBe(false);
+  });
+
+  test('texto para mostrar', () => {
+    expect(oneSizeLabel('Único (S al L)')).toBe('Talle único · calza del S al L');
+    expect(oneSizeLabel('Único (M)')).toBe('Talle único · M');
+    expect(oneSizeLabel('Único')).toBe('Talle único');
+  });
+
+  test('valida el rango: orden, mismo tipo y que estén los dos', () => {
+    expect(validateOneSizeRange('', '')).toBeNull();
+    expect(validateOneSizeRange('S', 'L')).toBeNull();
+    expect(validateOneSizeRange('38', '44')).toBeNull();
+    expect(validateOneSizeRange('M', 'M')).toBeNull();
+    expect(validateOneSizeRange('L', 'S')).toMatch(/menor/);
+    expect(validateOneSizeRange('S', '40')).toMatch(/mismo tipo/);
+    expect(validateOneSizeRange('S', '')).toMatch(/los dos/);
   });
 });
 

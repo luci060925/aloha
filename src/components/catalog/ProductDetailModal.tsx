@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
 import type { Product } from '../../types';
+import { isOneSizeList, oneSizeLabel } from '../../lib/sizes';
 import { X, Heart, ShoppingBag, Ruler, Check, ShieldCheck, Truck, Lock } from 'lucide-react';
 import { SizeGuideModal } from './SizeGuideModal';
 
@@ -153,36 +154,51 @@ const ProductDetailContent: React.FC<{ product: Product }> = ({ product }) => {
                   {product.description}
                 </p>
 
-                {/* Size Selection */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs uppercase tracking-[0.15em] font-semibold text-neutral-300">
-                      Talle: <span className="font-bold font-mono text-white">{selectedSize}</span>
-                    </span>
+                {/* Talle: si la prenda es de talle único no se elige, solo se informa */}
+                {isOneSizeList(product.sizes) ? (
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-neutral-900/60 border border-neutral-800 text-xs text-neutral-200">
+                      <Ruler className="w-3.5 h-3.5 text-neutral-400" aria-hidden="true" />
+                      <span className="font-semibold">{oneSizeLabel(product.sizes[0])}</span>
+                    </div>
                     <button
                       onClick={() => setIsSizeGuideOpen(true)}
-                      className="text-[11px] text-neutral-400 hover:text-white underline underline-offset-4 flex items-center gap-1 cursor-pointer font-medium"
+                      className="text-[11px] text-neutral-400 hover:text-white underline underline-offset-4 flex items-center gap-1 cursor-pointer font-medium shrink-0"
                     >
-                      <Ruler className="w-3 h-3" />
                       Guía de Talles
                     </button>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    {product.sizes.map(size => (
+                ) : (
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs uppercase tracking-[0.15em] font-semibold text-neutral-300">
+                        Talle: <span className="font-bold font-mono text-white">{selectedSize}</span>
+                      </span>
                       <button
-                        key={size}
-                        onClick={() => setSelectedSize(size)}
-                        className={`min-w-[48px] h-11 px-3.5 flex items-center justify-center font-mono text-xs border uppercase tracking-wider transition-all cursor-pointer rounded-xl ${
-                          selectedSize === size
-                            ? 'bg-white text-black border-white font-bold shadow-md scale-105'
-                            : 'bg-neutral-900 text-neutral-300 border-neutral-700 hover:border-white hover:text-white'
-                        }`}
+                        onClick={() => setIsSizeGuideOpen(true)}
+                        className="text-[11px] text-neutral-400 hover:text-white underline underline-offset-4 flex items-center gap-1 cursor-pointer font-medium"
                       >
-                        {size}
+                        <Ruler className="w-3 h-3" />
+                        Guía de Talles
                       </button>
-                    ))}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {product.sizes.map(size => (
+                        <button
+                          key={size}
+                          onClick={() => setSelectedSize(size)}
+                          className={`min-w-[48px] h-11 px-3.5 flex items-center justify-center font-mono text-xs border uppercase tracking-wider transition-all cursor-pointer rounded-xl ${
+                            selectedSize === size
+                              ? 'bg-white text-black border-white font-bold shadow-md scale-105'
+                              : 'bg-neutral-900 text-neutral-300 border-neutral-700 hover:border-white hover:text-white'
+                          }`}
+                        >
+                          {size}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Color Selection */}
                 <div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { uploadCatalogImage } from '../../lib/images';
 import { suggestDescriptions } from '../../lib/aiDescription';
+import { LETTER_SIZES, NUMBER_SIZES, buildOneSize, isOneSizeList, oneSizeLabel, parseOneSize, validateOneSizeRange } from '../../lib/sizes';
 import { slugify } from '../../lib/slug';
 import {
   X,
@@ -69,6 +70,12 @@ export const ProductFormModal: React.FC = () => {
 
   // Sizes & Colors
   const [sizes, setSizes] = useState<string[]>([]);
+  // Talle único: la prenda no se elige por talle, "calza del X al Y"
+  const [oneSize, setOneSize] = useState(false);
+  const [oneFrom, setOneFrom] = useState('');
+  const [oneTo, setOneTo] = useState('');
+  // Talles que realmente se guardan con la prenda
+  const effectiveSizes = oneSize ? [buildOneSize(oneFrom, oneTo)] : sizes;
   const [customSizeInput, setCustomSizeInput] = useState('');
   const [colors, setColors] = useState<Array<{ name: string; hex: string }>>([]);
   const [customColorName, setCustomColorName] = useState('');
@@ -99,7 +106,7 @@ export const ProductFormModal: React.FC = () => {
         category: categories.find(c => c.slug === category)?.name || category,
         subcategory: categories.find(c => c.slug === category)?.subcategories?.find(s => s.slug === subcategory)?.name || subcategory,
         colors: colors.map(c => c.name),
-        sizes,
+        sizes: effectiveSizes.map(sz => (isOneSizeList([sz]) ? oneSizeLabel(sz) : sz)),
         notes: aiNotes,
         imageSrc: imagesList[0]?.rawUrl,
       });
@@ -134,6 +141,10 @@ export const ProductFormModal: React.FC = () => {
       }
 
       setSizes(editingProduct.sizes?.length ? [...editingProduct.sizes] : []);
+      const savedOneSize = editingProduct.sizes?.length === 1 ? parseOneSize(editingProduct.sizes[0]) : null;
+      setOneSize(Boolean(savedOneSize));
+      setOneFrom(savedOneSize?.from ?? '');
+      setOneTo(savedOneSize?.to ?? '');
       setColors(editingProduct.colors?.length ? [...editingProduct.colors] : []);
     } else {
       // Clean blank state for new product; respeta la categoría/subcategoría preseleccionada al abrir el formulario
@@ -144,6 +155,9 @@ export const ProductFormModal: React.FC = () => {
       setFeatured(false);
       setImagesList([]);
       setSizes([]);
+      setOneSize(false);
+      setOneFrom('');
+      setOneTo('');
       setColors([]);
       const realCategories = categories.filter(c => c.slug !== 'all');
       const preselected = realCategories.find(c => c.slug === editingProduct?.category);
@@ -344,8 +358,14 @@ export const ProductFormModal: React.FC = () => {
       return;
     }
 
-    if (sizes.length === 0) {
-      setErrorMessage('Por favor, seleccioná o agregá al menos un talle.');
+    if (oneSize) {
+      const rangeError = validateOneSizeRange(oneFrom, oneTo);
+      if (rangeError) {
+        setErrorMessage(rangeError);
+        return;
+      }
+    } else if (sizes.length === 0) {
+      setErrorMessage('Por favor, seleccioná o agregá al menos un talle, o marcá "Talle único".');
       return;
     }
 
@@ -375,7 +395,7 @@ export const ProductFormModal: React.FC = () => {
         category,
         subcategory,
         images: finalImages,
-        sizes,
+        sizes: effectiveSizes,
         colors: finalColors,
         featured,
       };
@@ -694,86 +714,147 @@ export const ProductFormModal: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-neutral-300 font-bold uppercase tracking-wider font-mono">
                 <Layers className="w-4 h-4 text-white" />
-                <span>3. Talles Seleccionados ({sizes.length})</span>
+                <span>3. Talles {oneSize ? '(talle único)' : `Seleccionados (${sizes.length})`}</span>
               </div>
-              <span className="text-[11px] text-neutral-400 font-mono">Elegí o escribí los talles</span>
+              <span className="text-[11px] text-neutral-400 font-mono">
+                {oneSize ? 'La clienta no elige talle' : 'Elegí o escribí los talles'}
+              </span>
             </div>
 
-            {/* Current Active Tags Display */}
-            {sizes.length > 0 ? (
-              <div className="flex flex-wrap gap-2 p-3 bg-black/70 border border-neutral-800 rounded-xl">
-                {sizes.map(sz => (
-                  <span
-                    key={sz}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white text-black font-mono font-bold text-xs rounded-lg shadow-sm animate-fade-in"
+            {/* Talle único: la clienta no elige, solo ve en qué talles calza */}
+            <label className="flex items-start gap-3 p-3.5 bg-[#171717] border border-neutral-700 rounded-xl cursor-pointer hover:border-neutral-500 transition-colors">
+              <input
+                type="checkbox"
+                checked={oneSize}
+                onChange={(e) => setOneSize(e.target.checked)}
+                className="mt-0.5 w-4 h-4 accent-white cursor-pointer shrink-0"
+              />
+              <span>
+                <span className="block uppercase tracking-wider font-semibold text-neutral-200">Talle único</span>
+                <span className="block text-[11px] text-neutral-500 mt-0.5 normal-case">
+                  Para prendas que no se eligen por talle. La clienta ve un aviso con el rango en el que calza, sin botones de talle.
+                </span>
+              </span>
+            </label>
+
+            {oneSize ? (
+              <div className="space-y-2 p-3.5 bg-black/70 border border-neutral-800 rounded-xl">
+                <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-300">
+                  <span className="font-semibold">Calza del</span>
+                  <select
+                    value={oneFrom}
+                    onChange={(e) => setOneFrom(e.target.value)}
+                    className="px-3 py-2 bg-[#171717] border border-neutral-700 rounded-lg text-white font-mono font-bold focus:outline-none focus:border-white cursor-pointer"
                   >
-                    <span>{sz}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveSize(sz)}
-                      className="hover:text-red-600 font-bold cursor-pointer text-xs ml-0.5"
-                      title={`Quitar talle ${sz}`}
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
+                    <option value="">--</option>
+                    <optgroup label="Letras">
+                      {LETTER_SIZES.map(sz => <option key={sz} value={sz}>{sz}</option>)}
+                    </optgroup>
+                    <optgroup label="Números">
+                      {NUMBER_SIZES.map(sz => <option key={sz} value={sz}>{sz}</option>)}
+                    </optgroup>
+                  </select>
+                  <span className="font-semibold">al</span>
+                  <select
+                    value={oneTo}
+                    onChange={(e) => setOneTo(e.target.value)}
+                    className="px-3 py-2 bg-[#171717] border border-neutral-700 rounded-lg text-white font-mono font-bold focus:outline-none focus:border-white cursor-pointer"
+                  >
+                    <option value="">--</option>
+                    <optgroup label="Letras">
+                      {LETTER_SIZES.map(sz => <option key={sz} value={sz}>{sz}</option>)}
+                    </optgroup>
+                    <optgroup label="Números">
+                      {NUMBER_SIZES.map(sz => <option key={sz} value={sz}>{sz}</option>)}
+                    </optgroup>
+                  </select>
+                </div>
+                <p className="text-[11px] text-neutral-400 normal-case">
+                  Así lo verá la clienta: <strong className="text-white">{oneSizeLabel(buildOneSize(oneFrom, oneTo))}</strong>
+                </p>
+                {validateOneSizeRange(oneFrom, oneTo) && (
+                  <p className="text-[11px] text-red-400 normal-case">{validateOneSizeRange(oneFrom, oneTo)}</p>
+                )}
               </div>
             ) : (
-              <div className="p-3 bg-black/40 border border-dashed border-neutral-800 rounded-xl text-neutral-500 italic text-xs">
-                Aún no agregaste ningún talle. Seleccioná abajo o escribí un talle nuevo.
-              </div>
+              <>
+                {/* Current Active Tags Display */}
+                {sizes.length > 0 ? (
+                  <div className="flex flex-wrap gap-2 p-3 bg-black/70 border border-neutral-800 rounded-xl">
+                    {sizes.map(sz => (
+                      <span
+                        key={sz}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white text-black font-mono font-bold text-xs rounded-lg shadow-sm animate-fade-in"
+                      >
+                        <span>{sz}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveSize(sz)}
+                          className="hover:text-red-600 font-bold cursor-pointer text-xs ml-0.5"
+                          title={`Quitar talle ${sz}`}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-3 bg-black/40 border border-dashed border-neutral-800 rounded-xl text-neutral-500 italic text-xs">
+                    Aún no agregaste ningún talle. Seleccioná abajo o escribí un talle nuevo.
+                  </div>
+                )}
+
+                {/* Quick Preset Buttons */}
+                <div className="space-y-1.5 pt-1">
+                  <span className="text-[10px] text-neutral-400 uppercase font-mono block">
+                    Tocar para agregar/quitar rápidamente:
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {['XS', 'S', 'M', 'L', 'XL', 'XXL', '36', '38', '40', '42', '44'].map(sz => {
+                      const isActive = sizes.includes(sz);
+                      return (
+                        <button
+                          key={sz}
+                          type="button"
+                          onClick={() => handleToggleSize(sz)}
+                          className={`min-w-[42px] h-9 px-3 font-mono text-xs uppercase tracking-wider border rounded-xl font-bold transition-all cursor-pointer ${
+                            isActive
+                              ? 'bg-white text-black border-white shadow-md scale-105'
+                              : 'bg-neutral-950 text-neutral-400 border-neutral-800 hover:border-neutral-600 hover:text-white'
+                          }`}
+                        >
+                          {sz}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Custom Free Text Input */}
+                <div className="flex gap-2 pt-1">
+                  <input
+                    type="text"
+                    value={customSizeInput}
+                    onChange={(e) => setCustomSizeInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddCustomSize();
+                      }
+                    }}
+                    placeholder="Otro talle (ej. 1, 2, 46)..."
+                    className="flex-1 px-3.5 py-2 bg-[#171717] border border-neutral-700 text-white rounded-xl font-mono text-xs focus:outline-none focus:border-white uppercase font-bold placeholder:text-neutral-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleAddCustomSize()}
+                    className="px-5 py-2 bg-white hover:bg-neutral-200 text-black font-bold uppercase tracking-wider rounded-xl text-xs cursor-pointer transition-colors shadow-sm"
+                  >
+                    + Agregar
+                  </button>
+                </div>
+              </>
             )}
-
-            {/* Quick Preset Buttons */}
-            <div className="space-y-1.5 pt-1">
-              <span className="text-[10px] text-neutral-400 uppercase font-mono block">
-                Tocar para agregar/quitar rápidamente:
-              </span>
-              <div className="flex flex-wrap gap-2">
-                {['XS', 'S', 'M', 'L', 'XL', 'XXL', '36', '38', '40', '42', '44', 'Único'].map(sz => {
-                  const isActive = sizes.includes(sz);
-                  return (
-                    <button
-                      key={sz}
-                      type="button"
-                      onClick={() => handleToggleSize(sz)}
-                      className={`min-w-[42px] h-9 px-3 font-mono text-xs uppercase tracking-wider border rounded-xl font-bold transition-all cursor-pointer ${
-                        isActive
-                          ? 'bg-white text-black border-white shadow-md scale-105'
-                          : 'bg-neutral-950 text-neutral-400 border-neutral-800 hover:border-neutral-600 hover:text-white'
-                      }`}
-                    >
-                      {sz}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Custom Free Text Input */}
-            <div className="flex gap-2 pt-1">
-              <input
-                type="text"
-                value={customSizeInput}
-                onChange={(e) => setCustomSizeInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleAddCustomSize();
-                  }
-                }}
-                placeholder="Otro talle (ej. 1, 2, 46)..."
-                className="flex-1 px-3.5 py-2 bg-[#171717] border border-neutral-700 text-white rounded-xl font-mono text-xs focus:outline-none focus:border-white uppercase font-bold placeholder:text-neutral-500"
-              />
-              <button
-                type="button"
-                onClick={() => handleAddCustomSize()}
-                className="px-5 py-2 bg-white hover:bg-neutral-200 text-black font-bold uppercase tracking-wider rounded-xl text-xs cursor-pointer transition-colors shadow-sm"
-              >
-                + Agregar
-              </button>
-            </div>
           </div>
 
           {/* SECCIÓN 4: COLORES (CON VISUALIZACIÓN INMEDIATA) */}

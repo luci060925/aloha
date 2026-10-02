@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { Product } from '../../types';
 import { useStore } from '../../context/StoreContext';
+import { isOneSizeList, oneSizeLabel } from '../../lib/sizes';
 import { Heart, Eye, ShoppingBag, Edit3, Trash2, Lock } from 'lucide-react';
 
 interface ProductCardProps {
@@ -196,24 +197,30 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             onClick={(e) => e.stopPropagation()}
             className="absolute inset-x-0 bottom-0 bg-[#121212]/98 backdrop-blur-md p-3.5 border-t border-neutral-700 z-20 animate-fade-in shadow-2xl text-white rounded-b"
           >
-            <div className="text-[11px] uppercase tracking-wider font-bold mb-1.5 text-neutral-300">
-              Seleccionar Talle:
-            </div>
-            <div className="flex flex-wrap gap-1.5 mb-2">
-              {product.sizes.map(size => (
-                <button
-                  key={size}
-                  onClick={() => setSelectedQuickSize(size)}
-                  className={`text-xs px-2.5 py-1 font-mono font-bold border transition-colors cursor-pointer rounded ${
-                    selectedQuickSize === size 
-                      ? 'bg-white text-black border-white' 
-                      : 'bg-neutral-900 text-neutral-300 border-neutral-700 hover:border-white'
-                  }`}
-                >
-                  {size}
-                </button>
-              ))}
-            </div>
+            {isOneSizeList(product.sizes) ? (
+              <div className="text-[11px] font-semibold mb-2.5 text-neutral-200">{oneSizeLabel(product.sizes[0])}</div>
+            ) : (
+              <>
+                <div className="text-[11px] uppercase tracking-wider font-bold mb-1.5 text-neutral-300">
+                  Seleccionar Talle:
+                </div>
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {product.sizes.map(size => (
+                    <button
+                      key={size}
+                      onClick={() => setSelectedQuickSize(size)}
+                      className={`text-xs px-2.5 py-1 font-mono font-bold border transition-colors cursor-pointer rounded ${
+                        selectedQuickSize === size
+                          ? 'bg-white text-black border-white'
+                          : 'bg-neutral-900 text-neutral-300 border-neutral-700 hover:border-white'
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
 
             <div className="text-[11px] uppercase tracking-wider font-bold mb-1 text-neutral-300">
               Color: <span className="font-semibold text-white">{selectedQuickColor.name}</span>
