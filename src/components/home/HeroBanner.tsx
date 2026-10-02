@@ -32,7 +32,7 @@ export const HeroBanner: React.FC = () => {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28 lg:py-32 flex flex-col items-center text-center">
         
         {/* Main Headline */}
-        <h1 className="font-['Bebas_Neue'] text-6xl sm:text-8xl lg:text-9xl font-normal uppercase tracking-[0.06em] leading-[0.95] max-w-4xl text-white">
+        <h1 className="font-['Bebas_Neue'] text-4xl sm:text-5xl lg:text-6xl font-normal uppercase tracking-[0.1em] leading-tight max-w-4xl text-white">
           {titleText}
         </h1>
 
