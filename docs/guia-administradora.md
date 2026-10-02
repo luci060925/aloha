@@ -16,7 +16,7 @@ Se hace desde la **tienda** (no desde el panel), estando con tu sesión de admin
 
 1. Entrá a la sección donde va la prenda (por ejemplo, Pantalones → Calzas).
 2. Tocá **Agregar Prenda**. Se abre el formulario con esa sección ya elegida.
-3. Completá: nombre, categoría y subcategoría, precio, precio original (opcional: se muestra tachado y calcula el % de descuento) y descripción.
+3. Completá: nombre, categoría y subcategoría, precio, precio original (opcional: se muestra tachado y calcula el % de descuento) y descripción. En la descripción podés tocar **Sugerir con IA** para que te proponga 3 opciones (cercana, elegante y canchera): tocá la que te guste, editala si querés y **revisá que sea correcta** antes de guardar. Se instala una vez (ver [ia-descripciones.md](./ia-descripciones.md)).
 4. **Fotos:** tocá el recuadro y elegí las imágenes desde tu celular o computadora.
    - Se recortan solas en formato vertical 3:4.
    - Con **Enfoque vertical** (Arriba / Centro / Abajo o el deslizador) elegís qué parte de la foto se ve.

@@ -1,0 +1,146 @@
+// Supabase Edge Function (Deno): sugiere descripciones de prendas con Gemini.
+// Instalación paso a paso: docs/ia-descripciones.md
+//
+// - Solo la administradora puede usarla (se verifica con is_admin() de la base).
+// - La clave de Gemini vive en un secreto de Supabase (GEMINI_API_KEY): nunca llega al navegador.
+// - Devuelve 3 descripciones: cercana, elegante y canchera.
+import { createClient } from 'jsr:@supabase/supabase-js@2';
+
+const MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-3.5-flash-lite';
+const MAX_BODY_BYTES = 1_800_000;
+const MAX_IMAGE_BASE64 = 1_400_000;
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
+const reply = (status: number, body: Record<string, unknown>) =>
+  new Response(JSON.stringify(body), { status, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } });
+
+const SYSTEM_INSTRUCTION = `Sos redactora de moda de Aloha Indumentaria, un showroom de moda femenina de Comodoro Rivadavia (Argentina).
+Escribí en español rioplatense, con voseo ("llevás", "combinás", "elegí").
+Devolvé EXACTAMENTE 3 descripciones, cada una un párrafo corto (2 o 3 oraciones, máximo 350 caracteres):
+1. Cercana: tono amigable y práctico, cómo se usa y con qué combina.
+2. Elegante: tono sobrio y sofisticado, líneas y versatilidad.
+3. Canchera: tono canchero y juvenil, directo.
+Reglas obligatorias:
+- Usá solamente los datos recibidos y lo que se ve en la foto (si hay foto).
+- NO inventes tela, composición, medidas, forro, cuidados, origen ni precios. Si no lo sabés, no lo digas.
+- Podés mencionar el tipo de prenda, los colores y los talles cuando aporten.
+- Sin emojis, sin hashtags, sin comillas y sin marcas.
+- Respondé únicamente con un arreglo JSON de 3 textos.`;
+
+const clean = (value: unknown, max: number): string => (typeof value === 'string' ? value.trim().slice(0, max) : '');
+const cleanList = (value: unknown, maxItems: number, maxLen: number): string[] =>
+  Array.isArray(value) ? value.map(v => clean(v, maxLen)).filter(Boolean).slice(0, maxItems) : [];
+
+/** Saca los textos de la respuesta de Gemini, aunque venga envuelta en un bloque de código. */
+function parseOptions(text: string): string[] {
+  const unfenced = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+  const start = unfenced.indexOf('[');
+  const end = unfenced.lastIndexOf(']');
+  if (start === -1 || end === -1) return [];
+  try {
+    const parsed = JSON.parse(unfenced.slice(start, end + 1));
+    return Array.isArray(parsed)
+      ? parsed.filter((v): v is string => typeof v === 'string').map(v => v.trim()).filter(Boolean).slice(0, 3)
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+Deno.serve(async (req: Request) => {
+  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS_HEADERS });
+  if (req.method !== 'POST') return reply(405, { error: 'Método no permitido.' });
+
+  // 1. Solo la administradora
+  const authorization = req.headers.get('Authorization');
+  if (!authorization) return reply(401, { error: 'Iniciá sesión como administradora.' });
+  const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_ANON_KEY') ?? '', {
+    global: { headers: { Authorization: authorization } },
+  });
+  const { data: isAdmin, error: adminError } = await supabase.rpc('is_admin');
+  if (adminError || isAdmin !== true) return reply(403, { error: 'Solo la administradora puede usar las sugerencias.' });
+
+  // 2. Datos de entrada
+  if (Number(req.headers.get('content-length') ?? 0) > MAX_BODY_BYTES) return reply(413, { error: 'La foto es demasiado grande.' });
+  let body: Record<string, unknown>;
+  try {
+    body = await req.json();
+  } catch {
+    return reply(400, { error: 'Pedido inválido.' });
+  }
+
+  const name = clean(body.name, 120);
+  if (!name) return reply(400, { error: 'Falta el nombre de la prenda.' });
+  const category = clean(body.category, 80);
+  const subcategory = clean(body.subcategory, 80);
+  const colors = cleanList(body.colors, 10, 30);
+  const sizes = cleanList(body.sizes, 15, 20);
+
+  const parts: Record<string, unknown>[] = [];
+  const image = body.image as { mimeType?: unknown; data?: unknown } | undefined;
+  if (image && typeof image.data === 'string' && image.data.length > 0) {
+    if (typeof image.mimeType !== 'string' || !ALLOWED_IMAGE_TYPES.includes(image.mimeType) || image.data.length > MAX_IMAGE_BASE64) {
+      return reply(400, { error: 'La foto no tiene un formato válido o es muy grande.' });
+    }
+    parts.push({ inlineData: { mimeType: image.mimeType, data: image.data } });
+  }
+  parts.push({
+    text: [
+      `Prenda: ${name}`,
+      category && `Categoría: ${category}`,
+      subcategory && `Subcategoría: ${subcategory}`,
+      colors.length > 0 && `Colores: ${colors.join(', ')}`,
+      sizes.length > 0 && `Talles: ${sizes.join(', ')}`,
+      parts.length > 0 ? 'Mirá la foto adjunta para describir lo que se ve.' : 'No hay foto: usá solo los datos de arriba.',
+    ].filter(Boolean).join('\n'),
+  });
+
+  // 3. Gemini
+  const apiKey = Deno.env.get('GEMINI_API_KEY');
+  if (!apiKey) return reply(500, { error: 'Falta configurar la clave de Gemini en Supabase (GEMINI_API_KEY).' });
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 25_000);
+  let geminiResponse: Response;
+  try {
+    geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
+      method: 'POST',
+      signal: controller.signal,
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
+        contents: [{ role: 'user', parts }],
+        generationConfig: {
+          temperature: 0.8,
+          responseMimeType: 'application/json',
+          responseSchema: { type: 'ARRAY', items: { type: 'STRING' } },
+        },
+      }),
+    });
+  } catch {
+    return reply(504, { error: 'La IA tardó demasiado en responder. Probá de nuevo.' });
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  if (geminiResponse.status === 429) {
+    return reply(429, { error: 'Se alcanzó el límite gratuito de la IA por ahora. Probá más tarde o escribí la descripción a mano.' });
+  }
+  if (!geminiResponse.ok) {
+    console.error('Gemini respondió', geminiResponse.status, await geminiResponse.text().catch(() => ''));
+    return reply(502, { error: 'La IA no pudo responder. Probá de nuevo en un rato.' });
+  }
+
+  const data = await geminiResponse.json().catch(() => null);
+  const text: string = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+  const options = parseOptions(text);
+  if (options.length === 0) return reply(502, { error: 'La IA no devolvió sugerencias válidas. Probá de nuevo.' });
+
+  return reply(200, { options });
+});

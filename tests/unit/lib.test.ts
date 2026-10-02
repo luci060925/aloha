@@ -4,6 +4,7 @@ import { calculateCartTotals, couponKind, couponShortfall, syncCartWithCatalog, 
 import { isHttpUrl, isTrustedAvatarUrl, safeUrl } from '../../src/lib/external';
 import { slugify } from '../../src/lib/slug';
 import { displayPhone } from '../../src/lib/phone';
+import { fitWithin } from '../../src/lib/aiDescription';
 import { MAGNOLIA_CATEGORY, MAGNOLIA_SLUG } from '../../src/data/fixedCategories';
 import { MIN_PASSWORD_LENGTH } from '../../src/lib/constants';
 import type { CartItem, Coupon, Product } from '../../src/types';
@@ -143,6 +144,14 @@ describe('Magnolia Intimates · categoría fija', () => {
     expect(MAGNOLIA_CATEGORY.slug).toBe(MAGNOLIA_SLUG);
     expect(MAGNOLIA_CATEGORY.locked).toBe(true);
     expect(MAGNOLIA_CATEGORY.subcategories?.map(s => s.slug)).toEqual(['lenceria', 'pijamas', 'medias', 'conjuntos']);
+  });
+});
+
+describe('aiDescription · fitWithin (foto que se manda a la IA)', () => {
+  test('achica sin deformar y nunca agranda', () => {
+    expect(fitWithin(3000, 1500, 768)).toEqual({ width: 768, height: 384 });
+    expect(fitWithin(1500, 3000, 768)).toEqual({ width: 384, height: 768 });
+    expect(fitWithin(400, 300, 768)).toEqual({ width: 400, height: 300 });
   });
 });
 

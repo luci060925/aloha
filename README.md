@@ -160,6 +160,7 @@ Más en [`docs/arquitectura.md`](./docs/arquitectura.md) y [`docs/seguridad.md`]
 | [`docs/guia-administradora.md`](./docs/guia-administradora.md) | Uso diario del panel para la dueña |
 | [`docs/despliegue.md`](./docs/despliegue.md) | Cloudflare Pages, Supabase y checklist de lanzamiento |
 | [`docs/login-google.md`](./docs/login-google.md) | Cómo habilitar el ingreso con Google |
+| [`docs/ia-descripciones.md`](./docs/ia-descripciones.md) | Sugerencias de descripción con IA (Gemini + función de Supabase) |
 | [`docs/auditoria.md`](./docs/auditoria.md) | Revisión de punta a punta y estado de cada hallazgo |
 | [`docs/pendientes.md`](./docs/pendientes.md) | Qué falta antes de lanzar y mejoras futuras |
 | [`informe.md`](./informe.md) | Auditoría de seguridad: hallazgos, correcciones y estado |

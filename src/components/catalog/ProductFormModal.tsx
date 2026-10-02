@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { uploadCatalogImage } from '../../lib/images';
+import { suggestDescriptions } from '../../lib/aiDescription';
 import { slugify } from '../../lib/slug';
 import {
   X,
@@ -76,6 +77,37 @@ export const ProductFormModal: React.FC = () => {
   // Validation Error State
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Sugerencias de descripción con IA (3 opciones: cercana, elegante y canchera)
+  const [suggesting, setSuggesting] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [suggestError, setSuggestError] = useState<string | null>(null);
+  const SUGGESTION_LABELS = ['Cercana', 'Elegante', 'Canchera'];
+
+  const handleSuggest = async () => {
+    setSuggestError(null);
+    setSuggestions([]);
+    if (!name.trim()) {
+      setSuggestError('Escribí primero el nombre de la prenda para que la IA tenga de dónde partir.');
+      return;
+    }
+    setSuggesting(true);
+    try {
+      const options = await suggestDescriptions({
+        name: name.trim(),
+        category: categories.find(c => c.slug === category)?.name || category,
+        subcategory: categories.find(c => c.slug === category)?.subcategories?.find(s => s.slug === subcategory)?.name || subcategory,
+        colors: colors.map(c => c.name),
+        sizes,
+        imageSrc: imagesList[0]?.rawUrl,
+      });
+      setSuggestions(options);
+    } catch (err) {
+      setSuggestError(err instanceof Error ? err.message : 'No se pudieron generar sugerencias.');
+    } finally {
+      setSuggesting(false);
+    }
+  };
 
   useEffect(() => {
     if (editingProduct && editingProduct.id) {
@@ -511,16 +543,52 @@ export const ProductFormModal: React.FC = () => {
             </label>
 
             <div>
-              <label className="block uppercase tracking-wider font-semibold text-neutral-300 mb-1.5">
-                Descripción
-              </label>
+              <div className="flex items-center justify-between gap-3 mb-1.5">
+                <label className="block uppercase tracking-wider font-semibold text-neutral-300">
+                  Descripción
+                </label>
+                <button
+                  type="button"
+                  onClick={handleSuggest}
+                  disabled={suggesting}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-neutral-600 text-[11px] font-mono font-bold uppercase text-neutral-200 hover:bg-white hover:text-black transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
+                  title="La IA propone 3 descripciones para elegir"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>{suggesting ? 'Pensando…' : 'Sugerir con IA'}</span>
+                </button>
+              </div>
               <textarea
-                rows={2}
+                rows={3}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Detalle de tela, calce, caída, detalles de confección..."
                 className="w-full px-3.5 py-2.5 bg-[#171717] border border-neutral-700 text-white rounded-xl focus:outline-none focus:border-white leading-relaxed resize-none placeholder:text-neutral-500 text-xs font-normal"
               />
+              {suggestError && <p className="mt-1.5 text-[11px] text-red-400 font-medium">{suggestError}</p>}
+              {suggestions.length > 0 && (
+                <div className="mt-2.5 space-y-2">
+                  <p className="text-[11px] text-neutral-400 font-medium normal-case">
+                    Tocá la que más te guste para usarla. Después podés editarla. Revisá que sea correcta antes de guardar: la IA puede equivocarse.
+                  </p>
+                  {suggestions.map((text, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => {
+                        setDescription(text);
+                        setSuggestions([]);
+                      }}
+                      className="w-full text-left p-3 rounded-xl border border-neutral-700 bg-[#171717] hover:border-white transition-colors cursor-pointer"
+                    >
+                      <span className="block text-[10px] font-mono font-bold uppercase tracking-wider text-neutral-500 mb-1">
+                        {SUGGESTION_LABELS[i] ?? `Opción ${i + 1}`}
+                      </span>
+                      <span className="block text-xs font-normal normal-case text-neutral-200 leading-relaxed">{text}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
