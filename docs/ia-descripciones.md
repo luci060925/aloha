@@ -37,7 +37,7 @@ Formulario de la prenda ──► Función de Supabase ──► Gemini (Google)
 
 ### 2. Crear la función en Supabase
 1. En Supabase: **Edge Functions → Deploy a new function → Via Editor**.
-2. Nombre: `sugerir-descripcion` (exactamente así).
+2. El nombre lo asigna Supabase (o podés elegirlo). Lo importante es que **coincida con `FUNCTION_NAME` en `src/lib/aiDescription.ts`** (hoy: `dynamic-api`). Si la creás con otro nombre, se cambia esa línea.
 3. Borrá el código de ejemplo y pegá todo el contenido de [`supabase/functions/sugerir-descripcion/index.ts`](../supabase/functions/sugerir-descripcion/index.ts).
 4. **Deploy**. La función comprueba por su cuenta que quien la usa sea la administradora, así que no importa si *Verify JWT* está activado o no. Si al probar el botón aparece un error "Invalid JWT" o 401, desactivalo en la configuración de la función (*Edge Functions → la función → Details → Verify JWT*).
 
@@ -53,13 +53,13 @@ Panel → cargá una prenda, escribí el nombre, tocá **Sugerir con IA**. En un
 
 | El botón dice | Qué pasa |
 |---|---|
-| "La función de IA todavía no está instalada" | Falta el paso 2 (o el nombre no es exactamente `sugerir-descripcion`). |
+| "La función de IA todavía no está instalada" | Falta el paso 2, o el nombre de la función en Supabase no coincide con `FUNCTION_NAME` de `src/lib/aiDescription.ts`. |
 | "Falta configurar la clave de Gemini" | Falta el paso 3. |
 | "Solo la administradora puede usar las sugerencias" | Se usó con una cuenta que no es administradora. |
 | "Se alcanzó el límite gratuito" | Se llegó al tope diario o por minuto de Google. Esperar un rato o escribir a mano. |
 | "La IA no pudo responder" | Falla momentánea de Google o el modelo cambió de nombre: probar de nuevo, o actualizar `GEMINI_MODEL` con un modelo vigente de la lista de AI Studio. |
 
-Los errores técnicos quedan en **Edge Functions → sugerir-descripcion → Logs**.
+Los errores técnicos quedan en **Edge Functions → (la función) → Logs**.
 
 ## Cambiar el estilo de las descripciones
 

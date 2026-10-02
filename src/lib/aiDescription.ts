@@ -1,7 +1,11 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 
-/** Función de Supabase que arma las sugerencias (supabase/functions/sugerir-descripcion). Ver docs/ia-descripciones.md */
-const FUNCTION_NAME = 'sugerir-descripcion';
+/**
+ * Nombre con el que quedó creada en Supabase la función que arma las sugerencias (su código está en
+ * supabase/functions/sugerir-descripcion). Supabase le asignó un nombre automático al crearla desde el panel.
+ * Ver docs/ia-descripciones.md
+ */
+const FUNCTION_NAME = 'dynamic-api';
 const MAX_IMAGE_SIDE = 768;
 
 export interface SuggestionInput {
