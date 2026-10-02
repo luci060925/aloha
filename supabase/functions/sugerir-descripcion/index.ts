@@ -60,7 +60,9 @@ Deno.serve(async (req: Request) => {
   // 1. Solo la administradora
   const authorization = req.headers.get('Authorization');
   if (!authorization) return reply(401, { error: 'Iniciá sesión como administradora.' });
-  const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_ANON_KEY') ?? '', {
+  // La clave pública llega también en el encabezado "apikey" (la manda el sitio): sirve de respaldo si el proyecto usa claves nuevas
+  const publicKey = Deno.env.get('SUPABASE_ANON_KEY') ?? req.headers.get('apikey') ?? '';
+  const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', publicKey, {
     global: { headers: { Authorization: authorization } },
   });
   const { data: isAdmin, error: adminError } = await supabase.rpc('is_admin');

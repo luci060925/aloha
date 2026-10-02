@@ -39,7 +39,7 @@ Formulario de la prenda ──► Función de Supabase ──► Gemini (Google)
 1. En Supabase: **Edge Functions → Deploy a new function → Via Editor**.
 2. Nombre: `sugerir-descripcion` (exactamente así).
 3. Borrá el código de ejemplo y pegá todo el contenido de [`supabase/functions/sugerir-descripcion/index.ts`](../supabase/functions/sugerir-descripcion/index.ts).
-4. **Deploy**. Dejá activada la opción *Verify JWT* (viene así por defecto).
+4. **Deploy**. La función comprueba por su cuenta que quien la usa sea la administradora, así que no importa si *Verify JWT* está activado o no. Si al probar el botón aparece un error "Invalid JWT" o 401, desactivalo en la configuración de la función (*Edge Functions → la función → Details → Verify JWT*).
 
 ### 3. Guardar la clave como secreto
 1. En Supabase: **Edge Functions → Secrets** (o *Project Settings → Edge Functions*).
