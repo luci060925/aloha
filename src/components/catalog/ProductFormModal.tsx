@@ -6,6 +6,7 @@ import { LETTER_SIZES, NUMBER_SIZES, buildOneSize, isOneSizeList, oneSizeLabel, 
 import { slugify } from '../../lib/slug';
 import {
   X,
+  ChevronDown,
   Sparkles,
   Check,
   Upload,
@@ -26,6 +27,41 @@ interface ImageItem {
 }
 
 const FRAME_RATIO = 0.75; // 3:4
+
+type ColorOption = { name: string; hex: string };
+
+const BASE_COLORS: ColorOption[] = [
+  { name: 'Negro', hex: '#0a0a0a' },
+  { name: 'Blanco', hex: '#ffffff' },
+  { name: 'Beige', hex: '#e5dec9' },
+  { name: 'Camel', hex: '#c19a6b' },
+  { name: 'Chocolate', hex: '#4b3621' },
+  { name: 'Gris', hex: '#6b7280' },
+  { name: 'Rojo', hex: '#991b1b' },
+  { name: 'Verde Oliva', hex: '#3f4f2c' },
+];
+
+const SAVED_COLORS_KEY = 'aloha-saved-colors';
+
+// Colores creados antes en este dispositivo (se suman a los de las prendas ya publicadas)
+function readSavedColors(): ColorOption[] {
+  try {
+    const raw = JSON.parse(localStorage.getItem(SAVED_COLORS_KEY) || '[]');
+    return Array.isArray(raw)
+      ? raw.filter((c): c is ColorOption => typeof c?.name === 'string' && /^#[0-9a-f]{6}$/i.test(c?.hex))
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeSavedColors(list: ColorOption[]) {
+  try {
+    localStorage.setItem(SAVED_COLORS_KEY, JSON.stringify(list.slice(0, 200)));
+  } catch {
+    // sin almacenamiento: los colores igual quedan en las prendas publicadas
+  }
+}
 
 const clampPercent = (value: number) => Math.min(100, Math.max(0, value));
 
@@ -95,6 +131,21 @@ export const ProductFormModal: React.FC = () => {
   const [colors, setColors] = useState<Array<{ name: string; hex: string }>>([]);
   const [customColorName, setCustomColorName] = useState('');
   const [customColorHex, setCustomColorHex] = useState('#000000');
+  const [colorMenuOpen, setColorMenuOpen] = useState(false);
+  const [savedColors, setSavedColors] = useState<ColorOption[]>(readSavedColors);
+
+  // Todos los colores ya usados (los básicos, los de las prendas publicadas y los creados acá), sin repetir
+  const colorLibrary = React.useMemo(() => {
+    const map = new Map<string, ColorOption>();
+    const add = (c: ColorOption) => {
+      const key = c.name.trim().toLowerCase();
+      if (key && key !== 'único' && !map.has(key)) map.set(key, { name: c.name.trim(), hex: c.hex });
+    };
+    BASE_COLORS.forEach(add);
+    products.forEach(p => (p.colors || []).forEach(add));
+    savedColors.forEach(add);
+    return [...map.values()].sort((a, b) => a.name.localeCompare(b.name, 'es'));
+  }, [products, savedColors]);
   
   // Validation Error State
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -342,6 +393,9 @@ export const ProductFormModal: React.FC = () => {
     if (!cleanName) return;
     if (!colors.some(c => c.name.toLowerCase() === cleanName.toLowerCase())) {
       setColors(prev => [...prev, { name: cleanName, hex: customColorHex }]);
+      const next = [...savedColors.filter(c => c.name.toLowerCase() !== cleanName.toLowerCase()), { name: cleanName, hex: customColorHex }];
+      setSavedColors(next);
+      writeSavedColors(next);
     }
     setCustomColorName('');
   };
@@ -955,43 +1009,38 @@ export const ProductFormModal: React.FC = () => {
               </div>
             )}
 
-            {/* Suggested Palette */}
-            <div className="space-y-1.5 pt-1">
-              <span className="text-[10px] text-neutral-400 uppercase font-mono block">
-                Colores frecuentes (tocá para agregar/quitar):
-              </span>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { name: 'Negro', hex: '#0a0a0a' },
-                  { name: 'Blanco', hex: '#ffffff' },
-                  { name: 'Beige', hex: '#e5dec9' },
-                  { name: 'Camel', hex: '#c19a6b' },
-                  { name: 'Chocolate', hex: '#4b3621' },
-                  { name: 'Gris', hex: '#6b7280' },
-                  { name: 'Rojo', hex: '#991b1b' },
-                  { name: 'Verde Oliva', hex: '#3f4f2c' },
-                ].map(col => {
-                  const isActive = colors.some(c => c.name.toLowerCase() === col.name.toLowerCase());
-                  return (
-                    <button
-                      key={col.name}
-                      type="button"
-                      onClick={() => handleToggleColor(col)}
-                      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-semibold cursor-pointer transition-all ${
-                        isActive
-                          ? 'bg-neutral-800 border-white text-white ring-1 ring-white/50 shadow-md'
-                          : 'bg-neutral-950 border-neutral-800 text-neutral-400 hover:border-neutral-600 hover:text-white'
-                      }`}
-                    >
-                      <span
-                        className="w-3.5 h-3.5 rounded-full border border-neutral-600 shadow-xs"
-                        style={{ backgroundColor: col.hex }}
-                      />
-                      <span>{col.name}</span>
-                    </button>
-                  );
-                })}
-              </div>
+            {/* Colores guardados: todos los que ya se usaron, en un desplegable */}
+            <div className="space-y-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setColorMenuOpen(o => !o)}
+                aria-expanded={colorMenuOpen}
+                className="w-full flex items-center justify-between gap-2 px-3.5 py-2.5 bg-[#171717] border border-neutral-700 hover:border-neutral-500 rounded-xl text-xs font-semibold text-white cursor-pointer transition-colors"
+              >
+                <span>Elegir de mis colores guardados ({colorLibrary.length})</span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${colorMenuOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {colorMenuOpen && (
+                <div className="max-h-56 overflow-y-auto rounded-xl border border-neutral-700 bg-[#101010] p-1.5 animate-fade-in">
+                  {colorLibrary.map(col => {
+                    const isActive = colors.some(c => c.name.toLowerCase() === col.name.toLowerCase());
+                    return (
+                      <button
+                        key={col.name}
+                        type="button"
+                        onClick={() => handleToggleColor(col)}
+                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left text-xs font-semibold cursor-pointer transition-colors ${
+                          isActive ? 'bg-neutral-800 text-white' : 'text-neutral-300 hover:bg-neutral-900 hover:text-white'
+                        }`}
+                      >
+                        <span className="w-4 h-4 rounded-full border border-neutral-600 shrink-0" style={{ backgroundColor: col.hex }} />
+                        <span className="flex-1 truncate">{col.name}</span>
+                        {isActive && <Check className="w-4 h-4 text-emerald-400 shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Custom Color Creator */}
