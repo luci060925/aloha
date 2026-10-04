@@ -457,15 +457,6 @@ export const ProductFormModal: React.FC = () => {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/90 backdrop-blur-md animate-fade-in overflow-y-auto">
       <div className="bg-[#121212] text-white max-w-2xl w-full p-6 sm:p-8 relative shadow-2xl border border-neutral-800 rounded-2xl my-auto max-h-[92vh] overflow-y-auto" ref={scrollRef}>
         
-        {/* Close Button */}
-        <button
-          onClick={closeProductModal}
-          className="absolute top-4 right-4 p-2 text-neutral-400 hover:text-white cursor-pointer rounded-full transition-colors hover:bg-neutral-800 border border-neutral-700/60"
-          title="Cerrar"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
         {/* Modal Header */}
         <div className="flex items-center gap-3 mb-1">
           <div className="w-9 h-9 rounded-xl bg-white text-black flex items-center justify-center shadow-md">
@@ -484,8 +475,8 @@ export const ProductFormModal: React.FC = () => {
         </div>
 
         {/* Barra de pestañas */}
-        <div className="sticky top-0 z-20 -mx-6 sm:-mx-8 px-6 sm:px-8 pt-3 pb-3 mt-5 bg-[#121212]/95 backdrop-blur border-b border-neutral-800">
-          <div role="tablist" className="grid grid-cols-3 gap-1.5 p-1 bg-black rounded-xl border border-neutral-800">
+        <div className="sticky top-0 z-20 -mx-6 sm:-mx-8 px-6 sm:px-8 pt-3 pb-3 mt-5 bg-[#121212]/95 backdrop-blur border-b border-neutral-800 flex items-center gap-2">
+          <div role="tablist" className="flex-1 grid grid-cols-3 gap-1.5 p-1 bg-black rounded-xl border border-neutral-800">
             {FORM_TABS.map(({ id, label }) => {
               const complete =
                 id === 'datos' ? name.trim() !== '' && Number(String(price).replace(/[^0-9]/g, '')) > 0 && category !== ''
@@ -512,6 +503,15 @@ export const ProductFormModal: React.FC = () => {
               );
             })}
           </div>
+          <button
+            type="button"
+            onClick={closeProductModal}
+            className="shrink-0 p-2.5 text-neutral-300 hover:text-white cursor-pointer rounded-full transition-colors bg-neutral-900 hover:bg-neutral-800 border border-neutral-700"
+            title="Cerrar"
+            aria-label="Cerrar"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         <form onSubmit={handleSubmit} className="mt-5 space-y-6 text-xs">
