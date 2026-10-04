@@ -282,7 +282,7 @@ const ProductDetailContent: React.FC<{ product: Product }> = ({ product }) => {
                       <span>¡Agregado a la Bolsa!</span>
                     </>
                   ) : !product.inStock ? (
-                    <span>Agotado Temporalmente</span>
+                    <span>Agotado</span>
                   ) : !currentUser ? (
                     <>
                       <Lock className="w-4 h-4 text-neutral-400" />
