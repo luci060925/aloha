@@ -27,7 +27,7 @@ Se hace desde la **tienda** (no desde el panel), estando con tu sesión de admin
 5. **Publicar Prenda.** Aparece de inmediato para todas las clientas.
 
 Mientras estés con sesión de administradora, cada prenda de la tienda muestra unos **íconos de acceso rápido** a la derecha de la foto, que se guardan al instante:
-- **★ Estrella:** marca la prenda como **destacada** (sale primero al ordenar por "Destacadas"). Se ve blanca cuando está activa.
+- **★ Estrella:** marca la prenda como **destacada** (es la única que se ve cuando la clienta elige "Destacadas" en "Ordenar por…"). Se ve blanca cuando está activa.
 - **⏳ Reloj de arena:** muestra la etiqueta roja **"Último en stock"**. Se ve roja cuando está activa.
 - **📦 Caja tachada:** marca la prenda como **agotada** (aparece "Agotado" y no se puede comprar). Tocala de nuevo cuando repongas.
 - **✏️ Lápiz:** modificar la prenda. **🗑 Tacho:** eliminarla. Al cambiar o quitar fotos, las que ya no se usan se borran solas.

@@ -43,6 +43,8 @@ export const CatalogGrid: React.FC = () => {
   // Filter & Sort logic
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
+      // "Destacadas": muestra solamente las prendas marcadas como destacadas
+      if (sortBy === 'featured' && !product.featured) return false;
       // Category filter
       if (selectedCategory !== 'all' && product.category !== selectedCategory) {
         return false;
@@ -278,10 +280,12 @@ export const CatalogGrid: React.FC = () => {
           <SlidersHorizontal className="w-8 h-8 text-neutral-600 mx-auto mb-3" />
           <h3 className="font-serif text-2xl font-bold text-white uppercase">No se encontraron prendas</h3>
           <p className="text-xs text-neutral-400 mt-1 max-w-md mx-auto font-medium">
-            No hay prendas en esta sección o con los filtros aplicados.
+            {sortBy === 'featured'
+              ? 'Todavía no hay prendas destacadas en esta sección. Elegí otra opción en "Ordenar por…" para ver todas.'
+              : 'No hay prendas en esta sección o con los filtros aplicados.'}
           </p>
           <div className="mt-5 flex justify-center gap-3">
-            {currentUser?.isAdmin && (
+            {currentUser?.isAdmin && sortBy !== 'featured' && (
               <button
                 onClick={() => openCreateProductModal(
                   selectedCategory !== 'all' ? selectedCategory : undefined,
