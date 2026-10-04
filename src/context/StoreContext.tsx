@@ -54,6 +54,7 @@ interface StoreContextType {
   deleteCategory: (id: string) => Promise<string | null>;
   addSubcategory: (categoryId: string, name: string, slug?: string) => Promise<string | null>;
   deleteSubcategory: (categoryId: string, subcategoryId: string) => Promise<string | null>;
+  updateSubcategory: (categoryId: string, subcategoryId: string, name: string) => Promise<string | null>;
 
   // Cart
   cart: CartItem[];
@@ -1235,6 +1236,28 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return null;
   };
 
+  // Cambia solo el nombre que se ve: el identificador (slug) queda igual, por eso las prendas de esa subcategoría no se mueven
+  const updateSubcategory = async (categoryId: string, subcategoryId: string, name: string): Promise<string | null> => {
+    const category = categories.find(cat => cat.id === categoryId);
+    const subcategory = category?.subcategories?.find(s => s.id === subcategoryId);
+    if (!category || !subcategory) return 'Subcategoría no encontrada.';
+    if (category.locked) return LOCKED_CATEGORY_MESSAGE;
+    const clean = name.trim();
+    if (!clean) return 'El nombre no puede quedar vacío.';
+    if (clean.length > 60) return 'El nombre es demasiado largo (máximo 60 caracteres).';
+
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase.from('subcategories').update({ name: clean }).eq('id', subcategoryId).select('id');
+      if (error || !data || data.length === 0) return error?.message || 'No se pudo cambiar el nombre (sin permisos).';
+    }
+    setCategories(prev => prev.map(cat =>
+      cat.id === categoryId
+        ? { ...cat, subcategories: (cat.subcategories || []).map(s => (s.id === subcategoryId ? { ...s, name: clean } : s)) }
+        : cat
+    ));
+    return null;
+  };
+
   const deleteSubcategory = async (categoryId: string, subcategoryId: string): Promise<string | null> => {
     const category = categories.find(c => c.id === categoryId);
     const subcategory = category?.subcategories?.find(s => s.id === subcategoryId);
@@ -1625,6 +1648,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         deleteCategory,
         addSubcategory,
         deleteSubcategory,
+        updateSubcategory,
         currentView,
         setCurrentView: handleSetCurrentView,
         cart,

@@ -40,6 +40,7 @@ Mientras estés con sesión de administradora, cada prenda de la tienda muestra 
 Panel → **Categorías & Subcategorías**.
 - **Nueva categoría:** nombre (y opcionalmente descripción). Aparece en el menú de la tienda.
 - **Subcategoría:** elegí la categoría padre y escribí el nombre.
+- **Cambiar un nombre:** en "Estructura Actual de Colecciones", tocá el lápiz (✏️) al lado del nombre de la categoría o de la subcategoría, escribí el nombre nuevo y apretá Enter (o el tilde). Solo cambia el nombre que se ve: las prendas siguen en su lugar.
 - **Magnolia Intimates** es una categoría **fija** (Lencería, Pijamas, Medias y Conjuntos): ya está en el menú y en el inicio, y no se puede editar ni borrar. Para cargar una prenda de esa línea, elegí "Magnolia Intimates" como categoría y una de sus 4 subcategorías. Las prendas de Magnolia también aparecen en "Todas las Prendas".
 - **Eliminar:** solo se puede si no tiene prendas. Si las tiene, el panel avisa cuántas son; movelas o eliminalas primero.
 

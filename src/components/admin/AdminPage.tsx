@@ -31,8 +31,37 @@ import {
   Upload,
   Sparkles,
   RefreshCw,
+  Pencil,
+  Check as CheckIcon,
   Plus
 } from 'lucide-react';
+
+/** Campo para cambiar un nombre en el lugar: Enter guarda, Escape cancela. */
+const InlineRename: React.FC<{ value: string; onChange: (v: string) => void; onSave: () => void; onCancel: () => void }> = ({ value, onChange, onSave, onCancel }) => (
+  <span className="inline-flex items-center gap-1 min-w-0">
+    <input
+      autoFocus
+      value={value}
+      maxLength={60}
+      onChange={(e) => onChange(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          onSave();
+        } else if (e.key === 'Escape') {
+          onCancel();
+        }
+      }}
+      className="w-32 px-2 py-1 text-[11px] bg-neutral-950 border border-neutral-600 rounded-md text-white font-semibold focus:outline-none focus:border-white"
+    />
+    <button type="button" onClick={onSave} className="p-1 text-emerald-400 hover:text-emerald-300 cursor-pointer" title="Guardar nombre">
+      <CheckIcon className="w-3.5 h-3.5" />
+    </button>
+    <button type="button" onClick={onCancel} className="p-1 text-neutral-400 hover:text-white cursor-pointer font-bold" title="Cancelar">
+      ×
+    </button>
+  </span>
+);
 
 export const AdminPage: React.FC = () => {
   const {
@@ -49,6 +78,8 @@ export const AdminPage: React.FC = () => {
     deleteCategory,
     addSubcategory,
     deleteSubcategory,
+    updateSubcategory,
+    updateCategory,
     addCoupon,
     deleteCoupon,
     toggleCouponActive,
@@ -83,6 +114,23 @@ export const AdminPage: React.FC = () => {
   const [newCatDesc, setNewCatDesc] = useState('');
   const [selectedCatForSub, setSelectedCatForSub] = useState<string>('');
   const [newSubName, setNewSubName] = useState('');
+  // Renombrar una categoría o una subcategoría desde la estructura de colecciones
+  const [renaming, setRenaming] = useState<{ catId: string; subId?: string; value: string } | null>(null);
+  const saveRename = async () => {
+    if (!renaming) return;
+    if (!renaming.value.trim()) {
+      alert('El nombre no puede quedar vacío.');
+      return;
+    }
+    const error = renaming.subId
+      ? await updateSubcategory(renaming.catId, renaming.subId, renaming.value)
+      : await updateCategory(renaming.catId, { name: renaming.value.trim() });
+    if (error) {
+      alert(error);
+      return;
+    }
+    setRenaming(null);
+  };
 
   // Unified 4-Type Discount Form State
   const [discountKind, setDiscountKind] = useState<'amount' | 'items' | 'global' | 'category'>('global');
@@ -1525,9 +1573,28 @@ export const AdminPage: React.FC = () => {
                     <div key={cat.id} className="p-4 bg-neutral-900/80 border border-neutral-800 rounded-xl flex flex-col justify-between">
                       <div>
                         <div className="flex items-center justify-between pb-2 border-b border-neutral-800">
-                          <span className="text-xs font-bold text-white uppercase tracking-wide">
-                            {cat.name}
-                          </span>
+                          {renaming && renaming.catId === cat.id && !renaming.subId ? (
+                            <InlineRename
+                              value={renaming.value}
+                              onChange={(value) => setRenaming({ ...renaming, value })}
+                              onSave={saveRename}
+                              onCancel={() => setRenaming(null)}
+                            />
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-white uppercase tracking-wide">
+                              {cat.name}
+                              {!cat.locked && cat.slug !== 'all' && (
+                                <button
+                                  type="button"
+                                  onClick={() => setRenaming({ catId: cat.id, value: cat.name })}
+                                  className="text-neutral-500 hover:text-white p-0.5 cursor-pointer normal-case"
+                                  title="Cambiar el nombre"
+                                >
+                                  <Pencil className="w-3 h-3" />
+                                </button>
+                              )}
+                            </span>
+                          )}
                           {cat.locked ? (
                             <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-[#6D1A2C] text-white" title="Categoría fija: no se puede editar">
                               Fija
@@ -1563,8 +1630,27 @@ export const AdminPage: React.FC = () => {
                                   key={sub.id}
                                   className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-neutral-950 border border-neutral-750 text-[11px] text-neutral-200 rounded-lg font-semibold"
                                 >
-                                  <span>{sub.name}</span>
-                                  {!cat.locked && (
+                                  {renaming && renaming.catId === cat.id && renaming.subId === sub.id ? (
+                                    <InlineRename
+                                      value={renaming.value}
+                                      onChange={(value) => setRenaming({ ...renaming, value })}
+                                      onSave={saveRename}
+                                      onCancel={() => setRenaming(null)}
+                                    />
+                                  ) : (
+                                    <span>{sub.name}</span>
+                                  )}
+                                  {!cat.locked && !(renaming && renaming.subId === sub.id) && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setRenaming({ catId: cat.id, subId: sub.id, value: sub.name })}
+                                      className="text-neutral-500 hover:text-white cursor-pointer"
+                                      title="Cambiar el nombre"
+                                    >
+                                      <Pencil className="w-3 h-3" />
+                                    </button>
+                                  )}
+                                  {!cat.locked && !(renaming && renaming.subId === sub.id) && (
                                     <button
                                       onClick={async () => {
                                         const error = await deleteSubcategory(cat.id, sub.id);
