@@ -3,6 +3,7 @@ import { describe, expect, test } from 'vitest';
 import { calculateCartTotals, couponKind, couponShortfall, syncCartWithCatalog, normalizeCouponCode, MAX_ITEM_QUANTITY } from '../../src/lib/pricing';
 import { isHttpUrl, isTrustedAvatarUrl, isWhatsAppUrl, safeUrl } from '../../src/lib/external';
 import { hasAuthErrorInUrl, shouldKeepAlive } from '../../src/lib/supabase';
+import { CATALOG_ROWS_PER_PAGE, columnsForWidth } from '../../src/lib/gridColumns';
 import { slugify } from '../../src/lib/slug';
 import { displayPhone } from '../../src/lib/phone';
 import { fitWithin } from '../../src/lib/aiDescription';
@@ -254,6 +255,18 @@ describe('focalPoint · acomodar las fotos de portada', () => {
     expect(dragFocal({ x: 50, y: 50 }, 9999, 0, 2, 90, 160).x).toBe(0);
     // en el sentido en el que no sobra foto no se mueve
     expect(dragFocal({ x: 50, y: 20 }, 0, 80, 2, 90, 160).y).toBe(20);
+  });
+});
+
+describe('gridColumns · 5 filas por página', () => {
+  test('las columnas siguen los puntos de corte de la grilla y la página trae 5 filas completas', () => {
+    expect(columnsForWidth(375)).toBe(2);
+    expect(columnsForWidth(767)).toBe(2);
+    expect(columnsForWidth(768)).toBe(3);
+    expect(columnsForWidth(1023)).toBe(3);
+    expect(columnsForWidth(1024)).toBe(4);
+    expect(CATALOG_ROWS_PER_PAGE * columnsForWidth(1440)).toBe(20);
+    expect(CATALOG_ROWS_PER_PAGE * columnsForWidth(375)).toBe(10);
   });
 });
 

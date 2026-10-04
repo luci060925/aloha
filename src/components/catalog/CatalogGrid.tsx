@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { ProductCard } from './ProductCard';
 import { ProductFormModal } from './ProductFormModal';
+import { CATALOG_ROWS_PER_PAGE, useGridColumns } from '../../lib/gridColumns';
 import { 
   SlidersHorizontal, 
   ArrowUpDown, 
@@ -28,12 +29,12 @@ export const CatalogGrid: React.FC = () => {
     openCreateProductModal,
   } = useStore();
 
-  // Pagination state (8 products per page). La página vuelve a 1 sola cuando cambia algún filtro.
+  // Paginación: 5 filas por página (la cantidad de prendas depende de las columnas de la pantalla). La página vuelve a 1 sola cuando cambia algún filtro.
   const filterKey = `${selectedCategory}|${selectedSubcategory}|${searchQuery}|${sortBy}`;
   const [pageState, setPageState] = useState({ key: filterKey, page: 1 });
   const currentPage = pageState.key === filterKey ? pageState.page : 1;
   const setCurrentPage = (page: number) => setPageState({ key: filterKey, page });
-  const itemsPerPage = 8;
+  const itemsPerPage = useGridColumns() * CATALOG_ROWS_PER_PAGE;
 
   // Active Category & Subcategories
   const activeCategoryObj = categories.find(c => c.slug === selectedCategory);
@@ -78,9 +79,11 @@ export const CatalogGrid: React.FC = () => {
 
   // Pagination calculation
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / itemsPerPage));
+  // Si cambia la cantidad por página (por ejemplo, al girar el celular), se evita quedar en una página que ya no existe
+  const page = Math.min(currentPage, totalPages);
   const paginatedProducts = filteredProducts.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    (page - 1) * itemsPerPage,
+    page * itemsPerPage
   );
 
   const handlePageChange = (page: number) => {
@@ -314,13 +317,13 @@ export const CatalogGrid: React.FC = () => {
       {totalPages > 1 && (
         <div className="mt-14 pt-6 border-t border-neutral-800 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="text-xs font-mono text-neutral-400">
-            Página <strong className="text-white font-bold">{currentPage}</strong> de <strong className="text-white font-bold">{totalPages}</strong> ({filteredProducts.length} prendas)
+            Página <strong className="text-white font-bold">{page}</strong> de <strong className="text-white font-bold">{totalPages}</strong> ({filteredProducts.length} prendas)
           </div>
 
           <div className="flex items-center gap-2">
             <button
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
+              onClick={() => handlePageChange(page - 1)}
+              disabled={page === 1}
               className="p-2 border border-neutral-800 rounded text-xs font-semibold uppercase tracking-wider flex items-center gap-1 hover:border-white disabled:opacity-30 disabled:pointer-events-none cursor-pointer bg-[#141414] text-white"
               title="Página anterior"
             >
@@ -334,7 +337,7 @@ export const CatalogGrid: React.FC = () => {
                   key={pageNum}
                   onClick={() => handlePageChange(pageNum)}
                   className={`w-8 h-8 rounded text-xs font-mono font-bold transition-all cursor-pointer ${
-                    currentPage === pageNum
+                    page === pageNum
                       ? 'bg-white text-black font-bold'
                       : 'bg-[#141414] text-neutral-400 border border-neutral-800 hover:border-neutral-600 hover:text-white'
                   }`}
@@ -345,8 +348,8 @@ export const CatalogGrid: React.FC = () => {
             </div>
 
             <button
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
+              onClick={() => handlePageChange(page + 1)}
+              disabled={page === totalPages}
               className="p-2 border border-neutral-800 rounded text-xs font-semibold uppercase tracking-wider flex items-center gap-1 hover:border-white disabled:opacity-30 disabled:pointer-events-none cursor-pointer bg-[#141414] text-white"
               title="Página siguiente"
             >
