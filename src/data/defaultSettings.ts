@@ -19,5 +19,7 @@ export const DEFAULT_SETTINGS: StoreSettings = {
   heroTitle: 'Elegancia & Estilo',
   heroSubtitle: 'Prendas esenciales y diseño contemporáneo pensados para acompañar tu día a día con distinción.',
   heroImageUrl: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&q=80&w=2000',
+  heroImagePosition: '50% 50%',
   showroomImageUrl: '',
+  showroomImagePosition: '50% 50%',
 };

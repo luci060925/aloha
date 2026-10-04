@@ -6,6 +6,7 @@ import { hasAuthErrorInUrl, shouldKeepAlive } from '../../src/lib/supabase';
 import { slugify } from '../../src/lib/slug';
 import { displayPhone } from '../../src/lib/phone';
 import { fitWithin } from '../../src/lib/aiDescription';
+import { dragFocal, focalOverflow, formatFocal, parseFocal } from '../../src/lib/focalPoint';
 import { buildOneSize, isOneSizeList, oneSizeLabel, parseOneSize, validateOneSizeRange } from '../../src/lib/sizes';
 import { MAGNOLIA_CATEGORY, MAGNOLIA_SLUG } from '../../src/data/fixedCategories';
 import { MIN_PASSWORD_LENGTH } from '../../src/lib/constants';
@@ -222,6 +223,37 @@ describe('supabase · errores de ingreso en la dirección', () => {
     expect(hasAuthErrorInUrl('')).toBe(false);
     expect(hasAuthErrorInUrl('#access_token=abc&type=recovery')).toBe(false);
     expect(hasAuthErrorInUrl('?terror=1')).toBe(false);
+  });
+});
+
+describe('focalPoint · acomodar las fotos de portada', () => {
+  test('lee y escribe la posición como en CSS, y ante algo inválido deja la foto centrada', () => {
+    expect(parseFocal('30% 70%')).toEqual({ x: 30, y: 70 });
+    expect(parseFocal('150% -20%')).toEqual({ x: 100, y: 0 });
+    expect(parseFocal('')).toEqual({ x: 50, y: 50 });
+    expect(parseFocal('center top')).toEqual({ x: 50, y: 50 });
+    expect(parseFocal(undefined)).toEqual({ x: 50, y: 50 });
+    expect(formatFocal({ x: 33.4, y: 66.6 })).toBe('33% 67%');
+  });
+
+  test('calcula cuánto sobra de foto en cada sentido', () => {
+    // foto vertical (3:4) en un marco horizontal 16:9 de 160 x 90: sobra alto, no ancho
+    const v = focalOverflow(0.75, 160, 90);
+    expect(v.x).toBe(0);
+    expect(Math.round(v.y)).toBe(123);
+    // foto horizontal (2:1) en un marco vertical 9:16 de 90 x 160: sobra ancho, no alto
+    const h = focalOverflow(2, 90, 160);
+    expect(h.y).toBe(0);
+    expect(h.x).toBe(230);
+  });
+
+  test('al arrastrar la foto sigue al dedo y nunca se sale de 0–100', () => {
+    // sobra 230 px de ancho: arrastrar 23 px hacia la derecha muestra 10 puntos más de la izquierda
+    expect(dragFocal({ x: 50, y: 50 }, 23, 0, 2, 90, 160)).toEqual({ x: 40, y: 50 });
+    expect(dragFocal({ x: 50, y: 50 }, -9999, 0, 2, 90, 160).x).toBe(100);
+    expect(dragFocal({ x: 50, y: 50 }, 9999, 0, 2, 90, 160).x).toBe(0);
+    // en el sentido en el que no sobra foto no se mueve
+    expect(dragFocal({ x: 50, y: 20 }, 0, 80, 2, 90, 160).y).toBe(20);
   });
 });
 

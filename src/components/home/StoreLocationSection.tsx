@@ -104,6 +104,7 @@ export const StoreLocationSection: React.FC = () => {
                   alt="Showroom de Aloha Indumentaria"
                   loading="lazy"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                  style={{ objectPosition: settings.showroomImagePosition || '50% 50%' }}
                 />
               ) : (
                 <MapPin className="absolute top-8 right-8 w-24 h-24 text-white/5" aria-hidden="true" />

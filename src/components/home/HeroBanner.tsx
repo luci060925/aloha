@@ -24,7 +24,8 @@ export const HeroBanner: React.FC = () => {
         <img
           src={bgImage}
           alt={settings.storeName || 'Aloha Indumentaria'}
-          className="w-full h-full object-cover object-center"
+          className="w-full h-full object-cover"
+          style={{ objectPosition: settings.heroImagePosition || '50% 50%' }}
         />
         {/* Velo oscuro para que el texto blanco se lea sobre fotos claras, sin quitarle el color a la foto */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/45 to-black/70" />

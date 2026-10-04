@@ -118,8 +118,11 @@ export interface StoreSettings {
   heroTitle?: string;
   heroSubtitle?: string;
   heroImageUrl?: string;
+  // Qué parte de la foto de portada queda a la vista ("50% 50%" = centrada); se acomoda arrastrando la foto
+  heroImagePosition?: string;
   // Foto de la sección "Vení a conocer nuestro local" (vacía = tarjeta oscura sin foto)
   showroomImageUrl?: string;
+  showroomImagePosition?: string;
 }
 
 export type InfoModalType = 'como-comprar' | 'terminos' | 'devoluciones' | 'arrepentimiento' | 'contacto' | null;

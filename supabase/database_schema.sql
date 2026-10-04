@@ -160,6 +160,8 @@ CREATE TABLE IF NOT EXISTS public.store_settings (
     hero_title TEXT DEFAULT 'Elegancia & Estilo',
     hero_subtitle TEXT DEFAULT 'Prendas esenciales y diseño contemporáneo pensados para acompañar tu día a día con distinción.',
     showroom_image_url TEXT DEFAULT '',
+    showroom_image_position TEXT DEFAULT '50% 50%',
+    hero_image_position TEXT DEFAULT '50% 50%',
     hero_image_url TEXT DEFAULT 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&q=80&w=2000',
     hero_primary_btn_text TEXT DEFAULT 'Ver Catálogo',
     hero_secondary_btn_text TEXT DEFAULT 'Ver Showroom',

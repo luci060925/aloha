@@ -93,7 +93,7 @@ En la tabla ves el tipo y la condición de cada cupón y cuántas personas lo us
 Panel → **Ajustes de Tienda & Portada**:
 - **Marquesina** (la barra negra de arriba), **dirección** y **horarios** del showroom.
 - **Foto del Showroom:** la foto de fondo de la sección "Vení a conocer nuestro local" (se ve en blanco y negro, con el cartel de la dirección encima). Se sube con **Subir Foto del Local**; con **Quitar foto** vuelve la tarjeta oscura sin foto.
-- **Portada:** foto de fondo (se optimiza sola), título y bajada. Los botones de la portada son fijos: **Ver Catálogo** e **Instagram**. A la derecha ves una vista previa.
+- **Portada:** foto de fondo (se optimiza sola), título y bajada. Debajo de la foto hay dos marcos, **Computadora** y **Celular**: **arrastrá la foto** dentro de cualquiera para elegir qué parte se ve (el botón "Centrar" la deja en el medio). Lo mismo vale para la foto del local. Los botones de la portada son fijos: **Ver Catálogo** e **Instagram**. A la derecha ves una vista previa.
 
 > El número de WhatsApp y los enlaces de Instagram, Facebook y TikTok ya no se editan desde el panel: el sitio usa los que están guardados. Para cambiarlos, pedir el cambio al desarrollo.
 

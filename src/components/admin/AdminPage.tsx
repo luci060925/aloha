@@ -4,6 +4,7 @@ import { useStore } from '../../context/StoreContext';
 import type { StoreSettings, OrderRecord } from '../../types';
 import { BrandLogo } from '../common/BrandLogo';
 import { OrderItemThumb } from '../common/OrderItemThumb';
+import { FocalPointEditor } from './FocalPointEditor';
 import { fileToDataUrl, uploadCatalogImage } from '../../lib/images';
 import { slugify } from '../../lib/slug';
 import { normalizeCouponCode, couponKind } from '../../lib/pricing';
@@ -613,10 +614,22 @@ export const AdminPage: React.FC = () => {
                             <span>{uploadingShowroom ? 'Subiendo foto...' : 'Subir Foto del Local'}</span>
                           </button>
                           <p className="text-[10px] text-neutral-500 font-mono">
-                            Se muestra en blanco y negro con el cartel de la dirección encima. Sin foto se ve una tarjeta oscura. Recordá tocar "Guardar Ajustes".
+                            Se muestra con el cartel "Showroom Oficial" encima. Sin foto se ve una tarjeta oscura. Recordá tocar "Guardar Ajustes".
                           </p>
                         </div>
                       </div>
+
+                      {isHttpUrl(settingsForm.showroomImageUrl) && (
+                        <FocalPointEditor
+                          src={settingsForm.showroomImageUrl ?? ''}
+                          value={settingsForm.showroomImagePosition}
+                          onChange={(v) => setSettingsForm(prev => ({ ...prev, showroomImagePosition: v }))}
+                          frames={[
+                            { label: 'Computadora', aspect: '16 / 10', widthClass: 'w-full sm:w-64' },
+                            { label: 'Celular', aspect: '4 / 3', widthClass: 'w-40' },
+                          ]}
+                        />
+                      )}
                     </div>
 
                     {/* PERSONALIZACIÓN DEL HERO BANNER */}
@@ -677,6 +690,16 @@ export const AdminPage: React.FC = () => {
                             </p>
                           </div>
                         </div>
+
+                        <FocalPointEditor
+                          src={settingsForm.heroImageUrl || 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&q=80&w=2000'}
+                          value={settingsForm.heroImagePosition}
+                          onChange={(v) => setSettingsForm(prev => ({ ...prev, heroImagePosition: v }))}
+                          frames={[
+                            { label: 'Computadora', aspect: '16 / 9', widthClass: 'w-full sm:w-64' },
+                            { label: 'Celular', aspect: '9 / 16', widthClass: 'w-24' },
+                          ]}
+                        />
                       </div>
 
                       {/* Título Principal */}
@@ -758,6 +781,7 @@ export const AdminPage: React.FC = () => {
                             src={settingsForm.heroImageUrl || 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&q=80&w=2000'}
                             alt="Portada Preview"
                             className="w-full h-full object-cover"
+                            style={{ objectPosition: settingsForm.heroImagePosition || '50% 50%' }}
                           />
                         </div>
                         <div className="relative z-10 space-y-1.5 max-w-sm">

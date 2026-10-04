@@ -172,7 +172,9 @@ const SETTINGS_DB_KEYS: Record<keyof StoreSettings, string> = {
   heroTitle: 'hero_title',
   heroSubtitle: 'hero_subtitle',
   heroImageUrl: 'hero_image_url',
+  heroImagePosition: 'hero_image_position',
   showroomImageUrl: 'showroom_image_url',
+  showroomImagePosition: 'showroom_image_position',
 };
 
 const mapOrderFromDb = (r: OrderRow): OrderRecord => ({
@@ -220,6 +222,13 @@ const missingOptionalColumn = (error: { code?: string; message?: string } | null
     : null;
 const missingColumnMessage = (column: string) =>
   `Falta ejecutar ${OPTIONAL_PRODUCT_COLUMNS[column]} en Supabase para guardar este dato de la prenda.`;
+
+// Columnas de store_settings que se agregaron después (con el script que las crea)
+const OPTIONAL_SETTINGS_COLUMNS: Record<string, string> = {
+  showroom_image_url: 'supabase/showroom_foto.sql',
+  hero_image_position: 'supabase/portada_posicion.sql',
+  showroom_image_position: 'supabase/portada_posicion.sql',
+};
 
 const settingsKeys = Object.keys(SETTINGS_DB_KEYS) as (keyof StoreSettings)[];
 
@@ -1317,12 +1326,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const save = (payload: DbWrite) => client.from('store_settings').update(payload).eq('id', 1).select('id');
 
       let { data, error } = await save(settingsToDb(newSettings));
-      // Si la columna de la foto del showroom todavía no existe en la base (falta ejecutar supabase/showroom_foto.sql),
-      // se guarda el resto de los ajustes en lugar de fallar todo
-      if (error?.code === 'PGRST204' && error.message.includes('showroom_image_url')) {
-        console.warn('Falta la columna showroom_image_url en store_settings: ejecutar supabase/showroom_foto.sql');
-        const payload = settingsToDb(newSettings);
-        delete payload.showroom_image_url;
+      // Columnas agregadas después: si todavía no se ejecutó su SQL en Supabase, se guarda el resto de los ajustes
+      // en lugar de fallar todo (y se avisa en la consola qué script falta)
+      const payload = settingsToDb(newSettings);
+      for (let attempt = 0; attempt < 4 && error?.code === 'PGRST204'; attempt++) {
+        const missing = Object.keys(OPTIONAL_SETTINGS_COLUMNS).find(col => error?.message.includes(col));
+        if (!missing) break;
+        console.warn(`Falta la columna ${missing} en store_settings: ejecutar ${OPTIONAL_SETTINGS_COLUMNS[missing]}`);
+        delete payload[missing];
         ({ data, error } = await save(payload));
       }
       if (error || !data || data.length === 0) {
