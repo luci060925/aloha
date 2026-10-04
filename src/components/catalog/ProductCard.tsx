@@ -394,7 +394,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         {/* Product Title */}
         <h3 
           onClick={() => setSelectedProductForDetail(product)}
-          className="font-serif text-base font-bold text-white hover:underline underline-offset-4 cursor-pointer line-clamp-1"
+          className="font-serif text-lg font-bold text-white hover:underline underline-offset-4 cursor-pointer line-clamp-1"
         >
           {product.name}
         </h3>
