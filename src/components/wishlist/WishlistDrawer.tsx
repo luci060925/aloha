@@ -133,7 +133,7 @@ export const WishlistDrawer: React.FC = () => {
                       <img
                         src={prod.images[0]}
                         alt={prod.name}
-                        className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
+                        className={`w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300 ${prod.inStock ? '' : 'grayscale'}`}
                         style={{ objectPosition: prod.imagePosition || '50% 50%' }}
                       />
                       {!prod.inStock && (

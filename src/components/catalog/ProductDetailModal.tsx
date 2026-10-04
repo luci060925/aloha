@@ -80,7 +80,7 @@ const ProductDetailContent: React.FC<{ product: Product }> = ({ product }) => {
                 <img
                   src={product.images[selectedImageIndex] || product.images[0]}
                   alt={product.name}
-                  className="w-full h-full object-cover object-center"
+                  className={`w-full h-full object-cover object-center ${product.inStock ? '' : 'grayscale'}`}
                 />
                 
                 {discountPercent > 0 && (

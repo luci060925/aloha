@@ -93,7 +93,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           alt={product.name}
           className={`w-full h-full object-cover object-center transition-all duration-700 ease-out ${
             isHovered && product.images[1] ? 'opacity-0 scale-105' : 'opacity-100 scale-100'
-          }`}
+          } ${product.inStock ? '' : 'grayscale'}`}
           loading="lazy"
         />
 
@@ -104,7 +104,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             alt={`${product.name} - Vista`}
             className={`absolute inset-0 w-full h-full object-cover object-center transition-all duration-700 ease-out ${
               isHovered ? 'opacity-100 scale-105' : 'opacity-0 scale-100'
-            }`}
+            } ${product.inStock ? '' : 'grayscale'}`}
             loading="lazy"
           />
         )}
