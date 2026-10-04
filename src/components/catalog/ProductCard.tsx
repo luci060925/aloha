@@ -104,6 +104,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               -{discountPercent}% OFF
             </span>
           )}
+          {product.lastInStock && product.inStock && (
+            <span className="bg-amber-400 text-black text-[10px] font-mono tracking-wider uppercase px-2 py-0.5 font-bold shadow-md rounded">
+              Último en stock
+            </span>
+          )}
           {product.isNewArrival && (
             <span className="bg-[#141414] text-white border border-neutral-700 text-[10px] font-mono tracking-wider uppercase px-2 py-0.5 font-bold shadow-md rounded">
               NEW DROP

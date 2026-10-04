@@ -88,6 +88,11 @@ const ProductDetailContent: React.FC<{ product: Product }> = ({ product }) => {
                     -{discountPercent}% OFF
                   </span>
                 )}
+                {product.lastInStock && product.inStock && (
+                  <span className="absolute bottom-3 left-3 bg-amber-400 text-black text-xs font-mono tracking-wider uppercase px-2.5 py-1 font-bold shadow-md rounded">
+                    Último en stock
+                  </span>
+                )}
                 {product.isNewArrival && (
                   <span className="absolute top-3 right-3 bg-black/80 text-white border border-neutral-700 text-[10px] font-mono tracking-wider uppercase px-2 py-0.5 font-bold shadow-md rounded">
                     NEW DROP

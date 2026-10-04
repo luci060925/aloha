@@ -115,11 +115,18 @@ export const ProductCarousel: React.FC<ProductCarouselProps> = ({ id, eyebrow, t
                   className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-700"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
-                {discount > 0 && (
-                  <span className="absolute top-2.5 left-2.5 bg-white text-black text-[10px] font-mono uppercase px-2 py-0.5 font-bold rounded-full">
-                    -{discount}%
-                  </span>
-                )}
+                <div className="absolute top-2.5 left-2.5 flex flex-col items-start gap-1">
+                  {discount > 0 && (
+                    <span className="bg-white text-black text-[10px] font-mono uppercase px-2 py-0.5 font-bold rounded-full">
+                      -{discount}%
+                    </span>
+                  )}
+                  {product.lastInStock && (
+                    <span className="bg-amber-400 text-black text-[9px] sm:text-[10px] font-mono uppercase whitespace-nowrap px-1.5 sm:px-2 py-0.5 font-bold rounded">
+                      Último en stock
+                    </span>
+                  )}
+                </div>
                 <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4">
                   <p className="text-xs sm:text-sm font-semibold text-white line-clamp-1">{product.name}</p>
                   <p className="text-sm sm:text-base font-sans font-bold tracking-tight tabular-nums text-white mt-0.5">

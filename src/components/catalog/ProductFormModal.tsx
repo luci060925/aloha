@@ -65,6 +65,7 @@ export const ProductFormModal: React.FC = () => {
   const [price, setPrice] = useState<string>('');
   const [originalPrice, setOriginalPrice] = useState<string>('');
   const [featured, setFeatured] = useState(false);
+  const [lastInStock, setLastInStock] = useState(false);
   const [category, setCategory] = useState('pantalones');
   const [subcategory, setSubcategory] = useState('sastreros');
   
@@ -141,6 +142,7 @@ export const ProductFormModal: React.FC = () => {
       setPrice(editingProduct.price ? String(editingProduct.price) : '');
       setOriginalPrice(editingProduct.originalPrice ? String(editingProduct.originalPrice) : '');
       setFeatured(Boolean(editingProduct.featured));
+      setLastInStock(Boolean(editingProduct.lastInStock));
       setProductType(editingProduct.productType || '');
       setTab('datos');
       setCategory(editingProduct.category || categories[0]?.slug || 'pantalones');
@@ -171,6 +173,7 @@ export const ProductFormModal: React.FC = () => {
       setPrice('');
       setOriginalPrice('');
       setFeatured(false);
+      setLastInStock(false);
       setProductType('');
       setTab('datos');
       setImagesList([]);
@@ -435,6 +438,7 @@ export const ProductFormModal: React.FC = () => {
         sizes: effectiveSizes,
         colors: finalColors,
         featured,
+        lastInStock,
       };
 
       if (isEditing && editingProduct?.id) {
@@ -633,6 +637,23 @@ export const ProductFormModal: React.FC = () => {
                 </span>
                 <span className="block text-[11px] text-neutral-500 mt-0.5 normal-case">
                   Sale primero cuando la clienta ordena "Todas las Prendas" por "Destacadas". Las prendas nuevas entran solas en el carrusel "Últimas Agregadas".
+                </span>
+              </span>
+            </label>
+
+            <label className="flex items-start gap-3 p-3.5 bg-[#171717] border border-neutral-700 rounded-xl cursor-pointer hover:border-neutral-500 transition-colors">
+              <input
+                type="checkbox"
+                checked={lastInStock}
+                onChange={(e) => setLastInStock(e.target.checked)}
+                className="mt-0.5 w-4 h-4 accent-white cursor-pointer shrink-0"
+              />
+              <span>
+                <span className="block uppercase tracking-wider font-semibold text-neutral-200">
+                  Marcar como "Último en stock"
+                </span>
+                <span className="block text-[11px] text-neutral-500 mt-0.5 normal-case">
+                  Muestra la etiqueta "Último en stock" en la prenda, para avisar que queda poco. Desmarcala cuando repongas.
                 </span>
               </span>
             </label>

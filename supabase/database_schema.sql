@@ -55,6 +55,7 @@ CREATE TABLE IF NOT EXISTS public.products (
     colors JSONB DEFAULT '[]'::JSONB,
     in_stock BOOLEAN DEFAULT TRUE,
     featured BOOLEAN DEFAULT FALSE,
+    last_in_stock BOOLEAN DEFAULT FALSE,
     is_new_arrival BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()

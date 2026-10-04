@@ -37,6 +37,7 @@ export interface ProductRow {
   colors: { name: string; hex: string }[] | null;
   in_stock: boolean | null;
   featured: boolean | null;
+  last_in_stock: boolean | null;
   is_new_arrival: boolean | null;
   created_at: string | null;
   updated_at: string | null;

@@ -208,10 +208,18 @@ const mapCouponFromDb = (r: CouponInput): Coupon => ({
   expiresAt: r.expires_at || undefined,
 });
 
-// Si todavía no se ejecutó supabase/tipo_de_prenda.sql, la columna product_type no existe en la base
-const isMissingTypeColumn = (error: { code?: string; message?: string } | null) =>
-  error?.code === 'PGRST204' && (error.message ?? '').includes('product_type');
-const MISSING_TYPE_MESSAGE = 'Para guardar el tipo de prenda falta ejecutar supabase/tipo_de_prenda.sql en Supabase.';
+// Columnas de las prendas que se agregaron después: si todavía no se ejecutó su SQL en Supabase, la columna no existe.
+// Mientras la prenda no use ese dato se publica igual (sin la columna); si lo usa, se avisa qué script falta correr.
+const OPTIONAL_PRODUCT_COLUMNS: Record<string, string> = {
+  product_type: 'supabase/tipo_de_prenda.sql',
+  last_in_stock: 'supabase/ultimo_en_stock.sql',
+};
+const missingOptionalColumn = (error: { code?: string; message?: string } | null): string | null =>
+  error?.code === 'PGRST204'
+    ? Object.keys(OPTIONAL_PRODUCT_COLUMNS).find(col => (error.message ?? '').includes(col)) ?? null
+    : null;
+const missingColumnMessage = (column: string) =>
+  `Falta ejecutar ${OPTIONAL_PRODUCT_COLUMNS[column]} en Supabase para guardar este dato de la prenda.`;
 
 const settingsKeys = Object.keys(SETTINGS_DB_KEYS) as (keyof StoreSettings)[];
 
@@ -508,6 +516,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     colors: Array.isArray(row.colors) ? row.colors : [],
     inStock: Boolean(row.in_stock ?? true),
     featured: Boolean(row.featured ?? false),
+    lastInStock: Boolean(row.last_in_stock ?? false),
     isNewArrival: Boolean(row.is_new_arrival ?? false),
     createdAt: row.created_at || new Date().toISOString(),
   });
@@ -528,6 +537,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (product.colors !== undefined) dbObj.colors = product.colors;
     if (product.inStock !== undefined) dbObj.in_stock = product.inStock;
     if (product.featured !== undefined) dbObj.featured = product.featured;
+    if (product.lastInStock !== undefined) dbObj.last_in_stock = product.lastInStock;
     if (product.isNewArrival !== undefined) dbObj.is_new_arrival = product.isNewArrival;
     return dbObj;
   };
@@ -1067,12 +1077,15 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
     // Primero la base: si falla, se avisa y no queda una prenda "fantasma" solo en este navegador
     if (isSupabaseConfigured && supabase) {
+      const client = supabase;
       const payload = mapProductToDb(newProduct);
-      let { error } = await supabase.from('products').insert([payload]);
-      if (isMissingTypeColumn(error)) {
-        if (newProduct.productType) throw new Error(MISSING_TYPE_MESSAGE);
-        delete payload.product_type; // sin tipo se puede publicar igual
-        ({ error } = await supabase.from('products').insert([payload]));
+      let { error } = await client.from('products').insert([payload]);
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const column = missingOptionalColumn(error);
+        if (!column) break;
+        if (payload[column]) throw new Error(missingColumnMessage(column));
+        delete payload[column]; // sin ese dato se puede publicar igual
+        ({ error } = await client.from('products').insert([payload]));
       }
       if (error) throw new Error(error.code === '23505' ? 'Ya existe una prenda con ese nombre. Cambiale el nombre.' : error.message);
     }
@@ -1087,9 +1100,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const payload: DbWrite = { ...mapProductToDb(productData), updated_at: new Date().toISOString() };
       const save = () => client.from('products').update(payload).eq('id', id).select('id');
       let { data, error } = await save();
-      if (isMissingTypeColumn(error)) {
-        if (productData.productType) throw new Error(MISSING_TYPE_MESSAGE);
-        delete payload.product_type;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const column = missingOptionalColumn(error);
+        if (!column) break;
+        if (payload[column]) throw new Error(missingColumnMessage(column));
+        delete payload[column];
         ({ data, error } = await save());
       }
       if (error) throw new Error(error.code === '23505' ? 'Ya existe una prenda con ese nombre. Cambiale el nombre.' : error.message);

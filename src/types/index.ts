@@ -13,6 +13,7 @@ export interface Product {
   colors: { name: string; hex: string }[];
   inStock: boolean;
   featured?: boolean;
+  lastInStock?: boolean; // muestra la etiqueta "Último en stock"
   isNewArrival?: boolean;
   imagePosition?: string;
   createdAt: string;
