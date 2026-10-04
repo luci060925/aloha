@@ -133,7 +133,7 @@ const ProductDetailContent: React.FC<{ product: Product }> = ({ product }) => {
                 </div>
 
                 {/* Title */}
-                <h2 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-white leading-tight">
+                <h2 className="font-serif text-3xl sm:text-4xl font-bold tracking-tight text-white leading-tight">
                   {product.name}
                 </h2>
 
