@@ -105,7 +105,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             </span>
           )}
           {product.lastInStock && product.inStock && (
-            <span className="bg-amber-400 text-black text-[10px] font-mono tracking-wider uppercase px-2 py-0.5 font-bold shadow-md rounded">
+            <span className="bg-red-600 text-white text-[10px] font-mono tracking-wider uppercase px-2 py-0.5 font-bold shadow-md rounded">
               Último en stock
             </span>
           )}

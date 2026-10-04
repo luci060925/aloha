@@ -122,7 +122,7 @@ export const ProductCarousel: React.FC<ProductCarouselProps> = ({ id, eyebrow, t
                     </span>
                   )}
                   {product.lastInStock && (
-                    <span className="bg-amber-400 text-black text-[9px] sm:text-[10px] font-mono uppercase whitespace-nowrap px-1.5 sm:px-2 py-0.5 font-bold rounded">
+                    <span className="bg-red-600 text-white text-[9px] sm:text-[10px] font-mono uppercase whitespace-nowrap px-1.5 sm:px-2 py-0.5 font-bold rounded">
                       Último en stock
                     </span>
                   )}

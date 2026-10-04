@@ -89,7 +89,7 @@ const ProductDetailContent: React.FC<{ product: Product }> = ({ product }) => {
                   </span>
                 )}
                 {product.lastInStock && product.inStock && (
-                  <span className="absolute bottom-3 left-3 bg-amber-400 text-black text-xs font-mono tracking-wider uppercase px-2.5 py-1 font-bold shadow-md rounded">
+                  <span className="absolute bottom-3 left-3 bg-red-600 text-white text-xs font-mono tracking-wider uppercase px-2.5 py-1 font-bold shadow-md rounded">
                     Último en stock
                   </span>
                 )}
