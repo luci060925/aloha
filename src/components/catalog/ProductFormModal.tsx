@@ -77,10 +77,10 @@ export const ProductFormModal: React.FC = () => {
   const [oneSize, setOneSize] = useState(false);
   // Pestañas del formulario y tipo de la prenda (Mom, Oxford, Wide Leg...)
   type FormTab = 'datos' | 'imagenes' | 'variantes';
-  const FORM_TABS: { id: FormTab; label: string }[] = [
-    { id: 'datos', label: 'Datos de la prenda' },
-    { id: 'imagenes', label: 'Imágenes cargadas' },
-    { id: 'variantes', label: 'Talle, color y tipo' },
+  const FORM_TABS: { id: FormTab; label: string; short: string }[] = [
+    { id: 'datos', label: 'Datos de la prenda', short: 'Datos' },
+    { id: 'imagenes', label: 'Imágenes cargadas', short: 'Imágenes' },
+    { id: 'variantes', label: 'Talle, color y tipo', short: 'Talle y color' },
   ];
   const [tab, setTab] = useState<FormTab>('datos');
   const [productType, setProductType] = useState('');
@@ -477,7 +477,7 @@ export const ProductFormModal: React.FC = () => {
         {/* Barra de pestañas */}
         <div className="sticky top-0 z-20 -mx-6 sm:-mx-8 px-6 sm:px-8 pt-3 pb-3 mt-5 bg-[#121212]/95 backdrop-blur border-b border-neutral-800 flex items-center gap-2">
           <div role="tablist" className="flex-1 grid grid-cols-3 gap-1.5 p-1 bg-black rounded-xl border border-neutral-800">
-            {FORM_TABS.map(({ id, label }) => {
+            {FORM_TABS.map(({ id, label, short }) => {
               const complete =
                 id === 'datos' ? name.trim() !== '' && Number(String(price).replace(/[^0-9]/g, '')) > 0 && category !== ''
                 : id === 'imagenes' ? imagesList.length > 0
@@ -489,11 +489,15 @@ export const ProductFormModal: React.FC = () => {
                   role="tab"
                   aria-selected={tab === id}
                   onClick={() => goToTab(id)}
-                  className={`py-2 px-1.5 rounded-lg text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider leading-tight text-center transition-all cursor-pointer flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 ${
+                  className={`py-2.5 px-1.5 rounded-lg text-[11px] sm:text-xs font-mono font-bold uppercase tracking-normal sm:tracking-wider leading-tight text-center transition-all cursor-pointer flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 ${
                     tab === id ? 'bg-white text-black shadow-md' : 'text-neutral-400 hover:text-white'
                   }`}
                 >
-                  <span>{label}{id === 'imagenes' && imagesList.length > 0 ? ` (${imagesList.length})` : ''}</span>
+                  <span>
+                    <span className="sm:hidden">{short}</span>
+                    <span className="hidden sm:inline">{label}</span>
+                    {id === 'imagenes' && imagesList.length > 0 ? ` (${imagesList.length})` : ''}
+                  </span>
                   {complete ? (
                     <Check className={`w-3.5 h-3.5 shrink-0 ${tab === id ? 'text-emerald-600' : 'text-emerald-400'}`} aria-label="Completo" />
                   ) : (
