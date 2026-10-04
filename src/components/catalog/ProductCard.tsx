@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { Product } from '../../types';
 import { useStore } from '../../context/StoreContext';
 import { isOneSizeList, oneSizeLabel } from '../../lib/sizes';
@@ -161,37 +162,40 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           )}
         </div>
 
-        {currentUser?.isAdmin && menuOpen && (
-          <>
-            {/* Fondo transparente: un toque afuera cierra el menú */}
-            <div
-              className="absolute inset-0 z-20 cursor-default"
-              onClick={(e) => {
-                e.stopPropagation();
-                closeMenu();
-              }}
-            />
+        {/* Menú de la administradora: una hoja que sale desde abajo en el celular y una ventana chica en la computadora.
+            Se dibuja fuera de la tarjeta (en el body) para que la foto no la recorte. */}
+        {currentUser?.isAdmin && menuOpen && createPortal(
+          <div
+            className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm animate-fade-in"
+            onClick={(e) => {
+              e.stopPropagation();
+              closeMenu();
+            }}
+          >
             <div
               role="menu"
               onClick={(e) => e.stopPropagation()}
-              className="absolute z-30 top-[5.3rem] right-2.5 left-2.5 rounded-xl border border-neutral-700 bg-[#101010] shadow-2xl p-1.5"
+              className="w-full sm:max-w-sm bg-[#121212] border border-neutral-800 rounded-t-3xl sm:rounded-2xl p-3 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl"
             >
+              <div className="sm:hidden w-12 h-1.5 bg-neutral-700 rounded-full mx-auto mb-3" />
+              <p className="px-3 pb-2 text-[11px] uppercase tracking-wider text-neutral-500 font-mono truncate">{product.name}</p>
+
               {confirmingDelete ? (
-                <div className="p-2.5 space-y-2.5 text-center">
-                  <p className="text-xs font-semibold text-white leading-snug">
+                <div className="p-3 space-y-4 text-center">
+                  <p className="text-base font-semibold text-white leading-snug">
                     ¿Seguro que querés eliminar «{product.name}»?
                   </p>
-                  <p className="text-[11px] text-neutral-400 leading-snug">No se puede deshacer.</p>
-                  <div className="grid grid-cols-2 gap-2">
+                  <p className="text-sm text-neutral-400">No se puede deshacer.</p>
+                  <div className="grid grid-cols-2 gap-3">
                     <button
                       onClick={closeMenu}
-                      className="py-2 rounded-lg border border-neutral-600 text-[11px] font-bold uppercase tracking-wider text-neutral-200 hover:bg-neutral-800 cursor-pointer"
+                      className="py-3.5 rounded-xl border border-neutral-600 text-sm font-bold uppercase tracking-wider text-neutral-200 hover:bg-neutral-800 cursor-pointer"
                     >
                       Cancelar
                     </button>
                     <button
                       onClick={handleAdminDelete}
-                      className="py-2 rounded-lg bg-red-600 hover:bg-red-700 text-[11px] font-bold uppercase tracking-wider text-white cursor-pointer"
+                      className="py-3.5 rounded-xl bg-red-600 hover:bg-red-700 text-sm font-bold uppercase tracking-wider text-white cursor-pointer"
                     >
                       Sí, eliminar
                     </button>
@@ -202,19 +206,19 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                   {[
                     {
                       key: 'featured',
-                      icon: <Star className={`w-4 h-4 ${product.featured ? 'fill-white' : ''}`} />,
+                      icon: <Star className={`w-5 h-5 ${product.featured ? 'fill-white' : ''}`} />,
                       label: product.featured ? 'Quitar de destacadas' : 'Marcar como destacada',
                       run: () => updateProduct(product.id, { featured: !product.featured }),
                     },
                     {
                       key: 'last',
-                      icon: <Hourglass className="w-4 h-4" />,
+                      icon: <Hourglass className="w-5 h-5" />,
                       label: product.lastInStock ? 'Quitar "Último en stock"' : 'Marcar "Último en stock"',
                       run: () => updateProduct(product.id, { lastInStock: !product.lastInStock }),
                     },
                     {
                       key: 'stock',
-                      icon: <PackageX className="w-4 h-4" />,
+                      icon: <PackageX className="w-5 h-5" />,
                       label: product.inStock ? 'Marcar como agotada' : 'Volver a poner en stock',
                       run: () => toggleProductStock(product.id),
                     },
@@ -230,10 +234,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                           alert(err instanceof Error ? err.message : 'No se pudo guardar el cambio.');
                         }
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left text-xs font-semibold text-neutral-100 hover:bg-neutral-800 cursor-pointer"
+                      className="w-full flex items-center gap-3.5 px-3 py-3.5 rounded-xl text-left text-[15px] font-semibold text-neutral-100 hover:bg-neutral-800 cursor-pointer"
                     >
                       <span className="shrink-0">{item.icon}</span>
-                      <span className="leading-tight">{item.label}</span>
+                      <span>{item.label}</span>
                     </button>
                   ))}
                   <button
@@ -242,24 +246,31 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                       closeMenu();
                       handleAdminEdit(e);
                     }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left text-xs font-semibold text-neutral-100 hover:bg-neutral-800 cursor-pointer"
+                    className="w-full flex items-center gap-3.5 px-3 py-3.5 rounded-xl text-left text-[15px] font-semibold text-neutral-100 hover:bg-neutral-800 cursor-pointer"
                   >
-                    <Edit3 className="w-4 h-4" />
+                    <Edit3 className="w-5 h-5 shrink-0" />
                     <span>Modificar prenda</span>
                   </button>
-                  <div className="my-1 h-px bg-neutral-800" />
+                  <div className="my-1.5 h-px bg-neutral-800" />
                   <button
                     role="menuitem"
                     onClick={() => setConfirmingDelete(true)}
-                    className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left text-xs font-semibold text-red-400 hover:bg-red-950/60 cursor-pointer"
+                    className="w-full flex items-center gap-3.5 px-3 py-3.5 rounded-xl text-left text-[15px] font-semibold text-red-400 hover:bg-red-950/60 cursor-pointer"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-5 h-5 shrink-0" />
                     <span>Eliminar prenda</span>
+                  </button>
+                  <button
+                    onClick={closeMenu}
+                    className="mt-2 w-full py-3.5 rounded-xl border border-neutral-700 text-sm font-bold uppercase tracking-wider text-neutral-300 hover:bg-neutral-800 cursor-pointer"
+                  >
+                    Cerrar
                   </button>
                 </>
               )}
             </div>
-          </>
+          </div>,
+          document.body
         )}
 
         {/* Quick View Button Hover Overlay */}

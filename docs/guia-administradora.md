@@ -26,7 +26,7 @@ Se hace desde la **tienda** (no desde el panel), estando con tu sesión de admin
 4. Con **Siguiente →** y **← Atrás** pasás de una pestaña a otra, y nada se pierde al cambiar. Si falta un dato al guardar, el formulario te lleva a la pestaña donde está.
 5. **Publicar Prenda.** Aparece de inmediato para todas las clientas.
 
-Mientras estés con sesión de administradora, cada prenda de la tienda muestra un botón de **tres puntos (⋯)** debajo del corazón, en la foto. Al tocarlo se abre un menú con las acciones, que se guardan al instante:
+Mientras estés con sesión de administradora, cada prenda de la tienda muestra un botón de **tres puntos (⋯)** debajo del corazón, en la foto. Al tocarlo se abre un menú (en el celular sale desde abajo de la pantalla) con las acciones, que se guardan al instante:
 - **★ Marcar como destacada / Quitar de destacadas:** la prenda es la única que se ve cuando la clienta elige "Destacadas" en "Ordenar por…". Solo vos ves la etiqueta blanca "Destacada" en la foto.
 - **⏳ Marcar "Último en stock":** muestra la etiqueta roja **"Último en stock"**.
 - **📦 Marcar como agotada / Volver a poner en stock:** aparece "Agotado", la foto se ve en blanco y negro y no se puede comprar.
