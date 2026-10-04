@@ -394,14 +394,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         {/* Product Title */}
         <h3 
           onClick={() => setSelectedProductForDetail(product)}
-          className="font-serif text-lg font-bold text-white hover:underline underline-offset-4 cursor-pointer line-clamp-1"
+          className="font-serif text-xl sm:text-[1.4rem] leading-snug font-bold text-white hover:underline underline-offset-4 cursor-pointer line-clamp-2"
         >
           {product.name}
         </h3>
 
         {/* Price & Discount */}
-        <div className="mt-1 flex items-baseline gap-2">
-          <span className="font-sans text-base font-bold tracking-tight tabular-nums text-white">
+        <div className="mt-1.5 flex items-baseline gap-2">
+          <span className="font-sans text-sm font-medium tracking-tight tabular-nums text-neutral-300">
             {formatPrice(product.price)}
           </span>
           {product.originalPrice && (
