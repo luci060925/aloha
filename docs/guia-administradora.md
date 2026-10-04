@@ -26,11 +26,12 @@ Se hace desde la **tienda** (no desde el panel), estando con tu sesión de admin
 4. Con **Siguiente →** y **← Atrás** pasás de una pestaña a otra, y nada se pierde al cambiar. Si falta un dato al guardar, el formulario te lleva a la pestaña donde está.
 5. **Publicar Prenda.** Aparece de inmediato para todas las clientas.
 
-Mientras estés con sesión de administradora, cada prenda de la tienda muestra unos **íconos de acceso rápido** a la derecha de la foto, que se guardan al instante:
-- **★ Estrella:** marca la prenda como **destacada** (es la única que se ve cuando la clienta elige "Destacadas" en "Ordenar por…"). Se ve blanca cuando está activa.
-- **⏳ Reloj de arena:** muestra la etiqueta roja **"Último en stock"**. Se ve roja cuando está activa.
-- **📦 Caja tachada:** marca la prenda como **agotada** (aparece "Agotado" y no se puede comprar). Tocala de nuevo cuando repongas.
-- **✏️ Lápiz:** modificar la prenda. **🗑 Tacho:** eliminarla. Al cambiar o quitar fotos, las que ya no se usan se borran solas.
+Mientras estés con sesión de administradora, cada prenda de la tienda muestra un botón de **tres puntos (⋯)** debajo del corazón, en la foto. Al tocarlo se abre un menú con las acciones, que se guardan al instante:
+- **★ Marcar como destacada / Quitar de destacadas:** la prenda es la única que se ve cuando la clienta elige "Destacadas" en "Ordenar por…". Solo vos ves la etiqueta blanca "Destacada" en la foto.
+- **⏳ Marcar "Último en stock":** muestra la etiqueta roja **"Último en stock"**.
+- **📦 Marcar como agotada / Volver a poner en stock:** aparece "Agotado", la foto se ve en blanco y negro y no se puede comprar.
+- **✏️ Modificar prenda:** abre el formulario.
+- **🗑 Eliminar prenda:** pregunta **"¿Seguro que querés eliminar…?"** antes de borrar, con los botones *Cancelar* y *Sí, eliminar*. No se puede deshacer. Al cambiar o quitar fotos, las que ya no se usan se borran solas.
 
 > Si una prenda no se guarda, el formulario muestra el motivo (por ejemplo, "Ya existe una prenda con ese nombre").
 

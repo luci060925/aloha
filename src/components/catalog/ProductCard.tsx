@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import type { Product } from '../../types';
 import { useStore } from '../../context/StoreContext';
 import { isOneSizeList, oneSizeLabel } from '../../lib/sizes';
-import { Heart, Eye, ShoppingBag, Edit3, Trash2, Lock, Star, Hourglass, PackageX } from 'lucide-react';
+import { Heart, Eye, ShoppingBag, Edit3, Trash2, Lock, Star, Hourglass, PackageX, MoreHorizontal } from 'lucide-react';
 
 interface ProductCardProps {
   product: Product;
@@ -26,6 +26,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const [selectedQuickSize, setSelectedQuickSize] = useState(product.sizes[0] || 'U');
   const [selectedQuickColor, setSelectedQuickColor] = useState(product.colors[0] || { name: 'Negro', hex: '#000000' });
   const [showQuickAdd, setShowQuickAdd] = useState(false);
+  // Menú de acciones de la administradora (los tres puntos) y su confirmación para eliminar
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const closeMenu = () => {
+    setMenuOpen(false);
+    setConfirmingDelete(false);
+  };
 
   const discountPercent = product.originalPrice 
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) 
@@ -52,24 +59,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     openEditProductModal(product);
   };
 
-  // Interruptores rápidos de la administradora: destacada, último en stock y agotado (se guardan al instante)
-  const handleAdminToggle = (change: () => Promise<void>) => async (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleAdminDelete = async () => {
     try {
-      await change();
+      await deleteProduct(product.id);
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'No se pudo guardar el cambio.');
-    }
-  };
-
-  const handleAdminDelete = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (confirm(`¿Estás segura de eliminar la prenda "${product.name}" del catálogo?`)) {
-      try {
-        await deleteProduct(product.id);
-      } catch (err) {
-        alert(err instanceof Error ? err.message : 'No se pudo eliminar la prenda.');
-      }
+      alert(err instanceof Error ? err.message : 'No se pudo eliminar la prenda.');
+      closeMenu();
     }
   };
 
@@ -116,6 +111,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               -{discountPercent}% OFF
             </span>
           )}
+          {currentUser?.isAdmin && product.featured && (
+            <span className="inline-flex items-center gap-1 bg-white text-black text-[10px] font-mono tracking-wider uppercase px-2 py-0.5 font-bold shadow-md rounded">
+              <Star className="w-3 h-3 fill-black" aria-hidden="true" /> Destacada
+            </span>
+          )}
           {product.lastInStock && product.inStock && (
             <span className="bg-red-600 text-white text-[10px] font-mono tracking-wider uppercase px-2 py-0.5 font-bold shadow-md rounded">
               Último en stock
@@ -141,56 +141,126 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             <Heart className={`w-4 h-4 transition-colors ${inWish ? 'fill-white text-white' : 'text-neutral-400'}`} />
           </button>
 
-          {/* Admin Direct Actions on Card */}
+          {/* Acciones de la administradora, dentro de un solo menú */}
           {currentUser?.isAdmin && (
-            <>
-              <button
-                onClick={handleAdminToggle(() => updateProduct(product.id, { featured: !product.featured }))}
-                className={`p-1.5 sm:p-2 rounded-full transition-all shadow-md cursor-pointer border ${
-                  product.featured ? 'bg-white text-black border-white' : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700 border-neutral-600'
-                }`}
-                title={product.featured ? 'Destacada: quitar de destacadas' : 'Marcar como destacada'}
-                aria-pressed={Boolean(product.featured)}
-              >
-                <Star className={`w-3.5 h-3.5 ${product.featured ? 'fill-black' : ''}`} />
-              </button>
-              <button
-                onClick={handleAdminToggle(() => updateProduct(product.id, { lastInStock: !product.lastInStock }))}
-                className={`p-1.5 sm:p-2 rounded-full transition-all shadow-md cursor-pointer border ${
-                  product.lastInStock ? 'bg-red-600 text-white border-red-500' : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700 border-neutral-600'
-                }`}
-                title={product.lastInStock ? '"Último en stock": quitar etiqueta' : 'Marcar como "Último en stock"'}
-                aria-pressed={Boolean(product.lastInStock)}
-              >
-                <Hourglass className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={handleAdminToggle(() => toggleProductStock(product.id))}
-                className={`p-1.5 sm:p-2 rounded-full transition-all shadow-md cursor-pointer border ${
-                  !product.inStock ? 'bg-neutral-100 text-black border-white' : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700 border-neutral-600'
-                }`}
-                title={product.inStock ? 'Marcar como agotada' : 'Agotada: volver a poner en stock'}
-                aria-pressed={!product.inStock}
-              >
-                <PackageX className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={handleAdminEdit}
-                className="p-1.5 sm:p-2 rounded-full bg-neutral-800 text-white hover:bg-neutral-700 transition-all shadow-md cursor-pointer border border-neutral-600"
-                title="Modificar prenda (Admin)"
-              >
-                <Edit3 className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={handleAdminDelete}
-                className="p-1.5 sm:p-2 rounded-full bg-red-600 text-white hover:bg-red-700 transition-all shadow-md cursor-pointer"
-                title="Eliminar prenda (Admin)"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            </>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (menuOpen) closeMenu();
+                else setMenuOpen(true);
+              }}
+              className={`p-2 rounded-full transition-all shadow-md cursor-pointer border ${
+                menuOpen ? 'bg-white text-black border-white' : 'bg-black/80 backdrop-blur-sm text-white hover:bg-black border-neutral-700'
+              }`}
+              title="Acciones de la prenda"
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+            >
+              <MoreHorizontal className="w-4 h-4" />
+            </button>
           )}
         </div>
+
+        {currentUser?.isAdmin && menuOpen && (
+          <>
+            {/* Fondo transparente: un toque afuera cierra el menú */}
+            <div
+              className="absolute inset-0 z-20 cursor-default"
+              onClick={(e) => {
+                e.stopPropagation();
+                closeMenu();
+              }}
+            />
+            <div
+              role="menu"
+              onClick={(e) => e.stopPropagation()}
+              className="absolute z-30 top-[5.3rem] right-2.5 left-2.5 rounded-xl border border-neutral-700 bg-[#101010] shadow-2xl p-1.5"
+            >
+              {confirmingDelete ? (
+                <div className="p-2.5 space-y-2.5 text-center">
+                  <p className="text-xs font-semibold text-white leading-snug">
+                    ¿Seguro que querés eliminar «{product.name}»?
+                  </p>
+                  <p className="text-[11px] text-neutral-400 leading-snug">No se puede deshacer.</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={closeMenu}
+                      className="py-2 rounded-lg border border-neutral-600 text-[11px] font-bold uppercase tracking-wider text-neutral-200 hover:bg-neutral-800 cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={handleAdminDelete}
+                      className="py-2 rounded-lg bg-red-600 hover:bg-red-700 text-[11px] font-bold uppercase tracking-wider text-white cursor-pointer"
+                    >
+                      Sí, eliminar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {[
+                    {
+                      key: 'featured',
+                      icon: <Star className={`w-4 h-4 ${product.featured ? 'fill-white' : ''}`} />,
+                      label: product.featured ? 'Quitar de destacadas' : 'Marcar como destacada',
+                      run: () => updateProduct(product.id, { featured: !product.featured }),
+                    },
+                    {
+                      key: 'last',
+                      icon: <Hourglass className="w-4 h-4" />,
+                      label: product.lastInStock ? 'Quitar "Último en stock"' : 'Marcar "Último en stock"',
+                      run: () => updateProduct(product.id, { lastInStock: !product.lastInStock }),
+                    },
+                    {
+                      key: 'stock',
+                      icon: <PackageX className="w-4 h-4" />,
+                      label: product.inStock ? 'Marcar como agotada' : 'Volver a poner en stock',
+                      run: () => toggleProductStock(product.id),
+                    },
+                  ].map(item => (
+                    <button
+                      key={item.key}
+                      role="menuitem"
+                      onClick={async () => {
+                        closeMenu();
+                        try {
+                          await item.run();
+                        } catch (err) {
+                          alert(err instanceof Error ? err.message : 'No se pudo guardar el cambio.');
+                        }
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left text-xs font-semibold text-neutral-100 hover:bg-neutral-800 cursor-pointer"
+                    >
+                      <span className="shrink-0">{item.icon}</span>
+                      <span className="leading-tight">{item.label}</span>
+                    </button>
+                  ))}
+                  <button
+                    role="menuitem"
+                    onClick={(e) => {
+                      closeMenu();
+                      handleAdminEdit(e);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left text-xs font-semibold text-neutral-100 hover:bg-neutral-800 cursor-pointer"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                    <span>Modificar prenda</span>
+                  </button>
+                  <div className="my-1 h-px bg-neutral-800" />
+                  <button
+                    role="menuitem"
+                    onClick={() => setConfirmingDelete(true)}
+                    className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left text-xs font-semibold text-red-400 hover:bg-red-950/60 cursor-pointer"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>Eliminar prenda</span>
+                  </button>
+                </>
+              )}
+            </div>
+          </>
+        )}
 
         {/* Quick View Button Hover Overlay */}
         <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black via-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-between gap-2 z-10">
