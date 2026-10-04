@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import type { Product } from '../../types';
 import { useStore } from '../../context/StoreContext';
 import { isOneSizeList, oneSizeLabel } from '../../lib/sizes';
-import { Heart, Eye, ShoppingBag, Edit3, Trash2, Lock } from 'lucide-react';
+import { Heart, Eye, ShoppingBag, Edit3, Trash2, Lock, Star, Hourglass, PackageX } from 'lucide-react';
 
 interface ProductCardProps {
   product: Product;
@@ -17,7 +17,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     currentUser,
     setIsAuthModalOpen,
     openEditProductModal,
-    deleteProduct
+    deleteProduct,
+    updateProduct,
+    toggleProductStock,
   } = useStore();
   
   const [isHovered, setIsHovered] = useState(false);
@@ -48,6 +50,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const handleAdminEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
     openEditProductModal(product);
+  };
+
+  // Interruptores rápidos de la administradora: destacada, último en stock y agotado (se guardan al instante)
+  const handleAdminToggle = (change: () => Promise<void>) => async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await change();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'No se pudo guardar el cambio.');
+    }
   };
 
   const handleAdminDelete = async (e: React.MouseEvent) => {
@@ -109,14 +121,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               Último en stock
             </span>
           )}
-          {product.isNewArrival && (
-            <span className="bg-[#141414] text-white border border-neutral-700 text-[10px] font-mono tracking-wider uppercase px-2 py-0.5 font-bold shadow-md rounded">
-              NEW DROP
-            </span>
-          )}
           {!product.inStock && (
-            <span className="bg-neutral-800 text-neutral-400 text-[10px] font-mono tracking-wider uppercase px-2 py-0.5 font-bold rounded">
-              PAUSADO
+            <span className="bg-neutral-800 text-white border border-neutral-600 text-[10px] font-mono tracking-wider uppercase px-2 py-0.5 font-bold shadow-md rounded">
+              Agotado
             </span>
           )}
         </div>
@@ -138,15 +145,45 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           {currentUser?.isAdmin && (
             <>
               <button
+                onClick={handleAdminToggle(() => updateProduct(product.id, { featured: !product.featured }))}
+                className={`p-1.5 sm:p-2 rounded-full transition-all shadow-md cursor-pointer border ${
+                  product.featured ? 'bg-white text-black border-white' : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700 border-neutral-600'
+                }`}
+                title={product.featured ? 'Destacada: quitar de destacadas' : 'Marcar como destacada'}
+                aria-pressed={Boolean(product.featured)}
+              >
+                <Star className={`w-3.5 h-3.5 ${product.featured ? 'fill-black' : ''}`} />
+              </button>
+              <button
+                onClick={handleAdminToggle(() => updateProduct(product.id, { lastInStock: !product.lastInStock }))}
+                className={`p-1.5 sm:p-2 rounded-full transition-all shadow-md cursor-pointer border ${
+                  product.lastInStock ? 'bg-red-600 text-white border-red-500' : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700 border-neutral-600'
+                }`}
+                title={product.lastInStock ? '"Último en stock": quitar etiqueta' : 'Marcar como "Último en stock"'}
+                aria-pressed={Boolean(product.lastInStock)}
+              >
+                <Hourglass className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={handleAdminToggle(() => toggleProductStock(product.id))}
+                className={`p-1.5 sm:p-2 rounded-full transition-all shadow-md cursor-pointer border ${
+                  !product.inStock ? 'bg-neutral-100 text-black border-white' : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700 border-neutral-600'
+                }`}
+                title={product.inStock ? 'Marcar como agotada' : 'Agotada: volver a poner en stock'}
+                aria-pressed={!product.inStock}
+              >
+                <PackageX className="w-3.5 h-3.5" />
+              </button>
+              <button
                 onClick={handleAdminEdit}
-                className="p-2 rounded-full bg-neutral-800 text-white hover:bg-neutral-700 transition-all shadow-md cursor-pointer border border-neutral-600"
+                className="p-1.5 sm:p-2 rounded-full bg-neutral-800 text-white hover:bg-neutral-700 transition-all shadow-md cursor-pointer border border-neutral-600"
                 title="Modificar prenda (Admin)"
               >
                 <Edit3 className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={handleAdminDelete}
-                className="p-2 rounded-full bg-red-600 text-white hover:bg-red-700 transition-all shadow-md cursor-pointer"
+                className="p-1.5 sm:p-2 rounded-full bg-red-600 text-white hover:bg-red-700 transition-all shadow-md cursor-pointer"
                 title="Eliminar prenda (Admin)"
               >
                 <Trash2 className="w-3.5 h-3.5" />

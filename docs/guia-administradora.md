@@ -17,7 +17,7 @@ Se hace desde la **tienda** (no desde el panel), estando con tu sesión de admin
 1. Entrá a la sección donde va la prenda (por ejemplo, Pantalones → Calzas).
 2. Tocá **Agregar Prenda**. Se abre el formulario con esa sección ya elegida.
 3. El formulario tiene **tres pestañas** arriba (un tilde verde marca las que están completas):
-   - **Datos de la prenda:** nombre, categoría y subcategoría, precio, precio original (opcional: se muestra tachado y calcula el % de descuento), casillas de **destacada** y de **"Último en stock"** (muestra esa etiqueta amarilla en la prenda; desmarcala cuando repongas) y descripción. En la descripción podés tocar **Sugerir con IA** (si querés mejores resultados, anotá antes en el campo "Para la IA" datos reales como tela o detalles) para que te proponga 3 opciones (cercana, elegante y canchera): tocá la que te guste, editala si querés y **revisá que sea correcta** antes de guardar. Se instala una vez (ver [ia-descripciones.md](./ia-descripciones.md)).
+   - **Datos de la prenda:** nombre, categoría y subcategoría, precio, precio original (opcional: se muestra tachado y calcula el % de descuento), y descripción. En la descripción podés tocar **Sugerir con IA** (si querés mejores resultados, anotá antes en el campo "Para la IA" datos reales como tela o detalles) para que te proponga 3 opciones (cercana, elegante y canchera): tocá la que te guste, editala si querés y **revisá que sea correcta** antes de guardar. Se instala una vez (ver [ia-descripciones.md](./ia-descripciones.md)).
    - **Imágenes cargadas:** tocá el recuadro y elegí las fotos desde tu celular o computadora. Cada foto se ve en su recuadro vertical 3:4, tal como la verá la clienta: **arrastrala con el dedo o el mouse** para acomodarla. La primera foto es la principal; la segunda aparece al pasar el mouse.
    - **Talle, color y tipo:**
      - **Talles:** tocá los que correspondan o escribí uno nuevo. Si la prenda no se elige por talle, marcá **Talle único** y elegí "calza del … al …" (letras o números).
@@ -26,7 +26,11 @@ Se hace desde la **tienda** (no desde el panel), estando con tu sesión de admin
 4. Con **Siguiente →** y **← Atrás** pasás de una pestaña a otra, y nada se pierde al cambiar. Si falta un dato al guardar, el formulario te lleva a la pestaña donde está.
 5. **Publicar Prenda.** Aparece de inmediato para todas las clientas.
 
-Para **modificar** o **eliminar**, en la tienda cada prenda muestra dos botones (lápiz y tacho) mientras estés con sesión de administradora. Al cambiar o quitar fotos, las que ya no se usan se borran solas.
+Mientras estés con sesión de administradora, cada prenda de la tienda muestra unos **íconos de acceso rápido** a la derecha de la foto, que se guardan al instante:
+- **★ Estrella:** marca la prenda como **destacada** (sale primero al ordenar por "Destacadas"). Se ve blanca cuando está activa.
+- **⏳ Reloj de arena:** muestra la etiqueta roja **"Último en stock"**. Se ve roja cuando está activa.
+- **📦 Caja tachada:** marca la prenda como **agotada** (aparece "Agotado" y no se puede comprar). Tocala de nuevo cuando repongas.
+- **✏️ Lápiz:** modificar la prenda. **🗑 Tacho:** eliminarla. Al cambiar o quitar fotos, las que ya no se usan se borran solas.
 
 > Si una prenda no se guarda, el formulario muestra el motivo (por ejemplo, "Ya existe una prenda con ese nombre").
 

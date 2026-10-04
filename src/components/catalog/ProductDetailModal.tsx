@@ -93,11 +93,6 @@ const ProductDetailContent: React.FC<{ product: Product }> = ({ product }) => {
                     Último en stock
                   </span>
                 )}
-                {product.isNewArrival && (
-                  <span className="absolute top-3 right-3 bg-black/80 text-white border border-neutral-700 text-[10px] font-mono tracking-wider uppercase px-2 py-0.5 font-bold shadow-md rounded">
-                    NEW DROP
-                  </span>
-                )}
               </div>
 
               {/* Thumbnails */}
