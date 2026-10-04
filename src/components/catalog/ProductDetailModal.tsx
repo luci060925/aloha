@@ -57,7 +57,7 @@ const ProductDetailContent: React.FC<{ product: Product }> = ({ product }) => {
     <>
       <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md animate-fade-in overflow-hidden">
         {/* Modal Container */}
-        <div className="bg-[#121212] text-white w-full max-h-[92vh] sm:max-h-[90vh] sm:max-w-4xl relative shadow-2xl border-t sm:border border-neutral-800 rounded-t-3xl sm:rounded-2xl flex flex-col overflow-hidden">
+        <div className="bg-[#121212] text-white w-full max-h-[calc(100%-0.75rem)] sm:max-h-[90%] sm:max-w-4xl relative shadow-2xl border-t sm:border border-neutral-800 rounded-t-3xl sm:rounded-2xl flex flex-col overflow-hidden">
           
           {/* Mobile Handle Indicator */}
           <div className="sm:hidden w-12 h-1.5 bg-neutral-700 rounded-full mx-auto my-2.5 shrink-0" />

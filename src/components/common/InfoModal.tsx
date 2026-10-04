@@ -29,7 +29,7 @@ export const InfoModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto">
-      <div className="bg-[#121212] text-white max-w-2xl w-full p-6 sm:p-10 relative shadow-2xl border border-neutral-800 rounded-2xl my-auto max-h-[90vh] overflow-y-auto">
+      <div className="bg-[#121212] text-white max-w-2xl w-full p-6 sm:p-10 relative shadow-2xl border border-neutral-800 rounded-2xl my-auto max-h-full overflow-y-auto">
         
         {/* Close Button */}
         <button

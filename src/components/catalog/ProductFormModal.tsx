@@ -459,7 +459,7 @@ export const ProductFormModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/90 backdrop-blur-md animate-fade-in overflow-y-auto">
-      <div className="bg-[#121212] text-white max-w-2xl w-full p-6 sm:p-8 relative shadow-2xl border border-neutral-800 rounded-2xl my-auto max-h-[92vh] overflow-y-auto" ref={scrollRef}>
+      <div className="bg-[#121212] text-white max-w-2xl w-full p-6 sm:p-8 relative shadow-2xl border border-neutral-800 rounded-2xl my-auto max-h-full overflow-y-auto" ref={scrollRef}>
         
         {/* Modal Header */}
         <div className="flex items-center gap-3 mb-1">
