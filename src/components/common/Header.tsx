@@ -194,7 +194,7 @@ export const Header: React.FC = () => {
 
               {/* Categorías Principales */}
               <div className="py-5">
-                <p className="text-[10px] uppercase tracking-[0.25em] text-[#C9A66B] font-bold mb-3 font-mono">
+                <p className="text-[10px] uppercase tracking-[0.25em] text-neutral-500 font-bold mb-3 font-mono">
                   Colecciones
                 </p>
 
@@ -206,8 +206,8 @@ export const Header: React.FC = () => {
                   }}
                   className={`w-full text-left text-xs uppercase tracking-[0.15em] py-2.5 px-3 rounded-lg transition-all cursor-pointer font-bold mb-1 ${
                     selectedCategory === 'all'
-                      ? 'bg-[#C9A66B] text-black shadow-sm'
-                      : 'text-neutral-300 hover:text-[#C9A66B] hover:bg-neutral-900'
+                      ? 'bg-white text-black shadow-sm'
+                      : 'text-neutral-300 hover:text-white hover:bg-neutral-900'
                   }`}
                 >
                   Todas las Prendas
@@ -247,7 +247,7 @@ export const Header: React.FC = () => {
                             className={`flex-1 text-left text-xs uppercase tracking-[0.14em] py-2.5 px-3 transition-colors cursor-pointer font-bold flex items-center justify-between ${
                               isMagnolia
                                 ? isCatSelected ? 'text-white bg-[#8E2A42]' : 'text-white hover:bg-[#7D2236]'
-                                : isCatSelected ? 'text-[#C9A66B] bg-neutral-800' : 'text-neutral-300 hover:text-[#C9A66B] hover:bg-neutral-800/60'
+                                : isCatSelected ? 'text-white bg-neutral-800' : 'text-neutral-300 hover:text-white hover:bg-neutral-800/60'
                             }`}
                           >
                             <span>{cat.name}</span>
@@ -257,7 +257,7 @@ export const Header: React.FC = () => {
                             <button
                               onClick={() => setExpandedCategory(isExpanded ? null : cat.slug)}
                               className={`p-2.5 transition-colors cursor-pointer ${
-                                isMagnolia ? 'text-white/80 hover:text-white hover:bg-[#7D2236]' : 'text-neutral-400 hover:text-[#C9A66B] hover:bg-neutral-800'
+                                isMagnolia ? 'text-white/80 hover:text-white hover:bg-[#7D2236]' : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
                               }`}
                               title="Ver subcategorías"
                             >
@@ -277,8 +277,8 @@ export const Header: React.FC = () => {
                               onClick={() => goToSub('all')}
                               className={`w-full text-left text-[11px] uppercase tracking-wider py-1.5 px-3 rounded-md cursor-pointer font-bold transition-colors ${
                                 isCatSelected && selectedSubcategory === 'all'
-                                  ? isMagnolia ? 'bg-white text-[#6D1A2C]' : 'bg-[#C9A66B] text-black'
-                                  : isMagnolia ? 'text-white/80 hover:text-white hover:bg-[#6D1A2C]' : 'text-neutral-400 hover:text-[#C9A66B] hover:bg-neutral-900'
+                                  ? isMagnolia ? 'bg-white text-[#6D1A2C]' : 'bg-white text-black'
+                                  : isMagnolia ? 'text-white/80 hover:text-white hover:bg-[#6D1A2C]' : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
                               }`}
                             >
                               Ver Todo en {cat.name}
@@ -290,8 +290,8 @@ export const Header: React.FC = () => {
                                 onClick={() => goToSub(sub.slug)}
                                 className={`w-full text-left text-[11px] uppercase tracking-wider py-1.5 px-3 rounded-md cursor-pointer transition-colors flex items-center gap-1.5 ${
                                   isCatSelected && selectedSubcategory === sub.slug
-                                    ? isMagnolia ? 'bg-white text-[#6D1A2C] font-bold' : 'bg-[#C9A66B] text-black font-bold'
-                                    : isMagnolia ? 'text-white/80 hover:text-white hover:bg-[#6D1A2C]' : 'text-neutral-400 hover:text-[#C9A66B] hover:bg-neutral-900'
+                                    ? isMagnolia ? 'bg-white text-[#6D1A2C] font-bold' : 'bg-white text-black font-bold'
+                                    : isMagnolia ? 'text-white/80 hover:text-white hover:bg-[#6D1A2C]' : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
                                 }`}
                               >
                                 <span className={isMagnolia ? 'text-white/50' : 'text-neutral-500'}>↳</span>

@@ -35,11 +35,12 @@ const overflowInBox = (ratio: number, boxW: number, boxH: number) => ({
   y: Math.max(0, boxW / ratio - boxH),
 });
 
-const loadRatio = (src: string): Promise<number> =>
+/** Proporción (ancho / alto) de la foto, o null si el navegador no puede leerla (por ejemplo, fotos HEIC en Windows). */
+const loadRatio = (src: string): Promise<number | null> =>
   new Promise(resolve => {
     const img = new Image();
     img.onload = () => resolve(img.width && img.height ? img.width / img.height : FRAME_RATIO);
-    img.onerror = () => resolve(FRAME_RATIO);
+    img.onerror = () => resolve(null);
     img.src = src;
   });
 
@@ -269,6 +270,10 @@ export const ProductFormModal: React.FC = () => {
         const rawResult = event.target?.result as string;
         if (rawResult) {
           const ratio = await loadRatio(rawResult);
+          if (ratio === null) {
+            setErrorMessage(`No pudimos leer la foto "${file.name}". Si es una foto HEIC (de iPhone), subila desde el celular o convertila a JPG antes de adjuntarla.`);
+            return;
+          }
           setImagesList(prev => [
             ...prev,
             { rawUrl: rawResult, previewUrl: rawResult, offsetXPercent: 50, offsetYPercent: 50, ratio },
