@@ -1,7 +1,7 @@
 // Ingreso con el botón oficial de Google (Google Identity Services).
 // A diferencia del ingreso por redirección, Google muestra el nombre de la tienda en vez de la dirección de Supabase.
 // El ID de cliente es público (no es una clave secreta): es el mismo "ID de cliente" de Google Cloud que ya está cargado en Supabase.
-export const GOOGLE_CLIENT_ID: string = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+export const GOOGLE_CLIENT_ID: string = import.meta.env.VITE_GOOGLE_CLIENT_ID || '653158457386-1ch4np31l2be3t2j6o56bra6jfr7v4k6.apps.googleusercontent.com';
 
 const GSI_SRC = 'https://accounts.google.com/gsi/client';
 
