@@ -91,6 +91,7 @@ interface StoreContextType {
   currentUser: UserProfile | null;
   registeredUsers: UserProfile[];
   loginWithSocial: (provider: 'google') => Promise<string | null>; // null = redirigiendo a Google; texto = error
+  loginWithGoogleToken: (idToken: string, nonce: string) => Promise<string | null>; // null = sesión iniciada; texto = error
   loginWithEmail: (email: string, password?: string) => Promise<{ success: boolean; message?: string }>;
   registerUser: (data: {
     fullName: string;
@@ -1388,6 +1389,19 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return null; // el navegador se redirige a Google
   };
 
+  // Ingreso con el botón oficial de Google: Google entrega un token y Supabase lo valida (sin viajar a otra página)
+  const loginWithGoogleToken = async (idToken: string, nonce: string): Promise<string | null> => {
+    if (!isSupabaseConfigured || !supabase) {
+      return 'El ingreso con Google no está disponible en modo demostración.';
+    }
+    const { error } = await supabase.auth.signInWithIdToken({ provider: 'google', token: idToken, nonce });
+    if (error) {
+      console.warn('Supabase Google token error:', error.message);
+      return 'No pudimos iniciar el ingreso con Google. Intentá nuevamente.';
+    }
+    return null;
+  };
+
   const registerUser = async (data: {
     fullName: string;
     email: string;
@@ -1676,6 +1690,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         currentUser,
         registeredUsers,
         loginWithSocial,
+        loginWithGoogleToken,
         loginWithEmail,
         registerUser,
         logout,

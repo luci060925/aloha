@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { X, Mail, User, Lock, Phone, MapPin, Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { BrandLogo } from '../common/BrandLogo';
 import { isSupabaseConfigured } from '../../lib/supabase';
 import { MIN_PASSWORD_LENGTH } from '../../lib/constants';
+import { GOOGLE_CLIENT_ID, renderGoogleButton } from '../../lib/googleSignIn';
 
 // Se monta al abrir el modal: al cerrarlo se descarta el correo, la contraseña y el resto de los campos
 const AuthModalContent: React.FC = () => {
   const {
     setIsAuthModalOpen,
     loginWithSocial,
+    loginWithGoogleToken,
     loginWithEmail,
     registerUser,
     requestPasswordReset,
@@ -26,6 +28,38 @@ const AuthModalContent: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  // Botón oficial de Google; si no se puede cargar, queda el botón de siempre
+  const googleSlot = useRef<HTMLDivElement>(null);
+  const [googleButtonReady, setGoogleButtonReady] = useState(false);
+  const showGoogle = isSupabaseConfigured && !isForgotMode;
+  const googleTokenLogin = useRef(loginWithGoogleToken);
+  useEffect(() => {
+    googleTokenLogin.current = loginWithGoogleToken;
+  });
+
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID || !showGoogle || !googleSlot.current) return;
+    const slot = googleSlot.current;
+    let cancelled = false;
+    renderGoogleButton(
+      slot,
+      async (idToken, nonce) => {
+        setErrorMessage('');
+        setGoogleLoading(true);
+        const error = await googleTokenLogin.current(idToken, nonce);
+        if (error) {
+          setErrorMessage(error);
+          setGoogleLoading(false);
+        }
+      },
+      slot.clientWidth || 320
+    ).then(ok => {
+      if (!cancelled) setGoogleButtonReady(ok);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [showGoogle]);
 
   // Form fields
   const [fullName, setFullName] = useState('');
@@ -173,8 +207,14 @@ const AuthModalContent: React.FC = () => {
         )}
 
         {/* Acceso con Google (requiere habilitar el proveedor en Supabase: ver docs/login-google.md) */}
-        {isSupabaseConfigured && !isForgotMode && (
+        {showGoogle && (
           <>
+            {GOOGLE_CLIENT_ID && (
+              <div className={googleButtonReady ? 'flex justify-center min-h-[44px]' : 'h-0 overflow-hidden'}>
+                <div ref={googleSlot} className={googleLoading ? 'opacity-60 pointer-events-none' : ''} />
+              </div>
+            )}
+            {!(GOOGLE_CLIENT_ID && googleButtonReady) && (
             <button
               type="button"
               onClick={handleGoogle}
@@ -189,6 +229,7 @@ const AuthModalContent: React.FC = () => {
               </svg>
               <span>{googleLoading ? 'Conectando con Google...' : 'Continuar con Google'}</span>
             </button>
+            )}
 
             <div className="relative flex items-center justify-center my-4">
               <div className="border-t border-neutral-800 w-full" />

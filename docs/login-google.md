@@ -61,3 +61,7 @@ Si una clienta ya se había registrado con correo y contraseña y después entra
 
 - El rol de administradora **nunca** se asigna por Google: una cuenta nueva siempre entra con `is_admin = false`; se otorga solo desde el panel de Supabase.
 - Las cuentas de Google verificadas se enlazan por correo. Si el correo de la dueña ya es administradora con contraseña, entrar con Google con ese mismo correo abre la misma cuenta (y el mismo rol).
+
+## Botón oficial de Google (para que no aparezca la dirección de Supabase)
+
+Si se define `VITE_GOOGLE_CLIENT_ID` (el ID de cliente de Google Cloud, que es público), el login usa el botón oficial de Google en una ventana emergente y Supabase valida el token (`signInWithIdToken`). Requisitos: en Google Cloud, el cliente debe tener la web de la tienda en **Orígenes autorizados de JavaScript**. Sin esa variable se usa el ingreso por redirección de siempre.
